@@ -1,9 +1,11 @@
 import Foundation
 
 /// Mapper for converting between Capture domain models and persistence models
+/// Note: Methods marked nonisolated to allow calling from actor contexts
+/// (Project has SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor)
 struct CaptureMapper {
     /// Map CaptureEntity to CaptureDTO for API communication
-    static func toDTO(_ entity: CaptureEntity) -> CaptureDTO {
+    nonisolated static func toDTO(_ entity: CaptureEntity) -> CaptureDTO {
         CaptureDTO(
             id: entity.id,
             captureType: entity.captureType,
@@ -14,7 +16,7 @@ struct CaptureMapper {
     }
 
     /// Map CaptureDTO to CaptureEntity for persistence
-    static func toEntity(_ dto: CaptureDTO) -> CaptureEntity {
+    nonisolated static func toEntity(_ dto: CaptureDTO) -> CaptureEntity {
         CaptureEntity(
             id: dto.id,
             captureType: dto.captureType,
@@ -27,7 +29,7 @@ struct CaptureMapper {
     }
 
     /// Map domain Capture model to CaptureEntity
-    static func toEntity(from capture: CaptureModel) -> CaptureEntity {
+    nonisolated static func toEntity(from capture: CaptureModel) -> CaptureEntity {
         let entity = CaptureEntity(
             id: capture.id,
             captureType: capture.captureType,
@@ -48,7 +50,7 @@ struct CaptureMapper {
     }
 
     /// Map CaptureEntity to domain Capture model
-    static func toModel(_ entity: CaptureEntity) -> CaptureModel {
+    nonisolated static func toModel(_ entity: CaptureEntity) -> CaptureModel {
         CaptureModel(
             id: entity.id,
             captureType: entity.captureType,
@@ -68,7 +70,7 @@ struct CaptureMapper {
     }
 
     /// Update CaptureEntity from domain Capture
-    static func update(_ entity: CaptureEntity, with capture: CaptureModel) {
+    nonisolated static func update(_ entity: CaptureEntity, with capture: CaptureModel) {
         entity.notes = capture.notes
         entity.qualityScore = capture.qualityScore
         entity.processingStatus = capture.processingStatus
@@ -78,7 +80,8 @@ struct CaptureMapper {
 }
 
 /// Local Capture model for mapper operations
-struct CaptureModel: Codable, Identifiable {
+/// Note: Marked nonisolated to allow use in actor contexts
+nonisolated struct CaptureModel: Codable, Identifiable, Sendable {
     let id: String
     let captureType: String
     let fileURL: String

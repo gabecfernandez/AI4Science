@@ -1,28 +1,16 @@
 import Foundation
 import SwiftData
 
-/// Protocol for sample operations
+/// Protocol for sample operations - returns only Sendable domain types
+/// Entity-based operations are internal to the actor and not exposed via protocol
 protocol SampleRepositoryProtocol: Sendable {
-    func createSample(_ sample: SampleEntity) async throws
-    func getSample(id: String) async throws -> SampleEntity?
-    func getSamplesByProject(projectID: String) async throws -> [SampleEntity]
-    func updateSample(_ sample: SampleEntity) async throws
-    func deleteSample(id: String) async throws
-    func getAllSamples() async throws -> [SampleEntity]
-    func searchSamples(query: String) async throws -> [SampleEntity]
-    func getSamplesByType(_ type: String) async throws -> [SampleEntity]
-    func getSamplesByStatus(_ status: String) async throws -> [SampleEntity]
-    func flagSample(id: String) async throws
-    func unflagSample(id: String) async throws
+    // Domain model operations would go here when Sample domain model is added
+    // For now, keep entity operations internal to actor only
 }
 
-/// Sample repository implementation
-actor SampleRepository: SampleRepositoryProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// Sample repository implementation using ModelActor
+@ModelActor
+final actor SampleRepository {
 
     /// Create a new sample
     func createSample(_ sample: SampleEntity) async throws {
@@ -57,7 +45,7 @@ actor SampleRepository: SampleRepositoryProtocol {
 
     /// Delete sample
     func deleteSample(id: String) async throws {
-        guard let sample = try getSample(id: id) else {
+        guard let sample = try await getSample(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(sample)
@@ -74,11 +62,11 @@ actor SampleRepository: SampleRepositoryProtocol {
 
     /// Search samples by name or description
     func searchSamples(query: String) async throws -> [SampleEntity] {
-        let lowercaseQuery = query.lowercased()
+        // Note: Using localizedStandardContains which is supported in SwiftData predicates
         let descriptor = FetchDescriptor<SampleEntity>(
             predicate: #Predicate { sample in
-                sample.name.localizedCaseInsensitiveContains(lowercaseQuery) ||
-                sample.description.localizedCaseInsensitiveContains(lowercaseQuery)
+                sample.name.localizedStandardContains(query) ||
+                sample.sampleDescription.localizedStandardContains(query)
             },
             sortBy: [SortDescriptor(\.name)]
         )
@@ -105,31 +93,31 @@ actor SampleRepository: SampleRepositoryProtocol {
 
     /// Flag a sample
     func flagSample(id: String) async throws {
-        guard let sample = try getSample(id: id) else {
+        guard let sample = try await getSample(id: id) else {
             throw RepositoryError.notFound
         }
-        sample.flag()
+        // Inline property updates instead of calling @MainActor method
+        sample.isFlagged = true
+        sample.updatedAt = Date()
         try modelContext.save()
     }
 
     /// Unflag a sample
     func unflagSample(id: String) async throws {
-        guard let sample = try getSample(id: id) else {
+        guard let sample = try await getSample(id: id) else {
             throw RepositoryError.notFound
         }
-        sample.unflag()
+        // Inline property updates instead of calling @MainActor method
+        sample.isFlagged = false
+        sample.updatedAt = Date()
         try modelContext.save()
     }
 }
 
 /// Factory for creating sample repository
-struct SampleRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> SampleRepository {
-        SampleRepository(modelContext: modelContext)
-    }
-
+enum SampleRepositoryFactory {
+    @MainActor
     static func makeRepository(modelContainer: ModelContainer) -> SampleRepository {
-        let context = ModelContext(modelContainer)
-        return SampleRepository(modelContext: context)
+        SampleRepository(modelContainer: modelContainer)
     }
 }

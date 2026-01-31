@@ -1,28 +1,16 @@
 import Foundation
 import SwiftData
 
-/// Protocol for ML model operations
+/// Protocol for ML model operations - returns only Sendable domain types
+/// Entity-based operations are internal to the actor and not exposed via protocol
 protocol MLModelRepositoryProtocol: Sendable {
-    func createModel(_ model: MLModelEntity) async throws
-    func getModel(id: String) async throws -> MLModelEntity?
-    func getModelByName(_ name: String) async throws -> MLModelEntity?
-    func updateModel(_ model: MLModelEntity) async throws
-    func deleteModel(id: String) async throws
-    func getAllModels() async throws -> [MLModelEntity]
-    func getDownloadedModels() async throws -> [MLModelEntity]
-    func getModelsByType(_ type: String) async throws -> [MLModelEntity]
-    func getEnabledModels() async throws -> [MLModelEntity]
-    func updateDownloadStatus(modelID: String, status: String, progress: Double) async throws
-    func markModelDownloadComplete(modelID: String, localPath: String) async throws
+    // Domain model operations would go here when MLModel domain model is added
+    // For now, keep entity operations internal to actor only
 }
 
-/// ML Model repository implementation
-actor MLModelRepository: MLModelRepositoryProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// ML Model repository implementation using ModelActor
+@ModelActor
+final actor MLModelRepository {
 
     /// Create a new ML model
     func createModel(_ model: MLModelEntity) async throws {
@@ -54,7 +42,7 @@ actor MLModelRepository: MLModelRepositoryProtocol {
 
     /// Delete model
     func deleteModel(id: String) async throws {
-        guard let model = try getModel(id: id) else {
+        guard let model = try await getModel(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(model)
@@ -98,31 +86,34 @@ actor MLModelRepository: MLModelRepositoryProtocol {
 
     /// Update download status
     func updateDownloadStatus(modelID: String, status: String, progress: Double) async throws {
-        guard let model = try getModel(id: modelID) else {
+        guard let model = try await getModel(id: modelID) else {
             throw RepositoryError.notFound
         }
-        model.updateDownloadStatus(status, progress: progress)
+        // Inline property updates instead of calling @MainActor method
+        model.downloadStatus = status
+        model.downloadProgress = min(max(progress, 0.0), 1.0)
+        model.updatedAt = Date()
         try modelContext.save()
     }
 
     /// Mark model download as complete
     func markModelDownloadComplete(modelID: String, localPath: String) async throws {
-        guard let model = try getModel(id: modelID) else {
+        guard let model = try await getModel(id: modelID) else {
             throw RepositoryError.notFound
         }
-        model.markDownloadCompleted(localPath: localPath)
+        // Inline property updates instead of calling @MainActor method
+        model.downloadStatus = "downloaded"
+        model.downloadProgress = 1.0
+        model.localPath = localPath
+        model.updatedAt = Date()
         try modelContext.save()
     }
 }
 
 /// Factory for creating ML model repository
-struct MLModelRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> MLModelRepository {
-        MLModelRepository(modelContext: modelContext)
-    }
-
+enum MLModelRepositoryFactory {
+    @MainActor
     static func makeRepository(modelContainer: ModelContainer) -> MLModelRepository {
-        let context = ModelContext(modelContainer)
-        return MLModelRepository(modelContext: context)
+        MLModelRepository(modelContainer: modelContainer)
     }
 }

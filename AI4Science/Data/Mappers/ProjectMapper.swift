@@ -1,11 +1,13 @@
 import Foundation
 
 /// Mapper for converting between Project domain models and persistence models
+/// Note: Methods marked nonisolated to allow calling from actor contexts
+/// (Project has SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor)
 struct ProjectMapper {
     // MARK: - Domain <-> Entity Mapping
 
     /// Map domain Project to ProjectEntity for persistence
-    static func toEntity(from project: Project) -> ProjectEntity {
+    nonisolated static func toEntity(from project: Project) -> ProjectEntity {
         let entity = ProjectEntity(
             id: project.id.uuidString,
             name: project.title,
@@ -26,7 +28,7 @@ struct ProjectMapper {
     }
 
     /// Map ProjectEntity to domain Project model
-    static func toDomain(_ entity: ProjectEntity) -> Project {
+    nonisolated static func toDomain(_ entity: ProjectEntity) -> Project {
         let projectId = UUID(uuidString: entity.id) ?? UUID()
         let piId = entity.principalInvestigatorId.flatMap { UUID(uuidString: $0) } ?? UUID()
 
@@ -50,7 +52,7 @@ struct ProjectMapper {
     }
 
     /// Update ProjectEntity from domain Project
-    static func update(_ entity: ProjectEntity, with project: Project) {
+    nonisolated static func update(_ entity: ProjectEntity, with project: Project) {
         entity.name = project.title
         entity.projectDescription = project.description
         entity.status = project.status.rawValue
@@ -67,7 +69,7 @@ struct ProjectMapper {
     // MARK: - DTO Mapping (for API communication)
 
     /// Map ProjectEntity to ProjectDTO for API communication
-    static func toDTO(_ entity: ProjectEntity) -> ProjectDTO {
+    nonisolated static func toDTO(_ entity: ProjectEntity) -> ProjectDTO {
         ProjectDTO(
             id: entity.id,
             name: entity.name,
@@ -79,7 +81,7 @@ struct ProjectMapper {
     }
 
     /// Map ProjectDTO to ProjectEntity for persistence
-    static func toEntity(_ dto: ProjectDTO) -> ProjectEntity {
+    nonisolated static func toEntity(_ dto: ProjectDTO) -> ProjectEntity {
         ProjectEntity(
             id: dto.id,
             name: dto.name,
@@ -91,7 +93,7 @@ struct ProjectMapper {
     }
 
     /// Update ProjectEntity from ProjectDTO
-    static func update(_ entity: ProjectEntity, with dto: ProjectDTO) {
+    nonisolated static func update(_ entity: ProjectEntity, with dto: ProjectDTO) {
         entity.name = dto.name
         entity.projectDescription = dto.description
         entity.updatedAt = dto.updatedAt
@@ -99,7 +101,7 @@ struct ProjectMapper {
 
     // MARK: - Helper Methods
 
-    private static func mapStringToProjectStatus(_ status: String) -> ProjectStatus {
+    private nonisolated static func mapStringToProjectStatus(_ status: String) -> ProjectStatus {
         switch status.lowercased() {
         case "planning", "draft":
             return .planning
@@ -116,11 +118,11 @@ struct ProjectMapper {
         }
     }
 
-    private static func mapProjectTypeToString(_ type: String?) -> String {
+    private nonisolated static func mapProjectTypeToString(_ type: String?) -> String {
         type ?? "materials_science"
     }
 
-    private static func createDefaultLabAffiliation() -> LabAffiliation {
+    private nonisolated static func createDefaultLabAffiliation() -> LabAffiliation {
         LabAffiliation(
             name: "Vision & AI Lab",
             institution: "UTSA"

@@ -129,7 +129,7 @@ final class CaptureEntity {
 
     /// Check if capture is ready for analysis
     nonisolated var isReadyForAnalysis: Bool {
-        !fileURL.isEmpty && !fileSize.isZero
+        !fileURL.isEmpty && fileSize != 0
     }
 }
 

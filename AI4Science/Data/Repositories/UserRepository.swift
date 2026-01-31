@@ -1,24 +1,16 @@
 import Foundation
 import SwiftData
 
-/// Repository protocol for user operations
+/// Repository protocol for user operations - returns only Sendable domain types
+/// Entity-based operations are internal to the actor and not exposed via protocol
 protocol UserRepositoryProtocol: Sendable {
-    func createUser(_ user: UserEntity) async throws
-    func getUser(id: String) async throws -> UserEntity?
-    func getUserByEmail(_ email: String) async throws -> UserEntity?
-    func updateUser(_ user: UserEntity) async throws
-    func deleteUser(id: String) async throws
-    func getAllUsers() async throws -> [UserEntity]
-    func getCurrentUser() async throws -> UserEntity?
+    // Domain model operations would go here when User domain model is added
+    // For now, keep entity operations internal to actor only
 }
 
-/// User repository implementation with SwiftData
-actor UserRepository: UserRepositoryProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// User repository implementation using ModelActor
+@ModelActor
+final actor UserRepository {
 
     /// Create a new user
     func createUser(_ user: UserEntity) async throws {
@@ -50,7 +42,7 @@ actor UserRepository: UserRepositoryProtocol {
 
     /// Delete user by ID
     func deleteUser(id: String) async throws {
-        guard let user = try getUser(id: id) else {
+        guard let user = try await getUser(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(user)
@@ -76,13 +68,9 @@ actor UserRepository: UserRepositoryProtocol {
 // Note: RepositoryError is defined in Core/Protocols/Repository.swift
 
 /// Factory for creating user repository
-struct UserRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> UserRepository {
-        UserRepository(modelContext: modelContext)
-    }
-
+enum UserRepositoryFactory {
+    @MainActor
     static func makeRepository(modelContainer: ModelContainer) -> UserRepository {
-        let context = ModelContext(modelContainer)
-        return UserRepository(modelContext: context)
+        UserRepository(modelContainer: modelContainer)
     }
 }

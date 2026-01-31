@@ -24,7 +24,7 @@ public actor FetchAnalysisResultsUseCase: Sendable {
         } catch let error as AnalysisError {
             throw error
         } catch {
-            throw AnalysisError.unknownError(error.localizedDescription)
+            throw AnalysisError.processingFailed(error.localizedDescription)
         }
     }
 
@@ -54,7 +54,7 @@ public actor FetchAnalysisResultsUseCase: Sendable {
     ///   - status: Analysis status to filter
     /// - Returns: Results with specified status
     /// - Throws: AnalysisError if fetch fails
-    public func fetchByStatus(captureId: String, status: AnalysisStatus) async throws -> [MLAnalysisResult] {
+    public func fetchByStatus(captureId: String, status: AnalysisServiceStatus) async throws -> [MLAnalysisResult] {
         let allResults = try await execute(captureId: captureId)
         return allResults.filter { $0.status == status }
     }
@@ -64,6 +64,6 @@ public actor FetchAnalysisResultsUseCase: Sendable {
     /// - Returns: Completed analysis results
     /// - Throws: AnalysisError if fetch fails
     public func fetchCompleted(captureId: String) async throws -> [MLAnalysisResult] {
-        return try await fetchByStatus(captureId: captureId, status: .completed)
+        return try await fetchByStatus(captureId: captureId, status: AnalysisServiceStatus.completed)
     }
 }

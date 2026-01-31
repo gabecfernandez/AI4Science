@@ -59,7 +59,13 @@ actor SyncQueue: Sendable {
 
             for item in pendingItems {
                 if item.shouldRetry {
-                    await processQueueItem(item)
+                    await processQueueItem(
+                        id: item.id,
+                        operationType: item.operationType,
+                        entityType: item.entityType,
+                        entityID: item.entityID,
+                        maxRetries: item.maxRetries
+                    )
                     synced += 1
                 }
             }
@@ -125,27 +131,27 @@ actor SyncQueue: Sendable {
 
     // MARK: - Private Methods
 
-    private func processQueueItem(_ item: SyncQueueEntity) async {
+    private func processQueueItem(id itemId: String, operationType: String, entityType: String, entityID: String, maxRetries: Int) async {
         await MainActor.run {
             let context = ModelContext(modelContainer)
 
-            do {
-                // Mark as in progress
-                item.status = "in_progress"
-
-                // Simulate network sync (would be actual API call)
-                // For now, just mark as synced
-                item.status = "synced"
-                item.lastAttemptedAt = Date()
-
-                AppLogger.info("Synced \(item.operationType) for \(item.entityType)")
-            } catch {
-                item.errorMessage = error.localizedDescription
-                item.retryCount += 1
-                item.lastAttemptedAt = Date()
-                item.status = item.retryCount >= item.maxRetries ? "failed" : "pending_retry"
-                AppLogger.warning("Failed to sync \(item.entityType):\(item.entityID) - will retry")
+            // Re-fetch the entity within MainActor context to avoid crossing isolation boundaries
+            let predicate = #Predicate<SyncQueueEntity> { $0.id == itemId }
+            let descriptor = FetchDescriptor(predicate: predicate)
+            guard let item = try? context.fetch(descriptor).first else {
+                AppLogger.warning("Queue item \(itemId) not found during processing")
+                return
             }
+
+            // Mark as in progress
+            item.status = "in_progress"
+
+            // Simulate network sync (would be actual API call)
+            // For now, just mark as synced
+            item.status = "synced"
+            item.lastAttemptedAt = Date()
+
+            AppLogger.info("Synced \(operationType) for \(entityType)")
 
             try? context.save()
         }

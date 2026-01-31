@@ -1,28 +1,15 @@
 import Foundation
 import SwiftData
 
-/// Protocol for analysis result entity operations (data layer)
+/// Protocol for analysis result operations - entity methods are internal to actor only
 protocol AnalysisResultDataSourceProtocol: Sendable {
-    func createAnalysisResult(_ result: AnalysisResultEntity) async throws
-    func getAnalysisResult(id: String) async throws -> AnalysisResultEntity?
-    func getAnalysisResultsByCapture(captureID: String) async throws -> [AnalysisResultEntity]
-    func getAnalysisResultsByModel(modelID: String) async throws -> [AnalysisResultEntity]
-    func updateAnalysisResult(_ result: AnalysisResultEntity) async throws
-    func deleteAnalysisResult(id: String) async throws
-    func getAllAnalysisResults() async throws -> [AnalysisResultEntity]
-    func getResultsByStatus(_ status: String) async throws -> [AnalysisResultEntity]
-    func getReviewedResults() async throws -> [AnalysisResultEntity]
-    func getPendingAnalysis() async throws -> [AnalysisResultEntity]
+    // Domain model operations would go here when AnalysisResult domain model is added
+    // For now, keep entity operations internal to actor only
 }
 
-/// Analysis result repository implementation
-@MainActor
-final class AnalysisResultRepository: AnalysisResultDataSourceProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// Analysis result repository implementation using ModelActor
+@ModelActor
+final actor AnalysisResultRepository {
 
     /// Create a new analysis result
     func createAnalysisResult(_ result: AnalysisResultEntity) async throws {
@@ -110,16 +97,13 @@ final class AnalysisResultRepository: AnalysisResultDataSourceProtocol {
     }
 }
 
-/// Factory for creating analysis result repository
-struct AnalysisResultRepositoryFactory {
-    @MainActor
-    static func makeRepository(modelContext: ModelContext) -> AnalysisResultRepository {
-        AnalysisResultRepository(modelContext: modelContext)
-    }
+/// Type alias for compatibility
+typealias AnalysisRepository = AnalysisResultRepository
 
+/// Factory for creating analysis result repository
+enum AnalysisResultRepositoryFactory {
     @MainActor
     static func makeRepository(modelContainer: ModelContainer) -> AnalysisResultRepository {
-        let context = ModelContext(modelContainer)
-        return AnalysisResultRepository(modelContext: context)
+        AnalysisResultRepository(modelContainer: modelContainer)
     }
 }

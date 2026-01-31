@@ -32,15 +32,13 @@ final class ServiceContainer {
     // MARK: - Initialization
 
     init(modelContainer: ModelContainer) {
-        let context = modelContainer.mainContext
-
-        // Initialize repositories
-        self.userRepository = UserRepository(modelContext: context)
-        self.projectRepository = ProjectRepository(modelContext: context)
-        self.sampleRepository = SampleRepository(modelContext: context)
-        self.captureRepository = CaptureRepository(modelContext: context)
-        self.annotationRepository = AnnotationRepository(modelContext: context)
-        self.analysisRepository = AnalysisRepository(modelContext: context)
+        // Initialize repositories using @ModelActor pattern (requires modelContainer)
+        self.userRepository = UserRepository(modelContainer: modelContainer)
+        self.projectRepository = ProjectRepository(modelContainer: modelContainer)
+        self.sampleRepository = SampleRepository(modelContainer: modelContainer)
+        self.captureRepository = CaptureRepository(modelContainer: modelContainer)
+        self.annotationRepository = AnnotationRepository(modelContainer: modelContainer)
+        self.analysisRepository = AnalysisRepository(modelContainer: modelContainer)
 
         // Initialize services
         self.authService = AuthService(userRepository: userRepository)

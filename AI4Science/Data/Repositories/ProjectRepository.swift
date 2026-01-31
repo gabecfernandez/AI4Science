@@ -1,21 +1,8 @@
 import Foundation
 import SwiftData
 
-/// Protocol for project operations
+/// Protocol for project operations - returns only Sendable domain types
 protocol ProjectRepositoryProtocol: Sendable {
-    // Entity-based operations
-    func createProject(_ project: ProjectEntity) async throws
-    func getProject(id: String) async throws -> ProjectEntity?
-    func getProjectsByOwner(userID: String) async throws -> [ProjectEntity]
-    func updateProject(_ project: ProjectEntity) async throws
-    func deleteProject(id: String) async throws
-    func getAllProjects() async throws -> [ProjectEntity]
-    func searchProjects(query: String) async throws -> [ProjectEntity]
-    func getProjectsByStatus(_ status: String) async throws -> [ProjectEntity]
-    func archiveProject(id: String) async throws
-    func unarchiveProject(id: String) async throws
-
-    // Domain model operations
     func save(_ project: Project) async throws
     func findById(_ id: UUID) async throws -> Project?
     func findAll() async throws -> [Project]
@@ -25,13 +12,9 @@ protocol ProjectRepositoryProtocol: Sendable {
     func filterByStatus(_ status: ProjectStatus) async throws -> [Project]
 }
 
-/// Project repository implementation
-actor ProjectRepository: ProjectRepositoryProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// Project repository implementation using ModelActor
+@ModelActor
+final actor ProjectRepository: ProjectRepositoryProtocol {
 
     // MARK: - Domain Model Operations
 
@@ -94,7 +77,7 @@ actor ProjectRepository: ProjectRepositoryProtocol {
         let descriptor = FetchDescriptor<ProjectEntity>(
             predicate: #Predicate { project in
                 project.name.localizedStandardContains(query) ||
-                project.description.localizedStandardContains(query)
+                project.projectDescription.localizedStandardContains(query)
             },
             sortBy: [SortDescriptor(\.name)]
         )
@@ -168,7 +151,7 @@ actor ProjectRepository: ProjectRepositoryProtocol {
         let descriptor = FetchDescriptor<ProjectEntity>(
             predicate: #Predicate { project in
                 project.name.localizedStandardContains(query) ||
-                project.description.localizedStandardContains(query)
+                project.projectDescription.localizedStandardContains(query)
             },
             sortBy: [SortDescriptor(\.name)]
         )
@@ -206,13 +189,9 @@ actor ProjectRepository: ProjectRepositoryProtocol {
 }
 
 /// Factory for creating project repository
-struct ProjectRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> ProjectRepository {
-        ProjectRepository(modelContext: modelContext)
-    }
-
+enum ProjectRepositoryFactory {
+    @MainActor
     static func makeRepository(modelContainer: ModelContainer) -> ProjectRepository {
-        let context = ModelContext(modelContainer)
-        return ProjectRepository(modelContext: context)
+        ProjectRepository(modelContainer: modelContainer)
     }
 }
