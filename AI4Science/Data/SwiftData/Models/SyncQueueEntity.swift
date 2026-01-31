@@ -134,7 +134,8 @@ final class SyncQueueEntity {
     }
 
     /// Check if entry is expired (24 hours)
-    nonisolated var isExpired: Bool {
+    @MainActor
+    var isExpired: Bool {
         Date().timeIntervalSince(enqueuedAt) > 86400
     }
 }

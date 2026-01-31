@@ -1,8 +1,8 @@
 import Foundation
 import SwiftData
 
-/// Protocol for analysis result operations
-protocol AnalysisRepositoryProtocol: Sendable {
+/// Protocol for analysis result entity operations (data layer)
+protocol AnalysisResultDataSourceProtocol: Sendable {
     func createAnalysisResult(_ result: AnalysisResultEntity) async throws
     func getAnalysisResult(id: String) async throws -> AnalysisResultEntity?
     func getAnalysisResultsByCapture(captureID: String) async throws -> [AnalysisResultEntity]
@@ -15,8 +15,9 @@ protocol AnalysisRepositoryProtocol: Sendable {
     func getPendingAnalysis() async throws -> [AnalysisResultEntity]
 }
 
-/// Analysis repository implementation
-actor AnalysisRepository: AnalysisRepositoryProtocol {
+/// Analysis result repository implementation
+@MainActor
+final class AnalysisResultRepository: AnalysisResultDataSourceProtocol {
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
@@ -64,7 +65,7 @@ actor AnalysisRepository: AnalysisRepositoryProtocol {
 
     /// Delete analysis result
     func deleteAnalysisResult(id: String) async throws {
-        guard let result = try getAnalysisResult(id: id) else {
+        guard let result = try await getAnalysisResult(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(result)
@@ -109,14 +110,16 @@ actor AnalysisRepository: AnalysisRepositoryProtocol {
     }
 }
 
-/// Factory for creating analysis repository
-struct AnalysisRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> AnalysisRepository {
-        AnalysisRepository(modelContext: modelContext)
+/// Factory for creating analysis result repository
+struct AnalysisResultRepositoryFactory {
+    @MainActor
+    static func makeRepository(modelContext: ModelContext) -> AnalysisResultRepository {
+        AnalysisResultRepository(modelContext: modelContext)
     }
 
-    static func makeRepository(modelContainer: ModelContainer) -> AnalysisRepository {
+    @MainActor
+    static func makeRepository(modelContainer: ModelContainer) -> AnalysisResultRepository {
         let context = ModelContext(modelContainer)
-        return AnalysisRepository(modelContext: context)
+        return AnalysisResultRepository(modelContext: context)
     }
 }

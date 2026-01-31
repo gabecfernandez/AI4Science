@@ -42,6 +42,119 @@ actor MockUserRepository: UserRepositoryProtocol {
     }
 }
 
+// MARK: - Mock Project Repository
+
+actor MockProjectRepository: ProjectRepositoryProtocol {
+    private var projects: [UUID: Project] = [:]
+    var saveCallCount = 0
+    var updateCallCount = 0
+    var deleteCallCount = 0
+    var shouldThrowError = false
+    var errorToThrow: Error = RepositoryError.saveFailed(nil)
+
+    func save(_ project: Project) async throws {
+        if shouldThrowError { throw errorToThrow }
+        saveCallCount += 1
+        projects[project.id] = project
+    }
+
+    func findById(_ id: UUID) async throws -> Project? {
+        if shouldThrowError { throw errorToThrow }
+        return projects[id]
+    }
+
+    func findAll() async throws -> [Project] {
+        if shouldThrowError { throw errorToThrow }
+        return Array(projects.values).sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func update(_ project: Project) async throws {
+        if shouldThrowError { throw errorToThrow }
+        guard projects[project.id] != nil else {
+            throw RepositoryError.notFound
+        }
+        updateCallCount += 1
+        projects[project.id] = project
+    }
+
+    func delete(_ id: UUID) async throws {
+        if shouldThrowError { throw errorToThrow }
+        guard projects[id] != nil else {
+            throw RepositoryError.notFound
+        }
+        deleteCallCount += 1
+        projects.removeValue(forKey: id)
+    }
+
+    func search(query: String) async throws -> [Project] {
+        if shouldThrowError { throw errorToThrow }
+        return projects.values.filter { project in
+            project.title.localizedCaseInsensitiveContains(query) ||
+            project.description.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    func filterByStatus(_ status: ProjectStatus) async throws -> [Project] {
+        if shouldThrowError { throw errorToThrow }
+        return projects.values.filter { $0.status == status }
+    }
+
+    // Legacy entity-based methods (stubs for protocol conformance)
+    func createProject(_ project: ProjectEntity) async throws {
+        // Not used in tests
+    }
+
+    func getProject(id: String) async throws -> ProjectEntity? {
+        return nil
+    }
+
+    func getProjectsByOwner(userID: String) async throws -> [ProjectEntity] {
+        return []
+    }
+
+    func updateProject(_ project: ProjectEntity) async throws {
+        // Not used in tests
+    }
+
+    func deleteProject(id: String) async throws {
+        // Not used in tests
+    }
+
+    func getAllProjects() async throws -> [ProjectEntity] {
+        return []
+    }
+
+    func searchProjects(query: String) async throws -> [ProjectEntity] {
+        return []
+    }
+
+    func getProjectsByStatus(_ status: String) async throws -> [ProjectEntity] {
+        return []
+    }
+
+    func archiveProject(id: String) async throws {
+        // Not used in tests
+    }
+
+    func unarchiveProject(id: String) async throws {
+        // Not used in tests
+    }
+
+    // Test helpers
+    func addProjects(_ newProjects: [Project]) {
+        for project in newProjects {
+            projects[project.id] = project
+        }
+    }
+
+    func clear() {
+        projects.removeAll()
+        saveCallCount = 0
+        updateCallCount = 0
+        deleteCallCount = 0
+    }
+}
+
 // MARK: - Mock Sample Repository
 
 actor MockSampleRepository: SampleRepositoryProtocol {

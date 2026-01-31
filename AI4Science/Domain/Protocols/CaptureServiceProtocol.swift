@@ -4,16 +4,16 @@ import Foundation
 @available(iOS 15.0, *)
 public protocol CaptureServiceProtocol: Sendable {
     /// Capture and process photo
-    func capturePhoto(sampleId: String, metadata: CaptureMetadata) async throws -> Capture
+    func capturePhoto(sampleId: String, metadata: CaptureServiceMetadata) async throws -> CaptureServiceResponse
 
     /// Record and process video
-    func captureVideo(sampleId: String, duration: TimeInterval, metadata: CaptureMetadata) async throws -> Capture
+    func captureVideo(sampleId: String, duration: TimeInterval, metadata: CaptureServiceMetadata) async throws -> CaptureServiceResponse
 
     /// Fetch captures for sample
-    func fetchCaptures(sampleId: String) async throws -> [Capture]
+    func fetchCaptures(sampleId: String) async throws -> [CaptureServiceResponse]
 
     /// Fetch specific capture
-    func fetchCapture(captureId: String) async throws -> Capture
+    func fetchCapture(captureId: String) async throws -> CaptureServiceResponse
 
     /// Delete capture and associated files
     func deleteCapture(captureId: String) async throws
@@ -22,35 +22,35 @@ public protocol CaptureServiceProtocol: Sendable {
     func exportCapture(captureId: String, format: CaptureExportFormat) async throws -> Data
 
     /// Update capture metadata
-    func updateCapture(_ request: UpdateCaptureRequest) async throws -> Capture
+    func updateCapture(_ request: CaptureUpdateRequest) async throws -> CaptureServiceResponse
 }
 
-/// Capture domain model
-public struct Capture: Sendable {
+/// Capture service response model (distinct from domain Capture)
+public struct CaptureServiceResponse: Sendable {
     public let id: String
     public let sampleId: String
     public let projectId: String
-    public let type: CaptureType
+    public let type: CaptureServiceType
     public let fileUrl: String
     public let thumbnailUrl: String?
     public let createdAt: Date
     public let updatedAt: Date
-    public let metadata: CaptureMetadata
+    public let metadata: CaptureServiceMetadata
     public let processingStatus: ProcessingStatus
-    public let analysisResults: [AnalysisResult]
+    public let analysisResults: [CaptureAnalysisResult]
 
     public init(
         id: String,
         sampleId: String,
         projectId: String,
-        type: CaptureType,
+        type: CaptureServiceType,
         fileUrl: String,
         thumbnailUrl: String?,
         createdAt: Date,
         updatedAt: Date,
-        metadata: CaptureMetadata,
+        metadata: CaptureServiceMetadata,
         processingStatus: ProcessingStatus,
-        analysisResults: [AnalysisResult]
+        analysisResults: [CaptureAnalysisResult]
     ) {
         self.id = id
         self.sampleId = sampleId
@@ -66,16 +66,16 @@ public struct Capture: Sendable {
     }
 }
 
-/// Capture type
-public enum CaptureType: String, Sendable {
+/// Capture service type (distinct from domain CaptureType)
+public enum CaptureServiceType: String, Sendable {
     case photo
     case video
     case scan
     case microscopy
 }
 
-/// Capture metadata
-public struct CaptureMetadata: Sendable {
+/// Capture service metadata (distinct from domain CaptureMetadata)
+public struct CaptureServiceMetadata: Sendable {
     public let deviceInfo: String
     public let location: CaptureLocation?
     public let lighting: LightingCondition?
@@ -84,7 +84,7 @@ public struct CaptureMetadata: Sendable {
     public let tags: [String]
     public let customFields: [String: String]
 
-    public init(
+    public nonisolated init(
         deviceInfo: String,
         location: CaptureLocation? = nil,
         lighting: LightingCondition? = nil,
@@ -109,7 +109,7 @@ public struct CaptureLocation: Sendable {
     public let longitude: Double
     public let altitude: Double?
 
-    public init(latitude: Double, longitude: Double, altitude: Double? = nil) {
+    public nonisolated init(latitude: Double, longitude: Double, altitude: Double? = nil) {
         self.latitude = latitude
         self.longitude = longitude
         self.altitude = altitude
@@ -134,8 +134,8 @@ public enum ProcessingStatus: String, Sendable {
     case cancelled
 }
 
-/// Analysis result
-public struct AnalysisResult: Sendable {
+/// Capture service analysis result (distinct from domain AnalysisResult)
+public struct CaptureAnalysisResult: Sendable {
     public let id: String
     public let modelName: String
     public let timestamp: Date
@@ -204,12 +204,12 @@ public enum AnyCodable: Codable, Sendable {
     }
 }
 
-/// Update capture request
-public struct UpdateCaptureRequest: Sendable {
+/// Update capture request (distinct from any conflicting types)
+public struct CaptureUpdateRequest: Sendable {
     public let captureId: String
-    public let metadata: CaptureMetadata?
+    public let metadata: CaptureServiceMetadata?
 
-    public init(captureId: String, metadata: CaptureMetadata? = nil) {
+    public init(captureId: String, metadata: CaptureServiceMetadata? = nil) {
         self.captureId = captureId
         self.metadata = metadata
     }
@@ -231,6 +231,7 @@ public enum CaptureError: LocalizedError, Sendable {
     case accessDenied
     case networkError(String)
     case unknownError(String)
+    case validationFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -248,6 +249,87 @@ public enum CaptureError: LocalizedError, Sendable {
             return "Network error: \(message)"
         case .unknownError(let message):
             return "Error: \(message)"
+        case .validationFailed(let message):
+            return "Validation failed: \(message)"
         }
+    }
+}
+
+// MARK: - Conversion to Domain Model
+
+extension CaptureServiceType {
+    /// Convert to domain CaptureType
+    public nonisolated func toDomainType() -> CaptureType {
+        switch self {
+        case .photo:
+            return .photo
+        case .video:
+            return .video
+        case .scan, .microscopy:
+            return .photo // Map to photo as fallback
+        }
+    }
+}
+
+extension CaptureServiceResponse {
+    /// Convert service response to domain Capture model
+    public nonisolated func toDomainCapture() -> Capture {
+        let captureType = type.toDomainType()
+
+        // Build GeoLocation if available
+        var geoLocation: GeoLocation?
+        if let location = metadata.location {
+            geoLocation = GeoLocation(
+                latitude: location.latitude,
+                longitude: location.longitude,
+                altitude: location.altitude
+            )
+        }
+
+        // Determine processing status
+        let isProcessed = processingStatus == .completed
+        let progress: Double
+        switch processingStatus {
+        case .pending:
+            progress = 0.0
+        case .processing:
+            progress = 0.5
+        case .completed:
+            progress = 1.0
+        case .failed, .cancelled:
+            progress = 0.0
+        }
+
+        return Capture(
+            id: UUID(uuidString: id) ?? UUID(),
+            sampleID: UUID(uuidString: sampleId) ?? UUID(),
+            type: captureType,
+            fileURL: URL(fileURLWithPath: fileUrl),
+            thumbnailURL: thumbnailUrl.flatMap { URL(string: $0) },
+            mediaType: captureType == .video ? "video/mp4" : "image/jpeg",
+            fileSize: 0, // Not available in service response
+            duration: nil,
+            resolution: nil,
+            cameraModel: nil,
+            lensModel: nil,
+            focalLength: nil,
+            exposureTime: nil,
+            iso: nil,
+            focusMode: nil,
+            whiteBalance: nil,
+            geoLocation: geoLocation,
+            isProcessed: isProcessed,
+            processingProgress: progress,
+            metadata: metadata.customFields,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
+    }
+}
+
+extension Array where Element == CaptureServiceResponse {
+    /// Convert array of service responses to domain Captures
+    public nonisolated func toDomainCaptures() -> [Capture] {
+        map { $0.toDomainCapture() }
     }
 }

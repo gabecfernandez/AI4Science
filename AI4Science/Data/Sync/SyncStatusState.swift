@@ -1,7 +1,7 @@
 import Foundation
 
-/// Data structure tracking synchronization status
-struct SyncStatus: Sendable {
+/// Data structure tracking synchronization state info
+struct SyncStatusInfo: Sendable {
     // MARK: - Properties
 
     /// Whether a sync is currently in progress
@@ -74,7 +74,7 @@ struct SyncStatus: Sendable {
 
     /// Create readable description
     var description: String {
-        var desc = "SyncStatus {\n"
+        var desc = "SyncStatusInfo {\n"
         desc += "  isSyncing: \(isSyncing)\n"
         desc += "  lastSyncTime: \(lastSyncTime?.description ?? "nil")\n"
         desc += "  pendingItemsCount: \(pendingItemsCount)\n"
@@ -88,7 +88,7 @@ struct SyncStatus: Sendable {
 // MARK: - Sync Result
 
 /// Result of a sync operation
-struct SyncResult: Sendable {
+struct SyncOperationResult: Sendable {
     /// Whether sync was successful
     let success: Bool
 
@@ -108,7 +108,7 @@ struct SyncResult: Sendable {
 
     // MARK: - Initialization
 
-    init(
+    nonisolated init(
         success: Bool,
         error: String? = nil,
         itemsSynced: Int = 0,
@@ -151,7 +151,7 @@ enum SyncEvent: Sendable {
     case itemSynced(entityType: String, itemID: String)
     case itemFailed(entityType: String, itemID: String, error: String)
     case conflictDetected(entityType: String, itemID: String)
-    case syncCompleted(result: SyncResult)
+    case syncCompleted(result: SyncOperationResult)
     case syncFailed(error: String)
 
     var description: String {

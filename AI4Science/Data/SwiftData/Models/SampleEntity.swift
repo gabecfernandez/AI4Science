@@ -11,8 +11,8 @@ final class SampleEntity {
     /// Sample name
     var name: String
 
-    /// Sample description
-    var description: String
+    /// Sample sampleDescription
+    var sampleDescription: String
 
     /// The project this sample belongs to
     var project: ProjectEntity?
@@ -60,7 +60,7 @@ final class SampleEntity {
     init(
         id: String,
         name: String,
-        description: String,
+        sampleDescription: String,
         project: ProjectEntity? = nil,
         sampleType: String,
         source: String? = nil,
@@ -70,7 +70,7 @@ final class SampleEntity {
     ) {
         self.id = id
         self.name = name
-        self.description = description
+        self.sampleDescription = sampleDescription
         self.project = project
         self.sampleType = sampleType
         self.source = source
@@ -83,15 +83,15 @@ final class SampleEntity {
     @MainActor
     func updateInfo(
         name: String? = nil,
-        description: String? = nil,
+        sampleDescription: String? = nil,
         source: String? = nil,
         notes: String? = nil
     ) {
         if let name = name {
             self.name = name
         }
-        if let description = description {
-            self.description = description
+        if let sampleDescription = sampleDescription {
+            self.sampleDescription = sampleDescription
         }
         if let source = source {
             self.source = source

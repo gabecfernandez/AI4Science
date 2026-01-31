@@ -17,7 +17,7 @@ public actor RegisterUseCase: Sendable {
     ///   - password: User's desired password
     ///   - displayName: User's display name
     /// - Returns: Authentication session with tokens
-    /// - Throws: AuthError if registration fails
+    /// - Throws: ServiceAuthError if registration fails
     public func execute(
         email: String,
         password: String,
@@ -35,60 +35,60 @@ public actor RegisterUseCase: Sendable {
                 displayName: displayName
             )
             return session
-        } catch let error as AuthError {
+        } catch let error as ServiceAuthError {
             throw error
         } catch {
-            throw AuthError.unknownError(error.localizedDescription)
+            throw ServiceAuthError.unknownError(error.localizedDescription)
         }
     }
 
     /// Validate email format and length
     private func validateEmail(_ email: String) throws {
         guard !email.isEmpty && email.count <= 254 else {
-            throw AuthError.invalidCredentials
+            throw ServiceAuthError.invalidCredentials
         }
 
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
         let predicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
         guard predicate.evaluate(with: email) else {
-            throw AuthError.invalidCredentials
+            throw ServiceAuthError.invalidCredentials
         }
     }
 
     /// Validate password strength
     private func validatePassword(_ password: String) throws {
         guard password.count >= minPasswordLength && password.count <= maxPasswordLength else {
-            throw AuthError.weakPassword
+            throw ServiceAuthError.weakPassword
         }
 
         // Check for at least one uppercase letter
         guard password.range(of: "[A-Z]", options: .regularExpression) != nil else {
-            throw AuthError.weakPassword
+            throw ServiceAuthError.weakPassword
         }
 
         // Check for at least one lowercase letter
         guard password.range(of: "[a-z]", options: .regularExpression) != nil else {
-            throw AuthError.weakPassword
+            throw ServiceAuthError.weakPassword
         }
 
         // Check for at least one digit
         guard password.range(of: "[0-9]", options: .regularExpression) != nil else {
-            throw AuthError.weakPassword
+            throw ServiceAuthError.weakPassword
         }
 
         // Check for at least one special character
         guard password.range(of: "[!@#$%^&*()_+\\-=\\[\\]{};':\",./<>?]", options: .regularExpression) != nil else {
-            throw AuthError.weakPassword
+            throw ServiceAuthError.weakPassword
         }
     }
 
     /// Validate display name
     private func validateDisplayName(_ name: String) throws {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw AuthError.invalidCredentials
+            throw ServiceAuthError.invalidCredentials
         }
         guard name.count >= 2 && name.count <= 100 else {
-            throw AuthError.invalidCredentials
+            throw ServiceAuthError.invalidCredentials
         }
     }
 }

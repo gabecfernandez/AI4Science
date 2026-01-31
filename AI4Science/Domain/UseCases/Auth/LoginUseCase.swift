@@ -12,14 +12,14 @@ public struct LoginUseCase: Sendable {
     ///   - email: User's email address
     ///   - password: User's password
     /// - Returns: AuthToken containing access and refresh tokens
-    /// - Throws: AuthError if login fails
+    /// - Throws: ServiceAuthError if login fails
     public func execute(email: String, password: String) async throws -> AuthToken {
         // Validate input
         guard !email.isEmpty else {
-            throw AuthError.invalidEmail
+            throw LoginServiceAuthError.invalidEmail
         }
         guard !password.isEmpty else {
-            throw AuthError.invalidPassword
+            throw LoginServiceAuthError.invalidPassword
         }
 
         // Attempt login through repository
@@ -49,7 +49,7 @@ public struct AuthToken: Sendable, Codable {
     }
 }
 
-public enum AuthError: LocalizedError, Sendable {
+public enum LoginServiceAuthError: LocalizedError, Sendable {
     case invalidEmail
     case invalidPassword
     case invalidCredentials

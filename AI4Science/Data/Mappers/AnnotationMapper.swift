@@ -2,9 +2,9 @@ import Foundation
 
 /// Mapper for converting between Annotation domain models and persistence models
 struct AnnotationMapper {
-    /// Map AnnotationEntity to domain Annotation model
-    static func toModel(_ entity: AnnotationEntity) -> Annotation {
-        Annotation(
+    /// Map AnnotationEntity to AnnotationModel
+    static func toModel(_ entity: AnnotationEntity) -> AnnotationModel {
+        AnnotationModel(
             id: entity.id,
             annotationType: entity.annotationType,
             content: entity.content,
@@ -20,8 +20,8 @@ struct AnnotationMapper {
         )
     }
 
-    /// Map domain Annotation model to AnnotationEntity
-    static func toEntity(from annotation: Annotation) -> AnnotationEntity {
+    /// Map AnnotationModel to AnnotationEntity
+    static func toEntity(from annotation: AnnotationModel) -> AnnotationEntity {
         AnnotationEntity(
             id: annotation.id,
             annotationType: annotation.annotationType,
@@ -33,8 +33,8 @@ struct AnnotationMapper {
         )
     }
 
-    /// Update AnnotationEntity from domain Annotation
-    static func update(_ entity: AnnotationEntity, with annotation: Annotation) {
+    /// Update AnnotationEntity from AnnotationModel
+    static func update(_ entity: AnnotationEntity, with annotation: AnnotationModel) {
         entity.content = annotation.content
         entity.coordinates = annotation.coordinates
         entity.label = annotation.label
@@ -64,8 +64,8 @@ struct AnnotationMapper {
     }
 }
 
-/// Domain Annotation model
-struct Annotation: Codable, Identifiable {
+/// Local Annotation model for mapper operations
+struct AnnotationModel: Codable, Identifiable {
     let id: String
     let annotationType: String
     var content: String

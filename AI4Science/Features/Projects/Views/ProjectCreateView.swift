@@ -1,197 +1,244 @@
 import SwiftUI
 
 struct ProjectCreateView: View {
+    let repository: ProjectRepository
     @Binding var isPresented: Bool
-    @State private var viewModel = ProjectCreateViewModel()
-    let onCreated: (Project) -> Void
+    let onCreated: () -> Void
+
+    @State private var viewModel: ProjectFormViewModel?
+
+    init(
+        repository: ProjectRepository,
+        isPresented: Binding<Bool>,
+        onCreated: @escaping () -> Void = {}
+    ) {
+        self.repository = repository
+        self._isPresented = isPresented
+        self.onCreated = onCreated
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(red: 0.09, green: 0.17, blue: 0.26),
-                        Color(red: 0.12, green: 0.20, blue: 0.30)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                ColorPalette.background
+                    .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Header
-                        VStack(spacing: 8) {
-                            Text("Create New Project")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-
-                            Text("Set up your research project")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                        // Form
-                        VStack(spacing: 16) {
-                            // Project name
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label("Project Name", systemImage: "folder.fill")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-
-                                TextField("Enter project name", text: $viewModel.projectName)
-                                    .textInputAutocapitalization(.words)
-                                    .padding(12)
-                                    .background(Color.white.opacity(0.1))
-                                    .cornerRadius(8)
-                                    .foregroundColor(.white)
-                            }
-
-                            // Description
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label("Description", systemImage: "doc.text.fill")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-
-                                TextEditor(text: $viewModel.projectDescription)
-                                    .frame(height: 100)
-                                    .padding(8)
-                                    .background(Color.white.opacity(0.1))
-                                    .cornerRadius(8)
-                                    .foregroundColor(.white)
-                                    .scrollContentBackground(.hidden)
-                            }
-
-                            // Research area
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label("Research Area", systemImage: "atom")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-
-                                Picker("Research Area", selection: $viewModel.researchArea) {
-                                    Text("Materials Science").tag("materials")
-                                    Text("Biology").tag("biology")
-                                    Text("Chemistry").tag("chemistry")
-                                    Text("Physics").tag("physics")
-                                    Text("Engineering").tag("engineering")
-                                    Text("Other").tag("other")
-                                }
-                                .pickerStyle(.menu)
-                                .frame(maxWidth: .infinity)
-                                .padding(12)
-                                .background(Color.white.opacity(0.1))
-                                .cornerRadius(8)
-                                .foregroundColor(.blue)
-                            }
-
-                            // Visibility
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label("Visibility", systemImage: "eye.fill")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-
-                                Picker("Visibility", selection: $viewModel.visibility) {
-                                    Text("Private").tag("private")
-                                    Text("Lab Only").tag("lab")
-                                    Text("Public").tag("public")
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(maxWidth: .infinity)
-                            }
-
-                            // Collaborators
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label("Add Collaborators", systemImage: "person.2.fill")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-
-                                TextField("Enter email addresses", text: $viewModel.collaborators)
-                                    .textInputAutocapitalization(.never)
-                                    .padding(12)
-                                    .background(Color.white.opacity(0.1))
-                                    .cornerRadius(8)
-                                    .foregroundColor(.white)
-
-                                Text("Separate multiple emails with commas")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
-                        }
-                        .padding(16)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(12)
-
-                        // Create button
-                        Button(action: { Task { await createProject() } }) {
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                Text("Create Project")
-                                    .font(.headline)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        .disabled(viewModel.isLoading || viewModel.projectName.isEmpty)
-                        .opacity(viewModel.isLoading || viewModel.projectName.isEmpty ? 0.6 : 1.0)
-
-                        // Cancel button
-                        Button(action: { isPresented = false }) {
-                            Text("Cancel")
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 48)
-                        }
-                        .foregroundColor(.blue)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.blue, lineWidth: 1)
-                        )
-
-                        Spacer(minLength: 20)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 24)
+                if let viewModel = viewModel {
+                    projectFormContent(viewModel)
+                } else {
+                    LoadingView(message: "Loading...")
                 }
             }
+            .navigationTitle("Create Project")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Create") {
+                        Task { await createProject() }
+                    }
+                    .disabled(!(viewModel?.isFormValid ?? false) || (viewModel?.isLoading ?? true))
+                }
+            }
+            .onAppear {
+                if viewModel == nil {
+                    viewModel = ProjectFormViewModel(mode: .create, repository: repository)
+                }
+            }
         }
-        .alert("Error", isPresented: $viewModel.showError, presenting: viewModel.errorMessage) { _ in
-            Button("OK") { viewModel.showError = false }
-        } message: { message in
-            Text(message)
+        .interactiveDismissDisabled(viewModel?.isDirty ?? false)
+    }
+
+    @ViewBuilder
+    private func projectFormContent(_ viewModel: ProjectFormViewModel) -> some View {
+        ScrollView {
+            VStack(spacing: Spacing.lg) {
+                projectFormFields(viewModel)
+            }
+            .padding(Spacing.base)
+        }
+
+        if viewModel.isLoading {
+            loadingOverlay
+        }
+    }
+
+    @ViewBuilder
+    private func projectFormFields(_ viewModel: ProjectFormViewModel) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            // Title field
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Project Title")
+                    .font(Typography.labelMedium)
+                    .foregroundColor(ColorPalette.onBackground)
+
+                TextField("Enter project title", text: Binding(
+                    get: { viewModel.title },
+                    set: { viewModel.title = $0 }
+                ))
+                .textFieldStyle(.plain)
+                .padding(Spacing.md)
+                .background(ColorPalette.surface)
+                .cornerRadius(BorderStyles.radiusMedium)
+                .overlay(
+                    RoundedRectangle(cornerRadius: BorderStyles.radiusMedium)
+                        .stroke(
+                            viewModel.titleError != nil ? ColorPalette.error : ColorPalette.divider,
+                            lineWidth: 1
+                        )
+                )
+                .onChange(of: viewModel.title) {
+                    viewModel.validateTitle()
+                }
+
+                HStack {
+                    if let error = viewModel.titleError {
+                        Text(error)
+                            .font(Typography.labelSmall)
+                            .foregroundColor(ColorPalette.error)
+                    }
+                    Spacer()
+                    Text("\(viewModel.titleCharacterCount)/100")
+                        .font(Typography.labelSmall)
+                        .foregroundColor(ColorPalette.onSurfaceVariant)
+                }
+            }
+
+            // Description field
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Description")
+                    .font(Typography.labelMedium)
+                    .foregroundColor(ColorPalette.onBackground)
+
+                TextEditor(text: Binding(
+                    get: { viewModel.descriptionText },
+                    set: { viewModel.descriptionText = $0 }
+                ))
+                .frame(minHeight: 100)
+                .padding(Spacing.sm)
+                .background(ColorPalette.surface)
+                .cornerRadius(BorderStyles.radiusMedium)
+                .overlay(
+                    RoundedRectangle(cornerRadius: BorderStyles.radiusMedium)
+                        .stroke(
+                            viewModel.descriptionError != nil ? ColorPalette.error : ColorPalette.divider,
+                            lineWidth: 1
+                        )
+                )
+                .scrollContentBackground(.hidden)
+                .onChange(of: viewModel.descriptionText) {
+                    viewModel.validateDescription()
+                }
+
+                HStack {
+                    if let error = viewModel.descriptionError {
+                        Text(error)
+                            .font(Typography.labelSmall)
+                            .foregroundColor(ColorPalette.error)
+                    }
+                    Spacer()
+                    Text("\(viewModel.descriptionCharacterCount)/500")
+                        .font(Typography.labelSmall)
+                        .foregroundColor(ColorPalette.onSurfaceVariant)
+                }
+            }
+
+            // Project Type picker
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Project Type")
+                    .font(Typography.labelMedium)
+                    .foregroundColor(ColorPalette.onBackground)
+
+                Picker("Project Type", selection: Binding(
+                    get: { viewModel.projectType },
+                    set: { viewModel.projectType = $0 }
+                )) {
+                    ForEach(ProjectType.allCases, id: \.self) { type in
+                        Text(type.displayName).tag(type)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Spacing.md)
+                .background(ColorPalette.surface)
+                .cornerRadius(BorderStyles.radiusMedium)
+                .overlay(
+                    RoundedRectangle(cornerRadius: BorderStyles.radiusMedium)
+                        .stroke(ColorPalette.divider, lineWidth: 1)
+                )
+            }
+
+            // Visibility picker
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Visibility")
+                    .font(Typography.labelMedium)
+                    .foregroundColor(ColorPalette.onBackground)
+
+                Picker("Visibility", selection: Binding(
+                    get: { viewModel.visibility },
+                    set: { viewModel.visibility = $0 }
+                )) {
+                    ForEach(ProjectVisibility.allCases, id: \.self) { visibility in
+                        Text(visibility.displayName).tag(visibility)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            // Error message
+            if let errorMessage = viewModel.saveErrorMessage {
+                HStack {
+                    IconAssets.error
+                        .foregroundColor(ColorPalette.error)
+                    Text(errorMessage)
+                        .font(Typography.bodySmall)
+                        .foregroundColor(ColorPalette.error)
+                }
+                .padding(Spacing.md)
+                .background(ColorPalette.error.opacity(0.1))
+                .cornerRadius(BorderStyles.radiusMedium)
+            }
+        }
+        .padding(.bottom, Spacing.xl)
+    }
+
+    private var loadingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+
+            VStack(spacing: Spacing.md) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Creating project...")
+                    .font(Typography.bodyMedium)
+                    .foregroundColor(.white)
+            }
+            .padding(Spacing.xl)
+            .background(ColorPalette.neutral_800)
+            .cornerRadius(BorderStyles.radiusMedium)
         }
     }
 
     private func createProject() async {
-        guard !viewModel.projectName.isEmpty else {
-            viewModel.errorMessage = "Project name is required"
-            viewModel.showError = true
-            return
-        }
-
-        await viewModel.createProject()
-
-        if !viewModel.showError {
-            let newProject = Project(
-                id: UUID().uuidString,
-                name: viewModel.projectName,
-                description: viewModel.projectDescription,
-                status: .active,
-                sampleCount: 0,
-                memberCount: 1,
-                createdDate: Date()
-            )
-            onCreated(newProject)
+        await viewModel?.save()
+        if viewModel?.isSaved == true {
+            onCreated()
             isPresented = false
         }
     }
 }
 
 #Preview {
-    ProjectCreateView(isPresented: .constant(true)) { _ in }
+    ProjectCreateView(
+        repository: ProjectRepositoryFactory.makeRepository(
+            modelContainer: try! ModelContainer(for: ProjectEntity.self)
+        ),
+        isPresented: .constant(true)
+    )
 }

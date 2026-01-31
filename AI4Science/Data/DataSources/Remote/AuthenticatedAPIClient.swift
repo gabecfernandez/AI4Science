@@ -46,14 +46,14 @@ actor AuthenticatedAPIClient {
     ///   - endpoint: API endpoint
     ///   - responseType: Expected response type
     /// - Returns: Decoded response
-    func get<T: Decodable>(
+    func get<T: Decodable & Sendable>(
         endpoint: String,
         as responseType: T.Type
     ) async throws -> T {
-        let request = try buildAuthenticatedRequest(method: "GET", endpoint: endpoint)
+        let request = try await buildAuthenticatedRequest(method: "GET", endpoint: endpoint)
         let (data, response) = try await URLSession.shared.data(for: request)
-        try responseHandler.parseResponse(data, response: response)
-        return try responseHandler.decode(data, as: responseType)
+        try await responseHandler.parseResponse(data, response: response)
+        return try await responseHandler.decode(data, as: responseType)
     }
 
     /// Perform authenticated POST request
@@ -62,20 +62,20 @@ actor AuthenticatedAPIClient {
     ///   - body: Request body
     ///   - responseType: Expected response type
     /// - Returns: Decoded response
-    func post<T: Encodable, R: Decodable>(
+    func post<T: Encodable & Sendable, R: Decodable & Sendable>(
         endpoint: String,
         body: T,
         as responseType: R.Type
     ) async throws -> R {
-        let bodyData = try responseHandler.encode(body)
-        let request = try buildAuthenticatedRequest(
+        let bodyData = try await responseHandler.encode(body)
+        let request = try await buildAuthenticatedRequest(
             method: "POST",
             endpoint: endpoint,
             body: bodyData
         )
         let (data, response) = try await URLSession.shared.data(for: request)
-        try responseHandler.parseResponse(data, response: response)
-        return try responseHandler.decode(data, as: responseType)
+        try await responseHandler.parseResponse(data, response: response)
+        return try await responseHandler.decode(data, as: responseType)
     }
 
     /// Perform authenticated PUT request
@@ -84,28 +84,28 @@ actor AuthenticatedAPIClient {
     ///   - body: Request body
     ///   - responseType: Expected response type
     /// - Returns: Decoded response
-    func put<T: Encodable, R: Decodable>(
+    func put<T: Encodable & Sendable, R: Decodable & Sendable>(
         endpoint: String,
         body: T,
         as responseType: R.Type
     ) async throws -> R {
-        let bodyData = try responseHandler.encode(body)
-        let request = try buildAuthenticatedRequest(
+        let bodyData = try await responseHandler.encode(body)
+        let request = try await buildAuthenticatedRequest(
             method: "PUT",
             endpoint: endpoint,
             body: bodyData
         )
         let (data, response) = try await URLSession.shared.data(for: request)
-        try responseHandler.parseResponse(data, response: response)
-        return try responseHandler.decode(data, as: responseType)
+        try await responseHandler.parseResponse(data, response: response)
+        return try await responseHandler.decode(data, as: responseType)
     }
 
     /// Perform authenticated DELETE request
     /// - Parameter endpoint: API endpoint
     func delete(endpoint: String) async throws {
-        let request = try buildAuthenticatedRequest(method: "DELETE", endpoint: endpoint)
+        let request = try await buildAuthenticatedRequest(method: "DELETE", endpoint: endpoint)
         let (data, response) = try await URLSession.shared.data(for: request)
-        try responseHandler.parseResponse(data, response: response)
+        try await responseHandler.parseResponse(data, response: response)
     }
 
     /// Perform authenticated request with custom handling
@@ -119,7 +119,7 @@ actor AuthenticatedAPIClient {
         method: String = "GET",
         body: Data? = nil
     ) async throws -> (data: Data, response: HTTPURLResponse) {
-        let request = try buildAuthenticatedRequest(
+        let request = try await buildAuthenticatedRequest(
             method: method,
             endpoint: endpoint,
             body: body
@@ -131,7 +131,7 @@ actor AuthenticatedAPIClient {
             throw APIError.invalidResponse
         }
 
-        try responseHandler.parseResponse(data, response: httpResponse)
+        try await responseHandler.parseResponse(data, response: httpResponse)
 
         return (data, httpResponse)
     }
@@ -142,27 +142,27 @@ actor AuthenticatedAPIClient {
         method: String,
         endpoint: String,
         body: Data? = nil
-    ) throws -> URLRequest {
+    ) async throws -> URLRequest {
         guard let token = authToken else {
             throw APIError.unauthorized
         }
 
         let builder = APIRequestBuilder(baseURL: URL(string: "http://api.ai4science.com") ?? URL(fileURLWithPath: ""))
-        builder.addAuthHeader(token)
+        _ = await builder.addAuthHeader(token)
 
         let request: URLRequest
 
         switch method {
         case "GET":
-            request = try builder.buildGET(endpoint: endpoint)
+            request = try await builder.buildGET(endpoint: endpoint)
         case "POST":
-            request = try builder.buildPOST(endpoint: endpoint, body: body)
+            request = try await builder.buildPOST(endpoint: endpoint, body: body)
         case "PUT":
-            request = try builder.buildPUT(endpoint: endpoint, body: body)
+            request = try await builder.buildPUT(endpoint: endpoint, body: body)
         case "DELETE":
-            request = try builder.buildDELETE(endpoint: endpoint)
+            request = try await builder.buildDELETE(endpoint: endpoint)
         case "PATCH":
-            request = try builder.buildPATCH(endpoint: endpoint, body: body)
+            request = try await builder.buildPATCH(endpoint: endpoint, body: body)
         default:
             throw APIError.invalidURL
         }
@@ -194,11 +194,11 @@ struct AuthResponse: Codable, Sendable {
     let token: String
     let refreshToken: String?
     let expiresIn: Int?
-    let user: UserDTO?
+    let user: AuthUserDTO?
 }
 
-/// User DTO for API responses
-struct UserDTO: Codable, Sendable {
+/// User DTO for authentication API responses
+struct AuthUserDTO: Codable, Sendable {
     let id: String
     let email: String
     let fullName: String

@@ -171,7 +171,8 @@ final class SyncMetadataEntity {
     }
 
     /// Check if sync is stale (longer than 24 hours)
-    nonisolated var isStale: Bool {
+    @MainActor
+    var isStale: Bool {
         guard let lastSync = lastSyncSuccess ?? lastSyncAttempt else {
             return false
         }

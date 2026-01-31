@@ -14,7 +14,7 @@ public protocol LocalDataSource<Entity>: Sendable {
 }
 
 /// Protocol for remote data source operations
-public protocol RemoteDataSource<Entity>: Sendable {
+public protocol RemoteDataSourceBase<Entity>: Sendable {
     associatedtype Entity: Identifiable where Entity.ID == UUID
 
     func fetch(id: UUID) async throws -> Entity

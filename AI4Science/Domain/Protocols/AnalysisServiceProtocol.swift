@@ -4,10 +4,10 @@ import Foundation
 @available(iOS 15.0, *)
 public protocol AnalysisServiceProtocol: Sendable {
     /// Execute ML model on capture
-    func runMLAnalysis(captureId: String, modelId: String, parameters: AnalysisParameters) async throws -> MLAnalysisResult
+    func runMLAnalysis(captureId: String, modelId: String, parameters: ServiceAnalysisParameters) async throws -> MLAnalysisResult
 
     /// Analyze multiple captures in batch
-    func batchAnalysis(captureIds: [String], modelId: String, parameters: AnalysisParameters) async throws -> [MLAnalysisResult]
+    func batchAnalysis(captureIds: [String], modelId: String, parameters: ServiceAnalysisParameters) async throws -> [MLAnalysisResult]
 
     /// Fetch analysis history
     func fetchAnalysisResults(captureId: String) async throws -> [MLAnalysisResult]
@@ -22,7 +22,7 @@ public protocol AnalysisServiceProtocol: Sendable {
     func cancelAnalysis(resultId: String) async throws
 
     /// Get available ML models
-    func fetchAvailableModels() async throws -> [MLModel]
+    func fetchAvailableModels() async throws -> [AnalysisMLModel]
 }
 
 /// ML Analysis result
@@ -34,7 +34,7 @@ public struct MLAnalysisResult: Sendable {
     public let modelVersion: String
     public let executionTime: TimeInterval
     public let createdAt: Date
-    public let status: AnalysisStatus
+    public let status: AnalysisServiceStatus
     public let predictions: [Prediction]
     public let confidence: Double
     public let metadata: AnalysisMetadata
@@ -47,7 +47,7 @@ public struct MLAnalysisResult: Sendable {
         modelVersion: String,
         executionTime: TimeInterval,
         createdAt: Date,
-        status: AnalysisStatus,
+        status: AnalysisServiceStatus,
         predictions: [Prediction],
         confidence: Double,
         metadata: AnalysisMetadata
@@ -66,8 +66,8 @@ public struct MLAnalysisResult: Sendable {
     }
 }
 
-/// Analysis status
-public enum AnalysisStatus: String, Sendable {
+/// Analysis service status
+public enum AnalysisServiceStatus: String, Sendable {
     case queued
     case running
     case completed
@@ -108,13 +108,13 @@ public struct AnalysisMetadata: Sendable {
     }
 }
 
-/// Analysis parameters
-public struct AnalysisParameters: Sendable {
+/// Analysis parameters for service operations
+public struct ServiceAnalysisParameters: Sendable {
     public let threshold: Double?
     public let options: [String: String]
     public let priority: ProcessingPriority
 
-    public init(
+    public nonisolated init(
         threshold: Double? = nil,
         options: [String: String] = [:],
         priority: ProcessingPriority = .normal
@@ -133,8 +133,8 @@ public enum ProcessingPriority: String, Sendable {
     case critical
 }
 
-/// ML Model information
-public struct MLModel: Sendable {
+/// ML Model information for analysis service
+public struct AnalysisMLModel: Sendable {
     public let id: String
     public let name: String
     public let version: String
@@ -235,8 +235,8 @@ public enum AnalysisReportFormat: String, Sendable {
     case csv
 }
 
-/// Analysis errors
-public enum AnalysisError: LocalizedError, Sendable {
+/// Analysis errors for the analysis service
+public enum ServiceAnalysisError: LocalizedError, Sendable {
     case modelNotFound
     case analysisNotFound
     case analysisFailure(String)

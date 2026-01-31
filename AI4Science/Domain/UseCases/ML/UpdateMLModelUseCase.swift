@@ -50,9 +50,9 @@ public struct UpdateMLModelUseCase: Sendable {
 
     /// Downloads and installs a model update
     /// - Parameter updateInfo: Update information
-    /// - Returns: Updated ModelInfo
+    /// - Returns: Updated LoadedModelInfo
     /// - Throws: MLError if update fails
-    public func installUpdate(_ updateInfo: ModelUpdateInfo) async throws -> ModelInfo {
+    public func installUpdate(_ updateInfo: ModelUpdateInfo) async throws -> LoadedModelInfo {
         guard !updateInfo.modelId.isEmpty else {
             throw MLError.validationFailed("Model ID is required.")
         }
@@ -94,9 +94,8 @@ public struct UpdateMLModelUseCase: Sendable {
         var failedUpdates: [ModelUpdateInfo] = []
 
         // Install updates in parallel
-        let updateResults = try await withThrowingTaskGroup(
-            of: (ModelUpdateInfo, Bool).self,
-            returning: [(ModelUpdateInfo, Bool)]
+        let updateResults: [(ModelUpdateInfo, Bool)] = try await withThrowingTaskGroup(
+            of: (ModelUpdateInfo, Bool).self
         ) { taskGroup in
             for update in availableUpdates {
                 taskGroup.addTask {

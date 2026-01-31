@@ -35,11 +35,11 @@ public actor KeychainManager: Sendable {
             throw KeychainError.invalidData
         }
 
-        try save(data, for: key)
+        try saveData(data, for: key)
     }
 
     public func retrieve(for key: String) throws -> String {
-        let data = try retrieve(for: key)
+        let data = try retrieveData(for: key)
         guard let string = String(data: data, encoding: .utf8) else {
             throw KeychainError.invalidData
         }
@@ -48,7 +48,7 @@ public actor KeychainManager: Sendable {
 
     // MARK: - Data Operations
 
-    public func save(_ data: Data, for key: String) throws {
+    public func saveData(_ data: Data, for key: String) throws {
         let query = baseQuery(for: key)
 
         SecItemDelete(query as CFDictionary)
@@ -64,7 +64,7 @@ public actor KeychainManager: Sendable {
         }
     }
 
-    public func retrieve(for key: String) throws -> Data {
+    public func retrieveData(for key: String) throws -> Data {
         var query = baseQuery(for: key)
         query[kSecReturnData as String] = true
 

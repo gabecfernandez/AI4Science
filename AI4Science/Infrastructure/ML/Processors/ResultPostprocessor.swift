@@ -141,7 +141,7 @@ actor ResultPostprocessor {
             let defectTypeIndex = Int(truncating: detectionFeature[baseIndex + 5])
             let severityIndex = Int(truncating: detectionFeature[baseIndex + 6])
 
-            let defectType = DefectType.allCases[safe: defectTypeIndex]?.rawValue ?? "unknown"
+            let defectType = PostprocessorDefectType.allCases[safe: defectTypeIndex]?.rawValue ?? "unknown"
             let severity = DefectSeverity.allCases[safe: severityIndex] ?? .medium
 
             let boundingBox = BoundingBox(x: x, y: y, width: width, height: height)
@@ -272,7 +272,7 @@ actor ResultPostprocessor {
 // MARK: - Supporting Types
 
 /// Type representing defects for safe array indexing
-enum DefectType: String, CaseIterable {
+enum PostprocessorDefectType: String, CaseIterable {
     case crack
     case scratch
     case dent

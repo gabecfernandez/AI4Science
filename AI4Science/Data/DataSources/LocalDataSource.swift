@@ -2,7 +2,8 @@ import Foundation
 import SwiftData
 
 /// Protocol for local data source operations
-protocol LocalDataSourceProtocol: Sendable {
+/// Note: SwiftData models are not Sendable - implementations handle isolation
+protocol LocalDataSourceProtocol {
     associatedtype Model
 
     func create(_ model: Model) async throws
@@ -13,7 +14,8 @@ protocol LocalDataSourceProtocol: Sendable {
 }
 
 /// Base local data source implementation
-actor LocalDataSource<T: PersistentModel & Identifiable>: LocalDataSourceProtocol where T.ID == String {
+@MainActor
+final class SwiftDataLocalDataSource<T: PersistentModel & Identifiable>: LocalDataSourceProtocol where T.ID == String {
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
@@ -41,7 +43,7 @@ actor LocalDataSource<T: PersistentModel & Identifiable>: LocalDataSourceProtoco
 
     /// Delete model by ID
     func delete(id: String) async throws {
-        guard let model = try read(id: id) else {
+        guard let model = try await read(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(model)
@@ -73,7 +75,8 @@ actor LocalDataSource<T: PersistentModel & Identifiable>: LocalDataSourceProtoco
 }
 
 /// User local data source
-actor UserLocalDataSource: LocalDataSourceProtocol {
+@MainActor
+final class UserLocalDataSource: LocalDataSourceProtocol {
     typealias Model = UserEntity
 
     private let modelContext: ModelContext
@@ -99,7 +102,7 @@ actor UserLocalDataSource: LocalDataSourceProtocol {
     }
 
     func delete(id: String) async throws {
-        guard let user = try read(id: id) else {
+        guard let user = try await read(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(user)
@@ -113,7 +116,8 @@ actor UserLocalDataSource: LocalDataSourceProtocol {
 }
 
 /// Project local data source
-actor ProjectLocalDataSource: LocalDataSourceProtocol {
+@MainActor
+final class ProjectLocalDataSource: LocalDataSourceProtocol {
     typealias Model = ProjectEntity
 
     private let modelContext: ModelContext
@@ -139,7 +143,7 @@ actor ProjectLocalDataSource: LocalDataSourceProtocol {
     }
 
     func delete(id: String) async throws {
-        guard let project = try read(id: id) else {
+        guard let project = try await read(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(project)
@@ -153,7 +157,8 @@ actor ProjectLocalDataSource: LocalDataSourceProtocol {
 }
 
 /// Capture local data source
-actor CaptureLocalDataSource: LocalDataSourceProtocol {
+@MainActor
+final class CaptureLocalDataSource: LocalDataSourceProtocol {
     typealias Model = CaptureEntity
 
     private let modelContext: ModelContext
@@ -179,7 +184,7 @@ actor CaptureLocalDataSource: LocalDataSourceProtocol {
     }
 
     func delete(id: String) async throws {
-        guard let capture = try read(id: id) else {
+        guard let capture = try await read(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(capture)

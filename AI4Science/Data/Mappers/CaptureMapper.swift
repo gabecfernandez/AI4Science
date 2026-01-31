@@ -27,7 +27,7 @@ struct CaptureMapper {
     }
 
     /// Map domain Capture model to CaptureEntity
-    static func toEntity(from capture: Capture) -> CaptureEntity {
+    static func toEntity(from capture: CaptureModel) -> CaptureEntity {
         let entity = CaptureEntity(
             id: capture.id,
             captureType: capture.captureType,
@@ -48,8 +48,8 @@ struct CaptureMapper {
     }
 
     /// Map CaptureEntity to domain Capture model
-    static func toModel(_ entity: CaptureEntity) -> Capture {
-        Capture(
+    static func toModel(_ entity: CaptureEntity) -> CaptureModel {
+        CaptureModel(
             id: entity.id,
             captureType: entity.captureType,
             fileURL: entity.fileURL,
@@ -68,7 +68,7 @@ struct CaptureMapper {
     }
 
     /// Update CaptureEntity from domain Capture
-    static func update(_ entity: CaptureEntity, with capture: Capture) {
+    static func update(_ entity: CaptureEntity, with capture: CaptureModel) {
         entity.notes = capture.notes
         entity.qualityScore = capture.qualityScore
         entity.processingStatus = capture.processingStatus
@@ -77,8 +77,8 @@ struct CaptureMapper {
     }
 }
 
-/// Domain Capture model
-struct Capture: Codable, Identifiable {
+/// Local Capture model for mapper operations
+struct CaptureModel: Codable, Identifiable {
     let id: String
     let captureType: String
     let fileURL: String

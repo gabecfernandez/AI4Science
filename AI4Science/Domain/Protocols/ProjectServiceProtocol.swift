@@ -4,16 +4,16 @@ import Foundation
 @available(iOS 15.0, *)
 public protocol ProjectServiceProtocol: Sendable {
     /// Create new research project
-    func createProject(_ request: CreateProjectRequest) async throws -> Project
+    func createProject(_ request: CreateProjectRequest) async throws -> ProjectServiceResponse
 
     /// Fetch all user projects
-    func fetchProjects(userId: String) async throws -> [Project]
+    func fetchProjects(userId: String) async throws -> [ProjectServiceResponse]
 
     /// Fetch specific project
-    func fetchProject(projectId: String) async throws -> Project
+    func fetchProject(projectId: String) async throws -> ProjectServiceResponse
 
     /// Update project details
-    func updateProject(_ request: UpdateProjectRequest) async throws -> Project
+    func updateProject(_ request: UpdateProjectRequest) async throws -> ProjectServiceResponse
 
     /// Delete project
     func deleteProject(projectId: String) async throws
@@ -28,8 +28,8 @@ public protocol ProjectServiceProtocol: Sendable {
     func exportProject(projectId: String, format: ExportFormat) async throws -> Data
 }
 
-/// Project domain model
-public struct Project: Sendable {
+/// Project service response (distinct from domain Project)
+public struct ProjectServiceResponse: Sendable {
     public let id: String
     public let name: String
     public let description: String
@@ -37,9 +37,9 @@ public struct Project: Sendable {
     public let createdAt: Date
     public let updatedAt: Date
     public let isArchived: Bool
-    public let samples: [Sample]
-    public let collaborators: [ProjectCollaborator]
-    public let metadata: ProjectMetadata
+    public let sampleIds: [String]
+    public let collaborators: [ProjectServiceCollaborator]
+    public let metadata: ProjectServiceMetadata
 
     public init(
         id: String,
@@ -49,9 +49,9 @@ public struct Project: Sendable {
         createdAt: Date,
         updatedAt: Date,
         isArchived: Bool,
-        samples: [Sample],
-        collaborators: [ProjectCollaborator],
-        metadata: ProjectMetadata
+        sampleIds: [String],
+        collaborators: [ProjectServiceCollaborator],
+        metadata: ProjectServiceMetadata
     ) {
         self.id = id
         self.name = name
@@ -60,14 +60,14 @@ public struct Project: Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isArchived = isArchived
-        self.samples = samples
+        self.sampleIds = sampleIds
         self.collaborators = collaborators
         self.metadata = metadata
     }
 }
 
-/// Project collaborator information
-public struct ProjectCollaborator: Sendable {
+/// Project service collaborator (distinct from any domain type)
+public struct ProjectServiceCollaborator: Sendable {
     public let userId: String
     public let email: String
     public let displayName: String
@@ -96,8 +96,8 @@ public enum ProjectPermission: String, Sendable {
     case viewer
 }
 
-/// Project metadata
-public struct ProjectMetadata: Sendable {
+/// Project service metadata (distinct from SwiftData ProjectMetadata)
+public struct ProjectServiceMetadata: Sendable {
     public let sampleCount: Int
     public let totalCaptures: Int
     public let totalAnnotations: Int
@@ -124,7 +124,7 @@ public struct CreateProjectRequest: Sendable {
     public let name: String
     public let description: String
 
-    public init(name: String, description: String) {
+    public nonisolated init(name: String, description: String) {
         self.name = name
         self.description = description
     }
@@ -137,7 +137,7 @@ public struct UpdateProjectRequest: Sendable {
     public let description: String?
     public let isArchived: Bool?
 
-    public init(
+    public nonisolated init(
         projectId: String,
         name: String? = nil,
         description: String? = nil,
@@ -183,4 +183,43 @@ public enum ExportFormat: String, Sendable {
     case csv
     case pdf
     case zip
+}
+
+// MARK: - Conversion to Domain Model
+
+extension ProjectServiceResponse {
+    /// Convert service response to domain Project model
+    public nonisolated func toDomainProject() -> Project {
+        let status: ProjectStatus
+        if isArchived {
+            status = .archived
+        } else {
+            status = .active
+        }
+
+        return Project(
+            id: UUID(uuidString: id) ?? UUID(),
+            title: name,
+            description: description,
+            status: status,
+            principalInvestigatorID: UUID(uuidString: ownerId) ?? UUID(),
+            labAffiliation: LabAffiliation.placeholder,
+            participantIDs: [],
+            sampleIDs: sampleIds.compactMap { UUID(uuidString: $0) },
+            startDate: createdAt,
+            endDate: nil,
+            metadata: [:],
+            tags: [],
+            thumbnailURL: nil,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
+    }
+}
+
+extension Array where Element == ProjectServiceResponse {
+    /// Convert array of service responses to domain Projects
+    public nonisolated func toDomainProjects() -> [Project] {
+        map { $0.toDomainProject() }
+    }
 }

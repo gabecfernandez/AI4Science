@@ -17,7 +17,7 @@ public struct JSONCoder: Sendable {
         return decoder
     }()
 
-    private static let compactEncoder: JSONEncoder = {
+    private static let _compactEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.dataEncodingStrategy = .base64
@@ -36,7 +36,7 @@ public struct JSONCoder: Sendable {
 
     /// Get compact JSON encoder (no formatting)
     public static var compactEncoder: JSONEncoder {
-        compactEncoder
+        _compactEncoder
     }
 
     // MARK: - Encoding
@@ -48,7 +48,7 @@ public struct JSONCoder: Sendable {
 
     /// Encode object to compact JSON data
     static func encodeCompact<T: Encodable>(_ value: T) throws -> Data {
-        try compactEncoder.encode(value)
+        try _compactEncoder.encode(value)
     }
 
     /// Encode object to JSON string

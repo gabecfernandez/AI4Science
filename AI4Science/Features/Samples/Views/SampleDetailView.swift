@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SampleDetailView: View {
-    let sample: Sample
+    let sample: SampleDisplayItem
     @State private var viewModel = SampleDetailViewModel()
     @State private var selectedTab: SampleTab = .details
     @Environment(\.dismiss) var dismiss
@@ -125,7 +125,7 @@ struct SampleDetailView: View {
 }
 
 struct SampleDetailsContent: View {
-    let sample: Sample
+    let sample: SampleDisplayItemDisplayItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -160,7 +160,7 @@ struct SampleDetailsContent: View {
 }
 
 struct SampleImagesContent: View {
-    let sample: Sample
+    let sample: SampleDisplayItemDisplayItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -204,7 +204,7 @@ struct SampleImagesContent: View {
 }
 
 struct SampleAnalysisContent: View {
-    let sample: Sample
+    let sample: SampleDisplayItemDisplayItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -284,7 +284,7 @@ struct DetailRow: View {
 
 #Preview {
     NavigationStack {
-        SampleDetailView(sample: Sample(
+        SampleDetailView(sample: SampleDisplayItem(
             id: "1",
             name: "Sample A",
             type: "Material",

@@ -4,7 +4,7 @@ import SwiftData
 /// Version 1 of the schema (initial release)
 @available(iOS 18, *)
 enum SchemaV1: VersionedSchema {
-    static var versionIdentifier = "v1"
+    static let versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -16,26 +16,25 @@ enum SchemaV1: VersionedSchema {
             MLModelEntity.self,
             AnalysisResultEntity.self,
             SyncQueueEntity.self,
+            DefectEntity.self,
+            SyncMetadataEntity.self,
+            // Supporting models
             DeviceInfo.self,
             ProjectMetadata.self,
             SampleProperties.self,
-            CaptureMetadata.self,
+            CaptureMetadataEntity.self,
             AnnotationItem.self,
             AnalysisConfig.self,
             ResultArtifact.self,
-            Measurement.self,
+            DefectMeasurement.self,
         ]
     }
 }
 
-/// Fallback schema versions
-enum SchemaVersions {
-    static let v1 = SchemaV1.self
-}
-
 /// Migration plan for database schema evolution
-enum SchemaMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [VersionedSchema] {
+@available(iOS 18, *)
+enum AI4ScienceSchemaMigrationPlan: SwiftData.SchemaMigrationPlan {
+    static var schemas: [any VersionedSchema.Type] {
         [SchemaV1.self]
     }
 

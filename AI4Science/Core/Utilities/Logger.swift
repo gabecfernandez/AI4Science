@@ -2,7 +2,7 @@ import Foundation
 import os.log
 
 /// Centralized logger using os.log
-public actor Logger {
+public actor AppLogger {
     public enum Level: Sendable {
         case debug
         case info
@@ -63,7 +63,7 @@ public actor Logger {
         os_log("%{public}@", log: osLog, type: type, message)
 
         #if DEBUG
-        let timestamp = DateFormatter().localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
+        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
         let levelString = levelString(level)
         print("[\(levelString)] [\(timestamp)] \(message)")
         #endif

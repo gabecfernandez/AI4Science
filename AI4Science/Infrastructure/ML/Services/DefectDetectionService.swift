@@ -164,7 +164,7 @@ struct DefectPrediction: Codable, Sendable {
     let defectType: String
     let confidence: Float
     let boundingBox: BoundingBox
-    let severity: DefectSeverity
+    let severity: DetectionSeverity
     let location: String?
 
     enum CodingKeys: String, CodingKey {
@@ -177,7 +177,7 @@ struct DefectPrediction: Codable, Sendable {
 }
 
 /// Severity level of detected defect
-enum DefectSeverity: String, Codable, Sendable {
+enum DetectionSeverity: String, Codable, Sendable {
     case low
     case medium
     case high
@@ -195,7 +195,7 @@ struct DefectDetectionResult: Sendable {
         !predictions.isEmpty
     }
 
-    var severityLevel: DefectSeverity? {
+    var severityLevel: DetectionSeverity? {
         predictions.max { $0.severity.rawValue < $1.severity.rawValue }?.severity
     }
 }

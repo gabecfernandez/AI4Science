@@ -1,21 +1,21 @@
 import SwiftUI
 
 struct LabAffiliationView: View {
-    @State private var selectedLab: LabAffiliation?
+    @State private var selectedLab: LabAffiliationItem?
     @State private var searchText = ""
     @State private var isCustom = false
     @State private var customLabName = ""
     @Environment(\.dismiss) var dismiss
 
-    let labs: [LabAffiliation] = [
-        LabAffiliation(id: "1", name: "MIT Department of Materials Science", location: "Cambridge, MA"),
-        LabAffiliation(id: "2", name: "Stanford Materials Research Lab", location: "Stanford, CA"),
-        LabAffiliation(id: "3", name: "Harvard School of Engineering", location: "Cambridge, MA"),
-        LabAffiliation(id: "4", name: "Berkeley Lab - Advanced Light Source", location: "Berkeley, CA"),
-        LabAffiliation(id: "5", name: "Caltech Materials Science", location: "Pasadena, CA"),
+    let labs: [LabAffiliationItem] = [
+        LabAffiliationItem(id: "1", name: "MIT Department of Materials Science", location: "Cambridge, MA"),
+        LabAffiliationItem(id: "2", name: "Stanford Materials Research Lab", location: "Stanford, CA"),
+        LabAffiliationItem(id: "3", name: "Harvard School of Engineering", location: "Cambridge, MA"),
+        LabAffiliationItem(id: "4", name: "Berkeley Lab - Advanced Light Source", location: "Berkeley, CA"),
+        LabAffiliationItem(id: "5", name: "Caltech Materials Science", location: "Pasadena, CA"),
     ]
 
-    var filteredLabs: [LabAffiliation] {
+    var filteredLabs: [LabAffiliationItem] {
         if searchText.isEmpty {
             return labs
         }
@@ -135,14 +135,14 @@ struct LabAffiliationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isCustom) {
             CreateLabSheet(isPresented: $isCustom) { labName in
-                selectedLab = LabAffiliation(id: UUID().uuidString, name: labName, location: "")
+                selectedLab = LabAffiliationItem(id: UUID().uuidString, name: labName, location: "")
             }
         }
     }
 }
 
 struct LabCard: View {
-    let lab: LabAffiliation
+    let lab: LabAffiliationItem
     let isSelected: Bool
     let action: () -> Void
 
@@ -256,7 +256,7 @@ struct CreateLabSheet: View {
     }
 }
 
-struct LabAffiliation: Identifiable {
+struct LabAffiliationItem: Identifiable {
     let id: String
     let name: String
     let location: String

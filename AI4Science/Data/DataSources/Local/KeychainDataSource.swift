@@ -62,7 +62,7 @@ actor KeychainDataSource: Sendable {
             throw KeychainError.unhandledError(status: status)
         }
 
-        Logger.info("Stored value in Keychain for key: \(key)")
+        AppLogger.info("Stored value in Keychain for key: \(key)")
     }
 
     /// Retrieve sensitive string from Keychain
@@ -109,7 +109,7 @@ actor KeychainDataSource: Sendable {
             throw KeychainError.unhandledError(status: status)
         }
 
-        Logger.info("Deleted value from Keychain for key: \(key)")
+        AppLogger.info("Deleted value from Keychain for key: \(key)")
     }
 
     /// Check if value exists
@@ -218,7 +218,7 @@ actor KeychainDataSource: Sendable {
             throw KeychainError.unhandledError(status: status)
         }
 
-        Logger.warning("Deleted all Keychain items for service: \(Self.serviceName)")
+        AppLogger.warning("Deleted all Keychain items for service: \(Self.serviceName)")
     }
 }
 

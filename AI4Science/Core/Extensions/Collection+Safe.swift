@@ -65,7 +65,7 @@ extension Array {
     }
 
     /// Filter to unique elements
-    public var unique: [Element] where Element: Hashable {
+    public func unique() -> [Element] where Element: Hashable {
         var seen = Set<Element>()
         return filter { seen.insert($0).inserted }
     }

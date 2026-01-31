@@ -1,343 +1,432 @@
 import SwiftUI
 
 struct ProjectDetailView: View {
-    let project: Project
-    @State private var viewModel = ProjectDetailViewModel()
+    let projectId: UUID
+    let repository: ProjectRepository
+
+    @State private var viewModel: ProjectDetailViewModel?
     @State private var selectedTab: ProjectDetailTab = .overview
+    @State private var showEditSheet = false
+    @State private var showDeleteConfirmation = false
     @Environment(\.dismiss) var dismiss
 
-    enum ProjectDetailTab {
-        case overview
-        case samples
-        case settings
+    enum ProjectDetailTab: String, CaseIterable {
+        case overview = "Overview"
+        case samples = "Samples"
+        case settings = "Settings"
+    }
+
+    init(projectId: UUID, repository: ProjectRepository) {
+        self.projectId = projectId
+        self.repository = repository
     }
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.09, green: 0.17, blue: 0.26),
-                    Color(red: 0.12, green: 0.20, blue: 0.30)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            ColorPalette.background
+                .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 12) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(project.name)
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-
-                            HStack(spacing: 12) {
-                                Label(project.status.rawValue, systemImage: "circle.fill")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-
-                                Label(project.createdDate.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                        }
-
-                        Spacer()
-
-                        Menu {
-                            Button(action: {}) {
-                                Label("Edit", systemImage: "pencil")
-                            }
-
-                            Button(action: {}) {
-                                Label("Export", systemImage: "arrow.up.doc")
-                            }
-
-                            Button(action: {}) {
-                                Label("Share", systemImage: "square.and.arrow.up")
-                            }
-
-                            Divider()
-
-                            Button(role: .destructive, action: {}) {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
-                    // Tab selector
-                    HStack(spacing: 0) {
-                        ForEach([ProjectDetailTab.overview, .samples, .settings], id: \.self) { tab in
-                            VStack(spacing: 4) {
-                                Text(tabTitle(tab))
-                                    .font(.subheadline)
-                                    .fontWeight(selectedTab == tab ? .semibold : .regular)
-                                    .foregroundColor(selectedTab == tab ? .white : .white.opacity(0.6))
-
-                                if selectedTab == tab {
-                                    Capsule()
-                                        .fill(Color.blue)
-                                        .frame(height: 3)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
-                            .onTapGesture { selectedTab = tab }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+            if let viewModel = viewModel {
+                if viewModel.isLoading && viewModel.project == nil {
+                    LoadingView(message: "Loading project...")
+                } else if let project = viewModel.project {
+                    projectContent(project: project, viewModel: viewModel)
+                } else {
+                    errorView(viewModel)
                 }
-                .padding(.vertical, 16)
-
-                // Content
-                ScrollView {
-                    VStack(spacing: 16) {
-                        switch selectedTab {
-                        case .overview:
-                            ProjectOverviewContent(project: project)
-                        case .samples:
-                            ProjectSamplesContent(project: project)
-                        case .settings:
-                            ProjectSettingsContent(project: project)
-                        }
-                    }
-                    .padding(20)
-                }
+            } else {
+                LoadingView(message: "Loading...")
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
-        .task {
-            await viewModel.loadProjectDetails(for: project.id)
-        }
-    }
-
-    private func tabTitle(_ tab: ProjectDetailTab) -> String {
-        switch tab {
-        case .overview:
-            return "Overview"
-        case .samples:
-            return "Samples"
-        case .settings:
-            return "Settings"
-        }
-    }
-}
-
-struct ProjectOverviewContent: View {
-    let project: Project
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Description
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Description")
-                    .font(.headline)
-                    .foregroundColor(.white)
-
-                Text(project.description)
-                    .font(.body)
-                    .foregroundColor(.white.opacity(0.8))
-                    .lineSpacing(4)
-            }
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Stats
-            VStack(spacing: 12) {
-                StatRow(label: "Total Samples", value: "\(project.sampleCount)", icon: "beaker.fill")
-                StatRow(label: "Team Members", value: "\(project.memberCount)", icon: "person.2.fill")
-                StatRow(label: "Created Date", value: project.createdDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar")
-                StatRow(label: "Last Updated", value: Date().formatted(date: .abbreviated, time: .omitted), icon: "clock.fill")
-            }
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Quick actions
-            VStack(spacing: 10) {
-                Button(action: {}) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add Sample")
+        .toolbar {
+            if let project = viewModel?.project {
+                ToolbarItem(placement: .principal) {
+                    VStack {
+                        Text(project.title)
+                            .font(Typography.titleMedium)
+                            .fontWeight(.semibold)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
                 }
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
 
-                Button(action: {}) {
-                    HStack {
-                        Image(systemName: "person.badge.plus.fill")
-                        Text("Invite Member")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                }
-                .background(Color.white.opacity(0.1))
-                .foregroundColor(.blue)
-                .cornerRadius(8)
-            }
-        }
-    }
-}
-
-struct ProjectSamplesContent: View {
-    let project: Project
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Samples in this project")
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            if project.sampleCount > 0 {
-                ForEach(0..<min(3, project.sampleCount), id: \.self) { index in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Sample \(index + 1)")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-
-                            Text("Added \(Date().formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.6))
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            showEditSheet = true
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
                         }
 
-                        Spacer()
+                        Divider()
 
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.white.opacity(0.5))
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        IconAssets.menu
+                            .foregroundColor(ColorPalette.onBackground)
                     }
-                    .padding(12)
-                    .background(Color.white.opacity(0.08))
-                    .cornerRadius(8)
                 }
-            } else {
-                Text("No samples yet")
-                    .foregroundColor(.white.opacity(0.6))
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            if let project = viewModel?.project {
+                ProjectEditView(
+                    project: project,
+                    repository: repository,
+                    isPresented: $showEditSheet
+                ) {
+                    Task { await viewModel?.refresh() }
+                }
+            }
+        }
+        .alert("Delete Project?", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    await viewModel?.deleteProject()
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to delete this project? This action cannot be undone.")
+        }
+        .task {
+            if viewModel == nil {
+                viewModel = ProjectDetailViewModel(projectId: projectId, repository: repository)
+            }
+            await viewModel?.loadProject()
+        }
+    }
+
+    @ViewBuilder
+    private func projectContent(project: Project, viewModel: ProjectDetailViewModel) -> some View {
+        VStack(spacing: 0) {
+            // Header
+            headerSection(project: project)
+
+            // Tab selector
+            tabSelector
+
+            // Content
+            ScrollView {
+                VStack(spacing: Spacing.lg) {
+                    switch selectedTab {
+                    case .overview:
+                        overviewContent(project: project, viewModel: viewModel)
+                    case .samples:
+                        samplesContent(project: project)
+                    case .settings:
+                        settingsContent(project: project, viewModel: viewModel)
+                    }
+                }
+                .padding(Spacing.base)
+            }
+            .refreshable {
+                await viewModel.refresh()
             }
         }
     }
-}
 
-struct ProjectSettingsContent: View {
-    let project: Project
+    @ViewBuilder
+    private func headerSection(project: Project) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                ProjectStatusBadge(status: project.status)
+                Spacer()
+            }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Project Settings")
-                .font(.headline)
-                .foregroundColor(.white)
+            if !project.description.isEmpty {
+                Text(project.description)
+                    .font(Typography.bodyMedium)
+                    .foregroundColor(ColorPalette.onSurfaceVariant)
+                    .lineLimit(3)
+            }
 
-            SettingRow(label: "Project Name", value: project.name)
-            SettingRow(label: "Status", value: project.status.rawValue)
-            SettingRow(label: "Members", value: "\(project.memberCount)")
+            HStack(spacing: Spacing.lg) {
+                Label(
+                    "Started \(project.startDate.formatted(date: .abbreviated, time: .omitted))",
+                    systemImage: "calendar"
+                )
+                .font(Typography.labelSmall)
+                .foregroundColor(ColorPalette.onSurfaceVariant)
+
+                if !project.tags.isEmpty {
+                    Label("\(project.tags.count) tags", systemImage: "tag")
+                        .font(Typography.labelSmall)
+                        .foregroundColor(ColorPalette.onSurfaceVariant)
+                }
+            }
+        }
+        .padding(Spacing.base)
+        .background(ColorPalette.surface)
+    }
+
+    private var tabSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(ProjectDetailTab.allCases, id: \.self) { tab in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedTab = tab
+                    }
+                } label: {
+                    VStack(spacing: Spacing.xs) {
+                        Text(tab.rawValue)
+                            .font(Typography.labelMedium)
+                            .fontWeight(selectedTab == tab ? .semibold : .regular)
+                            .foregroundColor(selectedTab == tab ? ColorPalette.utsa_primary : ColorPalette.onSurfaceVariant)
+
+                        Rectangle()
+                            .fill(selectedTab == tab ? ColorPalette.utsa_primary : Color.clear)
+                            .frame(height: 2)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, Spacing.base)
+        .background(ColorPalette.surface)
+    }
+
+    @ViewBuilder
+    private func overviewContent(project: Project, viewModel: ProjectDetailViewModel) -> some View {
+        VStack(spacing: Spacing.lg) {
+            // Statistics
+            ProjectStatisticsGrid(
+                sampleCount: project.sampleCount,
+                participantCount: project.participantCount,
+                startDate: project.startDate,
+                lastUpdated: project.updatedAt
+            )
+
+            // Tags
+            if !project.tags.isEmpty {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text("Tags")
+                        .font(Typography.titleSmall)
+                        .fontWeight(.semibold)
+                        .foregroundColor(ColorPalette.onBackground)
+
+                    FlowLayout(spacing: Spacing.sm) {
+                        ForEach(project.tags, id: \.self) { tag in
+                            TagChip(text: tag)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Quick Actions
+            VStack(spacing: Spacing.md) {
+                PrimaryButton("Add Sample") {
+                    // Navigate to sample capture
+                }
+
+                SecondaryButton("Invite Participant") {
+                    // Show invite sheet
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func samplesContent(project: Project) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text("Samples")
+                .font(Typography.titleSmall)
+                .fontWeight(.semibold)
+                .foregroundColor(ColorPalette.onBackground)
+
+            if project.sampleCount == 0 {
+                EmptyStateView(
+                    icon: IconAssets.flask,
+                    title: "No Samples Yet",
+                    message: "Start capturing samples for this project",
+                    action: ("Add Sample", {})
+                )
+            } else {
+                Text("Sample list placeholder - \(project.sampleCount) samples")
+                    .font(Typography.bodyMedium)
+                    .foregroundColor(ColorPalette.onSurfaceVariant)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func settingsContent(project: Project, viewModel: ProjectDetailViewModel) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            // Project Info
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("Project Information")
+                    .font(Typography.titleSmall)
+                    .fontWeight(.semibold)
+                    .foregroundColor(ColorPalette.onBackground)
+
+                SettingsRow(label: "Title", value: project.title)
+                SettingsRow(label: "Status", value: viewModel.statusDisplayName)
+                SettingsRow(label: "Created", value: viewModel.formattedCreatedDate)
+                SettingsRow(label: "Last Updated", value: viewModel.formattedUpdatedDate)
+            }
 
             Divider()
-                .background(Color.white.opacity(0.1))
+                .background(ColorPalette.divider)
 
-            Button(role: .destructive, action: {}) {
-                Text("Delete Project")
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-            }
-            .background(Color.red.opacity(0.2))
-            .foregroundColor(.red)
-            .cornerRadius(8)
-        }
-    }
-}
-
-struct StatRow: View {
-    let label: String
-    let value: String
-    let icon: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.blue)
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
-
-                Text(value)
-                    .font(.subheadline)
+            // Status Actions
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("Status Actions")
+                    .font(Typography.titleSmall)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(ColorPalette.onBackground)
+
+                if viewModel.isArchived {
+                    SecondaryButton("Unarchive Project") {
+                        Task { await viewModel.unarchiveProject() }
+                    }
+                } else {
+                    SecondaryButton("Archive Project") {
+                        Task { await viewModel.archiveProject() }
+                    }
+                }
             }
 
-            Spacer()
+            Divider()
+                .background(ColorPalette.divider)
+
+            // Danger Zone
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("Danger Zone")
+                    .font(Typography.titleSmall)
+                    .fontWeight(.semibold)
+                    .foregroundColor(ColorPalette.error)
+
+                Button {
+                    showDeleteConfirmation = true
+                } label: {
+                    HStack {
+                        IconAssets.delete
+                        Text("Delete Project")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(Spacing.md)
+                    .background(ColorPalette.error.opacity(0.1))
+                    .foregroundColor(ColorPalette.error)
+                    .cornerRadius(BorderStyles.radiusMedium)
+                }
+            }
         }
+    }
+
+    @ViewBuilder
+    private func errorView(_ viewModel: ProjectDetailViewModel) -> some View {
+        VStack(spacing: Spacing.lg) {
+            IconAssets.error
+                .font(.system(size: 48))
+                .foregroundColor(ColorPalette.error)
+
+            Text("Failed to load project")
+                .font(Typography.titleMedium)
+                .foregroundColor(ColorPalette.onBackground)
+
+            if let message = viewModel.errorMessage {
+                Text(message)
+                    .font(Typography.bodyMedium)
+                    .foregroundColor(ColorPalette.onSurfaceVariant)
+            }
+
+            PrimaryButton("Try Again") {
+                Task { await viewModel.loadProject() }
+            }
+        }
+        .padding(Spacing.lg)
     }
 }
 
-struct SettingRow: View {
+// MARK: - Supporting Views
+
+struct SettingsRow: View {
     let label: String
     let value: String
 
     var body: some View {
         HStack {
             Text(label)
-                .foregroundColor(.white.opacity(0.7))
+                .font(Typography.bodyMedium)
+                .foregroundColor(ColorPalette.onSurfaceVariant)
 
             Spacer()
 
             Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .font(Typography.bodyMedium)
+                .fontWeight(.medium)
+                .foregroundColor(ColorPalette.onBackground)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 12)
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(8)
+        .padding(.vertical, Spacing.sm)
     }
 }
 
-struct Project: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let description: String
-    let status: Status
-    let sampleCount: Int
-    let memberCount: Int
-    let createdDate: Date
+struct TagChip: View {
+    let text: String
 
-    enum Status: String {
-        case active = "Active"
-        case paused = "Paused"
-        case completed = "Completed"
+    var body: some View {
+        Text(text)
+            .font(Typography.labelSmall)
+            .foregroundColor(ColorPalette.utsa_primary)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xs)
+            .background(ColorPalette.utsa_primary.opacity(0.1))
+            .cornerRadius(Spacing.radiusSmall)
+    }
+}
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = FlowResult(in: proposal.replacingUnspecifiedDimensions().width, subviews: subviews, spacing: spacing)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing)
+        for (index, subview) in subviews.enumerated() {
+            subview.place(at: CGPoint(x: bounds.minX + result.positions[index].x, y: bounds.minY + result.positions[index].y), proposal: .unspecified)
+        }
+    }
+
+    struct FlowResult {
+        var size: CGSize = .zero
+        var positions: [CGPoint] = []
+
+        init(in maxWidth: CGFloat, subviews: Subviews, spacing: CGFloat) {
+            var x: CGFloat = 0
+            var y: CGFloat = 0
+            var rowHeight: CGFloat = 0
+
+            for subview in subviews {
+                let subviewSize = subview.sizeThatFits(.unspecified)
+                if x + subviewSize.width > maxWidth, x > 0 {
+                    x = 0
+                    y += rowHeight + spacing
+                    rowHeight = 0
+                }
+                positions.append(CGPoint(x: x, y: y))
+                rowHeight = max(rowHeight, subviewSize.height)
+                x += subviewSize.width + spacing
+            }
+            size = CGSize(width: maxWidth, height: y + rowHeight)
+        }
     }
 }
 
 #Preview {
     NavigationStack {
-        ProjectDetailView(project: Project(
-            id: "1",
-            name: "Sample Project",
-            description: "A test project for demonstration",
-            status: .active,
-            sampleCount: 10,
-            memberCount: 3,
-            createdDate: Date()
-        ))
+        ProjectDetailView(
+            projectId: UUID(),
+            repository: ProjectRepositoryFactory.makeRepository(
+                modelContainer: try! ModelContainer(for: ProjectEntity.self)
+            )
+        )
     }
 }

@@ -11,10 +11,10 @@ class DefectOverlayNode: SCNNode {
     private let confidenceIndicator = SCNNode()
 
     let defectId: String
-    let severity: DefectSeverity
+    let severity: NodeSeverity
     let confidence: Float
 
-    enum DefectSeverity {
+    enum NodeSeverity {
         case low
         case medium
         case high
@@ -33,7 +33,7 @@ class DefectOverlayNode: SCNNode {
             }
         }
 
-        var description: String {
+        var severityDescription: String {
             switch self {
             case .low:
                 return "Low"
@@ -51,7 +51,7 @@ class DefectOverlayNode: SCNNode {
         defectId: String,
         position: SCNVector3,
         extent: SCNVector3,
-        severity: DefectSeverity,
+        severity: NodeSeverity,
         confidence: Float,
         description: String
     ) {
@@ -90,7 +90,7 @@ class DefectOverlayNode: SCNNode {
         addChildNode(boxNode)
 
         // Create label
-        createLabel(text: "\(severity.description) Severity\nConfidence: \(Int(confidence * 100))%")
+        createLabel(text: "\(severity.severityDescription) Severity\nConfidence: \(Int(confidence * 100))%")
 
         // Create confidence indicator
         createConfidenceIndicator()
@@ -139,7 +139,7 @@ class DefectOverlayNode: SCNNode {
     // MARK: - Public Methods
 
     /// Update severity color
-    func updateSeverity(_ newSeverity: DefectSeverity) {
+    func updateSeverity(_ newSeverity: NodeSeverity) {
         let newColor = newSeverity.color
 
         if let boxMaterial = boxNode.geometry?.materials.first {
@@ -215,7 +215,7 @@ class DefectOverlayNode: SCNNode {
 
 struct DefectInfo {
     let id: String
-    let severity: DefectOverlayNode.DefectSeverity
+    let severity: DefectOverlayNode.NodeSeverity
     let confidence: Float
     let position: SCNVector3
 }

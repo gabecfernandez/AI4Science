@@ -44,7 +44,7 @@ public struct ClassificationResult: InferenceResultProtocol, Sendable {
 }
 
 /// Defect type enumeration
-public enum DefectType: String, Sendable, Codable {
+public enum InferenceDefectType: String, Sendable, Codable {
     case noDefect = "no_defect"
     case scratch = "scratch"
     case crack = "crack"
@@ -55,7 +55,7 @@ public enum DefectType: String, Sendable, Codable {
 
     public init?(from label: String) {
         let normalized = label.lowercased().trimmingCharacters(in: .whitespaces)
-        self = DefectType(rawValue: normalized) ?? .unknown
+        self = InferenceDefectType(rawValue: normalized) ?? .unknown
     }
 }
 

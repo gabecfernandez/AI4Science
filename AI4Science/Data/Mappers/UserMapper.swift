@@ -28,8 +28,8 @@ struct UserMapper {
         )
     }
 
-    /// Map domain User model to UserEntity
-    static func toEntity(from user: User) -> UserEntity {
+    /// Map UserModel to UserEntity
+    static func toEntity(from user: UserModel) -> UserEntity {
         UserEntity(
             id: user.id,
             email: user.email,
@@ -42,9 +42,9 @@ struct UserMapper {
         )
     }
 
-    /// Map UserEntity to domain User model
-    static func toModel(_ entity: UserEntity) -> User {
-        User(
+    /// Map UserEntity to UserModel
+    static func toModel(_ entity: UserEntity) -> UserModel {
+        UserModel(
             id: entity.id,
             email: entity.email,
             fullName: entity.fullName,
@@ -68,8 +68,8 @@ struct UserMapper {
         entity.updatedAt = dto.updatedAt
     }
 
-    /// Update UserEntity from domain User
-    static func update(_ entity: UserEntity, with user: User) {
+    /// Update UserEntity from UserModel
+    static func update(_ entity: UserEntity, with user: UserModel) {
         entity.email = user.email
         entity.fullName = user.fullName
         entity.institution = user.institution
@@ -81,8 +81,8 @@ struct UserMapper {
     }
 }
 
-/// Domain User model
-struct User: Codable, Identifiable {
+/// Local User model for mapper operations
+struct UserModel: Codable, Identifiable {
     let id: String
     var email: String
     var fullName: String

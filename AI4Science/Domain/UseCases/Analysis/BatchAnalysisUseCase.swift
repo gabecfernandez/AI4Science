@@ -15,24 +15,24 @@ public actor BatchAnalysisUseCase: Sendable {
     ///   - modelId: ML model ID to use
     ///   - parameters: Analysis parameters
     /// - Returns: Array of analysis results
-    /// - Throws: AnalysisError if batch analysis fails
+    /// - Throws: ServiceAnalysisError if batch analysis fails
     public func execute(
         captureIds: [String],
         modelId: String,
-        parameters: AnalysisParameters
+        parameters: ServiceAnalysisParameters
     ) async throws -> [MLAnalysisResult] {
         guard !captureIds.isEmpty else {
-            throw AnalysisError.analysisNotFound
+            throw ServiceAnalysisError.analysisNotFound
         }
 
         guard !modelId.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw AnalysisError.modelNotFound
+            throw ServiceAnalysisError.modelNotFound
         }
 
         // Validate all capture IDs
         for captureId in captureIds {
             guard !captureId.trimmingCharacters(in: .whitespaces).isEmpty else {
-                throw AnalysisError.analysisNotFound
+                throw ServiceAnalysisError.analysisNotFound
             }
         }
 
@@ -43,10 +43,10 @@ public actor BatchAnalysisUseCase: Sendable {
                 parameters: parameters
             )
             return results
-        } catch let error as AnalysisError {
+        } catch let error as ServiceAnalysisError {
             throw error
         } catch {
-            throw AnalysisError.unknownError(error.localizedDescription)
+            throw ServiceAnalysisError.unknownError(error.localizedDescription)
         }
     }
 
@@ -87,7 +87,7 @@ public struct BatchStatistics: Sendable {
     public let averageConfidence: Double
     public let averageExecutionTime: TimeInterval
 
-    public init(
+    public nonisolated init(
         totalAnalyzed: Int,
         successCount: Int,
         failureCount: Int,

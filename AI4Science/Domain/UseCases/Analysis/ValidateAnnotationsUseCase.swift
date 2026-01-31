@@ -11,12 +11,12 @@ public struct ValidateAnnotationsUseCase: Sendable {
     /// - Parameters:
     ///   - findings: Array of findings to validate
     ///   - rules: Validation rules to apply
-    /// - Returns: ValidationResult with issues and recommendations
+    /// - Returns: AnnotationValidationResult with issues and recommendations
     /// - Throws: AnalysisError if validation fails
     public func execute(
-        findings: [Finding],
+        findings: [AnnotationFinding],
         rules: ValidationRules? = nil
-    ) async throws -> ValidationResult {
+    ) async throws -> AnnotationValidationResult {
         guard !findings.isEmpty else {
             throw AnalysisError.validationFailed("At least one finding is required.")
         }
@@ -24,7 +24,7 @@ public struct ValidateAnnotationsUseCase: Sendable {
         let validationRules = rules ?? ValidationRules()
         let issues = validateFindings(findings, with: validationRules)
 
-        return ValidationResult(
+        return AnnotationValidationResult(
             isValid: issues.isEmpty,
             issues: issues,
             totalFindingsChecked: findings.count,
@@ -47,16 +47,28 @@ public struct ValidateAnnotationsUseCase: Sendable {
         }
 
         let validationRules = rules ?? ValidationRules()
-        var individualResults: [String: ValidationResult] = [:]
+        var individualResults: [String: AnnotationValidationResult] = [:]
         var allIssues: [ValidationIssue] = []
 
         for result in results {
+            // Convert predictions to findings for validation
+            let findings = result.predictions.map { prediction in
+                AnnotationFinding(
+                    id: UUID().uuidString,
+                    label: prediction.className,
+                    confidence: Float(prediction.confidence),
+                    boundingBox: nil
+                )
+            }
+
+            guard !findings.isEmpty else { continue }
+
             do {
                 let validation = try await execute(
-                    findings: result.findings,
+                    findings: findings,
                     rules: validationRules
                 )
-                individualResults[result.id] = validation
+                individualResults[result.id.uuidString] = validation
                 allIssues.append(contentsOf: validation.issues)
             } catch {
                 print("Validation failed for result \(result.id): \(error)")
@@ -75,7 +87,7 @@ public struct ValidateAnnotationsUseCase: Sendable {
     // MARK: - Private Methods
 
     private func validateFindings(
-        _ findings: [Finding],
+        _ findings: [AnnotationFinding],
         with rules: ValidationRules
     ) -> [ValidationIssue] {
         var issues: [ValidationIssue] = []
@@ -148,7 +160,28 @@ public struct ValidateAnnotationsUseCase: Sendable {
 
 // MARK: - Supporting Types
 
-public struct ValidationResult: Sendable {
+/// A finding to be validated (distinct from ML predictions)
+public struct AnnotationFinding: Sendable {
+    public let id: String
+    public let label: String
+    public let confidence: Float
+    public let boundingBox: BoundingBox?
+
+    public init(
+        id: String,
+        label: String,
+        confidence: Float,
+        boundingBox: BoundingBox? = nil
+    ) {
+        self.id = id
+        self.label = label
+        self.confidence = confidence
+        self.boundingBox = boundingBox
+    }
+}
+
+/// Annotation validation result (distinct from MLModelValidator's ValidationResult)
+public struct AnnotationValidationResult: Sendable {
     public let isValid: Bool
     public let issues: [ValidationIssue]
     public let totalFindingsChecked: Int
@@ -225,7 +258,7 @@ public struct BatchValidationReport: Sendable {
     public let validCount: Int
     public let issuesFound: Int
     public let allIssues: [ValidationIssue]
-    public let individualResults: [String: ValidationResult]
+    public let individualResults: [String: AnnotationValidationResult]
 
     public var overallValidity: Float {
         guard totalAnalyzed > 0 else { return 1.0 }
@@ -237,7 +270,7 @@ public struct BatchValidationReport: Sendable {
         validCount: Int,
         issuesFound: Int,
         allIssues: [ValidationIssue],
-        individualResults: [String: ValidationResult]
+        individualResults: [String: AnnotationValidationResult]
     ) {
         self.totalAnalyzed = totalAnalyzed
         self.validCount = validCount

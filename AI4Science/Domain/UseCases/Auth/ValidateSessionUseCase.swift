@@ -11,27 +11,27 @@ public actor ValidateSessionUseCase: Sendable {
 
     /// Check if current session is valid
     /// - Returns: True if session is valid, false otherwise
-    /// - Throws: AuthError if validation fails
+    /// - Throws: ServiceAuthError if validation fails
     public func execute() async throws -> Bool {
         do {
             return try await authService.validateSession()
-        } catch let error as AuthError {
+        } catch let error as ServiceAuthError {
             throw error
         } catch {
-            throw AuthError.unknownError(error.localizedDescription)
+            throw ServiceAuthError.unknownError(error.localizedDescription)
         }
     }
 
     /// Get current authenticated session
     /// - Returns: Current authentication session or nil if not authenticated
-    /// - Throws: AuthError if retrieval fails
+    /// - Throws: ServiceAuthError if retrieval fails
     public func getCurrentSession() async throws -> AuthSession? {
         do {
             return try await authService.getCurrentSession()
-        } catch let error as AuthError {
+        } catch let error as ServiceAuthError {
             throw error
         } catch {
-            throw AuthError.unknownError(error.localizedDescription)
+            throw ServiceAuthError.unknownError(error.localizedDescription)
         }
     }
 

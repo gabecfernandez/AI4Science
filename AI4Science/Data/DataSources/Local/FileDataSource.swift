@@ -62,7 +62,7 @@ actor FileDataSource: Sendable {
         let fileURL = directory.appendingPathComponent(filename)
         try data.write(to: fileURL)
 
-        Logger.info("Saved file: \(fileURL.lastPathComponent)")
+        AppLogger.info("Saved file: \(fileURL.lastPathComponent)")
         return fileURL
     }
 
@@ -75,7 +75,7 @@ actor FileDataSource: Sendable {
         }
 
         let data = try Data(contentsOf: url)
-        Logger.info("Loaded file: \(url.lastPathComponent) (\(data.count) bytes)")
+        AppLogger.info("Loaded file: \(url.lastPathComponent) (\(data.count) bytes)")
         return data
     }
 
@@ -87,7 +87,7 @@ actor FileDataSource: Sendable {
         }
 
         try fileManager.removeItem(at: url)
-        Logger.info("Deleted file: \(url.lastPathComponent)")
+        AppLogger.info("Deleted file: \(url.lastPathComponent)")
     }
 
     /// Check if file exists
@@ -135,7 +135,7 @@ actor FileDataSource: Sendable {
             try fileManager.removeItem(at: fileURL)
         }
 
-        Logger.warning("Cleared directory: \(directory.lastPathComponent)")
+        AppLogger.warning("Cleared directory: \(directory.lastPathComponent)")
     }
 
     /// Get disk usage
@@ -174,7 +174,7 @@ actor FileDataSource: Sendable {
     ///   - destination: Destination file URL
     func copyFile(from source: URL, to destination: URL) async throws {
         try fileManager.copyItem(at: source, to: destination)
-        Logger.info("Copied file from \(source.lastPathComponent) to \(destination.lastPathComponent)")
+        AppLogger.info("Copied file from \(source.lastPathComponent) to \(destination.lastPathComponent)")
     }
 
     /// Move file
@@ -183,7 +183,7 @@ actor FileDataSource: Sendable {
     ///   - destination: Destination file URL
     func moveFile(from source: URL, to destination: URL) async throws {
         try fileManager.moveItem(at: source, to: destination)
-        Logger.info("Moved file from \(source.lastPathComponent) to \(destination.lastPathComponent)")
+        AppLogger.info("Moved file from \(source.lastPathComponent) to \(destination.lastPathComponent)")
     }
 }
 

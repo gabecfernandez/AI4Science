@@ -14,9 +14,9 @@ actor UserDefaultsDataSource: Sendable {
         self.userDefaults = UserDefaults(suiteName: suiteName) ?? .standard
     }
 
-    init(userDefaults: UserDefaults) {
+    init(userDefaults: UserDefaults, suiteName: String = "com.ai4science.app") {
         self.userDefaults = userDefaults
-        self.suiteName = userDefaults.suiteName ?? "com.ai4science.app"
+        self.suiteName = suiteName
     }
 
     // MARK: - Public Methods
@@ -201,7 +201,7 @@ actor UserDefaultsDataSource: Sendable {
         for key in userDefaults.dictionaryRepresentation().keys {
             userDefaults.removeObject(forKey: key)
         }
-        Logger.warning("UserDefaults cleared for \(suiteName)")
+        AppLogger.warning("UserDefaults cleared for \(suiteName)")
     }
 
     /// Get all stored keys

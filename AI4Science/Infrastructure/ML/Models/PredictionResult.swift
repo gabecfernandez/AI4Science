@@ -16,7 +16,7 @@ struct PredictionResult: Sendable, Codable {
     let output: PredictionOutput
 
     /// Model information
-    let modelInfo: ModelInfo
+    let modelInfo: PredictionModelInfo
 
     /// Confidence/score information
     let confidence: ConfidenceInfo
@@ -36,7 +36,7 @@ struct PredictionResult: Sendable, Codable {
         type: PredictionType,
         inputMetadata: InputMetadata,
         output: PredictionOutput,
-        modelInfo: ModelInfo,
+        modelInfo: PredictionModelInfo,
         confidence: ConfidenceInfo,
         inferenceTime: Int,
         metadata: [String: String]? = nil
@@ -159,8 +159,8 @@ enum PredictionValue: Sendable, Codable {
     case object([String: PredictionValue])
 }
 
-/// Model information for prediction
-struct ModelInfo: Sendable, Codable {
+/// Model information for prediction results
+struct PredictionModelInfo: Sendable, Codable {
     /// Name of the model
     let name: String
 
@@ -231,7 +231,7 @@ struct PredictionResultBuilder {
     private var type: PredictionType = .custom
     private var inputMetadata: InputMetadata?
     private var output: PredictionOutput?
-    private var modelInfo: ModelInfo?
+    private var modelInfo: PredictionModelInfo?
     private var confidence: ConfidenceInfo?
     private var inferenceTime: Int = 0
     private var metadata: [String: String]?
@@ -251,7 +251,7 @@ struct PredictionResultBuilder {
         return self
     }
 
-    mutating func setModel(_ info: ModelInfo) -> Self {
+    mutating func setModel(_ info: PredictionModelInfo) -> Self {
         self.modelInfo = info
         return self
     }

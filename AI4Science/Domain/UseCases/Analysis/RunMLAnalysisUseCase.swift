@@ -13,20 +13,20 @@ public actor RunMLAnalysisUseCase: Sendable {
     /// - Parameters:
     ///   - captureId: Capture ID to analyze
     ///   - modelId: ML model ID to use
-    ///   - parameters: Analysis parameters (threshold, options, priority)
+    ///   - parameters: Service analysis parameters (threshold, options, priority)
     /// - Returns: Analysis result with predictions
-    /// - Throws: AnalysisError if analysis fails
+    /// - Throws: ServiceAnalysisError if analysis fails
     public func execute(
         captureId: String,
         modelId: String,
-        parameters: AnalysisParameters
+        parameters: ServiceAnalysisParameters
     ) async throws -> MLAnalysisResult {
         guard !captureId.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw AnalysisError.analysisNotFound
+            throw ServiceAnalysisError.analysisNotFound
         }
 
         guard !modelId.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw AnalysisError.modelNotFound
+            throw ServiceAnalysisError.modelNotFound
         }
 
         do {
@@ -36,10 +36,10 @@ public actor RunMLAnalysisUseCase: Sendable {
                 parameters: parameters
             )
             return result
-        } catch let error as AnalysisError {
+        } catch let error as ServiceAnalysisError {
             throw error
         } catch {
-            throw AnalysisError.unknownError(error.localizedDescription)
+            throw ServiceAnalysisError.unknownError(error.localizedDescription)
         }
     }
 
@@ -47,12 +47,12 @@ public actor RunMLAnalysisUseCase: Sendable {
     /// - Parameters:
     ///   - threshold: Confidence threshold (0-1)
     ///   - priority: Processing priority
-    /// - Returns: Configured analysis parameters
+    /// - Returns: Configured service analysis parameters
     public func createParameters(
         threshold: Double? = nil,
         priority: ProcessingPriority = .normal
-    ) -> AnalysisParameters {
-        return AnalysisParameters(threshold: threshold, priority: priority)
+    ) -> ServiceAnalysisParameters {
+        return ServiceAnalysisParameters(threshold: threshold, options: [:], priority: priority)
     }
 
     /// Run analysis with high priority
@@ -60,7 +60,7 @@ public actor RunMLAnalysisUseCase: Sendable {
     ///   - captureId: Capture ID to analyze
     ///   - modelId: ML model ID to use
     /// - Returns: Analysis result
-    /// - Throws: AnalysisError if analysis fails
+    /// - Throws: ServiceAnalysisError if analysis fails
     public func executeHighPriority(
         captureId: String,
         modelId: String

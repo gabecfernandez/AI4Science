@@ -135,31 +135,31 @@ public actor Configuration {
 
     nonisolated public var endpoints: APIEndpoints {
         get async {
-            await instance.apiEndpoints
+            await Self.instance.apiEndpoints
         }
     }
 
     nonisolated public var network: NetworkConfig {
         get async {
-            await instance.networkConfig
+            await Self.instance.networkConfig
         }
     }
 
     nonisolated public var storage: StorageConfig {
         get async {
-            await instance.storageConfig
+            await Self.instance.storageConfig
         }
     }
 
     nonisolated public var features: FeatureFlags {
         get async {
-            await instance.featureFlags
+            await Self.instance.featureFlags
         }
     }
 
     nonisolated public var env: AppEnvironment {
         get async {
-            await instance.environment
+            await Self.instance.environment
         }
     }
 
@@ -220,19 +220,19 @@ public actor Configuration {
 
     nonisolated public var isDevelopment: Bool {
         get async {
-            await instance.environment == .development
+            await Self.instance.environment == .development
         }
     }
 
     nonisolated public var isStaging: Bool {
         get async {
-            await instance.environment == .staging
+            await Self.instance.environment == .staging
         }
     }
 
     nonisolated public var isProduction: Bool {
         get async {
-            await instance.environment == .production
+            await Self.instance.environment == .production
         }
     }
 }

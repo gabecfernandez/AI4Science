@@ -42,13 +42,13 @@ actor AROverlayService {
     }
 
     struct DefectInfo {
-        let severity: DefectSeverity
+        let severity: OverlaySeverity
         let location: SIMD3<Float>
         let extent: SIMD3<Float>
         let confidence: Float
         let description: String
 
-        enum DefectSeverity {
+        enum OverlaySeverity {
             case low
             case medium
             case high
@@ -102,7 +102,7 @@ actor AROverlayService {
         id: String,
         location: SIMD3<Float>,
         extent: SIMD3<Float>,
-        severity: DefectInfo.DefectSeverity,
+        severity: DefectInfo.OverlaySeverity,
         confidence: Float,
         description: String,
         in frame: ARFrame
@@ -331,7 +331,7 @@ actor AROverlayService {
     }
 }
 
-private extension AROverlayService.DefectInfo.DefectSeverity {
+private extension AROverlayService.DefectInfo.OverlaySeverity {
     var description: String {
         switch self {
         case .low:

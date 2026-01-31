@@ -57,7 +57,7 @@ final class CaptureEntity {
     @Relationship(deleteRule: .cascade, inverse: \AnalysisResultEntity.capture) var analysisResults: [AnalysisResultEntity] = []
 
     /// Relationship to capture metadata
-    @Relationship(deleteRule: .cascade) var captureMetadata: CaptureMetadata?
+    @Relationship(deleteRule: .cascade) var captureMetadata: CaptureMetadataEntity?
 
     /// Initialization
     init(
@@ -133,9 +133,9 @@ final class CaptureEntity {
     }
 }
 
-/// Capture metadata for additional information
+/// Capture metadata entity for SwiftData persistence
 @Model
-final class CaptureMetadata {
+final class CaptureMetadataEntity {
     var resolution: String?
     var bitDepth: Int?
     var colorSpace: String?

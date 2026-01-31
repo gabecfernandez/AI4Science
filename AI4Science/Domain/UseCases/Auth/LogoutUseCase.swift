@@ -2,13 +2,13 @@ import Foundation
 
 public struct LogoutUseCase: Sendable {
     private let authRepository: any AuthRepositoryProtocol
-    private let projectRepository: any ProjectRepositoryProtocol
-    private let captureRepository: any CaptureRepositoryProtocol
+    private let projectRepository: any LogoutProjectRepositoryProtocol
+    private let captureRepository: any LogoutCaptureRepositoryProtocol
 
     public init(
         authRepository: any AuthRepositoryProtocol,
-        projectRepository: any ProjectRepositoryProtocol,
-        captureRepository: any CaptureRepositoryProtocol
+        projectRepository: any LogoutProjectRepositoryProtocol,
+        captureRepository: any LogoutCaptureRepositoryProtocol
     ) {
         self.authRepository = authRepository
         self.projectRepository = projectRepository
@@ -48,10 +48,10 @@ public protocol AuthRepositoryProtocol: Sendable {
     func refreshToken(refreshToken: String) async throws -> AuthToken
 }
 
-public protocol ProjectRepositoryProtocol: Sendable {
+public protocol LogoutProjectRepositoryProtocol: Sendable {
     func clearLocalCache() async throws
 }
 
-public protocol CaptureRepositoryProtocol: Sendable {
+public protocol LogoutCaptureRepositoryProtocol: Sendable {
     func clearLocalCache() async throws
 }

@@ -73,29 +73,7 @@ actor UserRepository: UserRepositoryProtocol {
     }
 }
 
-/// Repository error types
-enum RepositoryError: LocalizedError {
-    case notFound
-    case saveFailed
-    case deleteFailed
-    case invalidData
-    case networkError
-
-    var errorDescription: String? {
-        switch self {
-        case .notFound:
-            return "Resource not found"
-        case .saveFailed:
-            return "Failed to save data"
-        case .deleteFailed:
-            return "Failed to delete data"
-        case .invalidData:
-            return "Invalid data"
-        case .networkError:
-            return "Network error occurred"
-        }
-    }
-}
+// Note: RepositoryError is defined in Core/Protocols/Repository.swift
 
 /// Factory for creating user repository
 struct UserRepositoryFactory {

@@ -3,22 +3,22 @@ import CoreGraphics
 
 /// Normalized bounding box representation
 /// Coordinates are normalized to 0-1 range relative to image dimensions
-struct BoundingBox: Codable, Sendable, Equatable {
+public struct BoundingBox: Codable, Sendable, Equatable {
     /// X coordinate (0-1, normalized)
-    let x: Float
+    public let x: Float
 
     /// Y coordinate (0-1, normalized)
-    let y: Float
+    public let y: Float
 
     /// Width (0-1, normalized)
-    let width: Float
+    public let width: Float
 
     /// Height (0-1, normalized)
-    let height: Float
+    public let height: Float
 
     // MARK: - Initialization
 
-    init(x: Float, y: Float, width: Float, height: Float) {
+    public init(x: Float, y: Float, width: Float, height: Float) {
         self.x = max(0, min(1, x))
         self.y = max(0, min(1, y))
         self.width = max(0, min(1 - x, width))
@@ -227,7 +227,7 @@ struct BoundingBox: Codable, Sendable, Equatable {
     // MARK: - Comparison
 
     /// Check equality
-    static func == (lhs: BoundingBox, rhs: BoundingBox) -> Bool {
+    public static func == (lhs: BoundingBox, rhs: BoundingBox) -> Bool {
         return abs(lhs.x - rhs.x) < 0.001 &&
                abs(lhs.y - rhs.y) < 0.001 &&
                abs(lhs.width - rhs.width) < 0.001 &&

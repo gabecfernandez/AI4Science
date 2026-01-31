@@ -32,7 +32,7 @@ public struct SyncDataUseCase: Sendable {
     /// - Throws: SyncError if sync fails
     public func execute(projectId: String) async throws -> SyncResult {
         guard !projectId.isEmpty else {
-            throw SyncError.validationFailed("Project ID is required.")
+            throw SyncUseCaseError.validationFailed("Project ID is required.")
         }
 
         let startTime = Date()
@@ -49,9 +49,9 @@ public struct SyncDataUseCase: Sendable {
     }
 
     /// Gets the current sync status
-    /// - Returns: SyncStatus with queue info
-    /// - Throws: SyncError if fetch fails
-    public func getStatus() async throws -> SyncStatus {
+    /// - Returns: SyncUseCaseStatus with queue info
+    /// - Throws: SyncUseCaseError if fetch fails
+    public func getStatus() async throws -> SyncUseCaseStatus {
         return try await syncRepository.getSyncStatus()
     }
 
@@ -108,7 +108,7 @@ public struct SyncResult: Sendable {
     }
 }
 
-public struct SyncStatus: Sendable {
+public struct SyncUseCaseStatus: Sendable {
     public let isSyncing: Bool
     public let queuedItemsCount: Int
     public let lastSyncTime: Date?
@@ -133,7 +133,7 @@ public struct SyncStatus: Sendable {
     }
 }
 
-public enum SyncError: LocalizedError, Sendable {
+public enum SyncUseCaseError: LocalizedError, Sendable {
     case validationFailed(String)
     case queueEmpty
     case syncInProgress
@@ -167,19 +167,19 @@ public enum SyncError: LocalizedError, Sendable {
 public protocol SyncRepositoryProtocol: Sendable {
     func syncAllData() async throws -> SyncResult
     func syncProject(projectId: String) async throws -> SyncResult
-    func getSyncStatus() async throws -> SyncStatus
+    func getSyncStatus() async throws -> SyncUseCaseStatus
     func pauseSync() async throws
     func resumeSync() async throws
     func queueItemForSync(_ item: SyncQueueItem) async throws
     func getQueuedItems() async throws -> [SyncQueueItem]
-    func resolveSyncConflict(conflict: SyncConflict, resolution: ConflictResolution) async throws
+    func resolveSyncConflict(conflictId: String, resolution: SyncResolutionType) async throws
 }
 
 public struct SyncQueueItem: Sendable {
     public let id: String
     public let type: SyncItemType
     public let resourceId: String
-    public let operation: SyncOperation
+    public let operation: SyncOperationType
     public let priority: Int
     public let addedAt: Date
     public let retryCount: Int
@@ -188,7 +188,7 @@ public struct SyncQueueItem: Sendable {
         id: String = UUID().uuidString,
         type: SyncItemType,
         resourceId: String,
-        operation: SyncOperation,
+        operation: SyncOperationType,
         priority: Int = 0,
         addedAt: Date = Date(),
         retryCount: Int = 0
@@ -210,8 +210,14 @@ public enum SyncItemType: Sendable {
     case annotation
 }
 
-public enum SyncOperation: Sendable {
+public enum SyncOperationType: Sendable {
     case create
     case update
     case delete
+}
+
+public enum SyncResolutionType: Sendable {
+    case useLocal
+    case useRemote
+    case merge
 }

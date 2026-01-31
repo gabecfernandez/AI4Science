@@ -13,7 +13,14 @@ public struct LabAffiliation: Identifiable, Codable, Sendable {
     public var createdAt: Date
     public var updatedAt: Date
 
-    public init(
+    /// Placeholder lab affiliation for cases where no lab is specified
+    public nonisolated(unsafe) static let placeholder = LabAffiliation(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!,
+        name: "Unknown Lab",
+        institution: "Unknown Institution"
+    )
+
+    public nonisolated init(
         id: UUID = UUID(),
         name: String,
         institution: String,

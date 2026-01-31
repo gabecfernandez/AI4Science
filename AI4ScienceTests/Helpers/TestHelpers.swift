@@ -44,16 +44,19 @@ enum TestDataGenerator {
 
     static func createProject(
         id: UUID = UUID(),
-        name: String = "Test Project",
-        ownerId: UUID = UUID(),
-        status: ProjectStatus = .active
+        title: String = "Test Project",
+        description: String = "A test project for unit testing",
+        status: ProjectStatus = .active,
+        principalInvestigatorID: UUID = UUID()
     ) -> Project {
         Project(
             id: id,
-            name: name,
-            description: "A test project for unit testing",
-            ownerId: ownerId,
+            title: title,
+            description: description,
             status: status,
+            principalInvestigatorID: principalInvestigatorID,
+            labAffiliation: createLabAffiliation(),
+            startDate: Date(),
             createdAt: Date(),
             updatedAt: Date()
         )
