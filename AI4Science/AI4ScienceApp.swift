@@ -130,12 +130,7 @@ struct MainTabView: View {
 
         TabView(selection: $selectedTab) {
             Tab("Projects", systemImage: "folder.fill", value: .projects) {
-                NavigationStack(path: $nav.projectsPath) {
-                    ProjectsListView()
-                        .navigationDestination(for: ProjectDestination.self) { destination in
-                            destination.view
-                        }
-                }
+                ProjectListView()
             }
 
             Tab("Capture", systemImage: "camera.fill", value: .capture) {
@@ -240,13 +235,6 @@ struct OnboardingFlowView: View {
 }
 
 // MARK: - Root Views for Each Tab
-
-struct ProjectsListView: View {
-    var body: some View {
-        Text("Projects")
-            .navigationTitle("Projects")
-    }
-}
 
 struct CaptureRootView: View {
     var body: some View {
