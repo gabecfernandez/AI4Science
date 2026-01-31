@@ -51,10 +51,8 @@ public struct PrimaryButton: View {
             .opacity(isLoading ? 0.8 : 1.0)
         }
         .disabled(!isEnabled || isLoading)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .accessibilityLabel(title)
-        .accessibilityHint(isLoading ? "Processing" : nil)
-        .accessibilityEnabled(isEnabled)
     }
 }
 

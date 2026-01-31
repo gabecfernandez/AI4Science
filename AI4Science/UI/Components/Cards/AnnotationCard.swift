@@ -24,7 +24,7 @@ public struct AnnotationCard: View {
             case .polygon: return IconAssets.polygon
             case .freehand: return IconAssets.paintbrush
             case .point: return IconAssets.circle
-            case .segmentation: return IconAssets.mask
+            case .segmentation: return IconAssets.chart
             }
         }
 
@@ -121,7 +121,7 @@ public struct AnnotationCard: View {
         )
         .shadow(Shadows.small)
         .onTapGesture(perform: onTap)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
     }
 
     private func formatTime(_ date: Date) -> String {

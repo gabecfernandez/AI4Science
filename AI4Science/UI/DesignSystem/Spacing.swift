@@ -49,23 +49,21 @@ public struct Spacing {
 // MARK: - Padding Modifiers
 extension View {
     /// Apply symmetric padding
+    @ViewBuilder
     public func paddingSymmetric(
         horizontal: CGFloat? = nil,
         vertical: CGFloat? = nil
     ) -> some View {
-        var paddings: [Edge.Set: CGFloat] = [:]
-        if let h = horizontal {
-            paddings[.horizontal] = h
+        switch (horizontal, vertical) {
+        case let (h?, v?):
+            self.padding(.horizontal, h).padding(.vertical, v)
+        case let (h?, nil):
+            self.padding(.horizontal, h)
+        case let (nil, v?):
+            self.padding(.vertical, v)
+        case (nil, nil):
+            self
         }
-        if let v = vertical {
-            paddings[.vertical] = v
-        }
-
-        var result: AnyView = AnyView(self)
-        for (edges, value) in paddings {
-            result = AnyView(result.padding(edges, value))
-        }
-        return result
     }
 
     /// Apply padding to specific edges

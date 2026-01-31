@@ -55,12 +55,10 @@ public struct FloatingActionButton: View {
             .shadow(Shadows.large)
         }
         .disabled(!isEnabled || isLoading)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .scaleEffect(isLoading ? 0.95 : 1.0)
         .opacity(isLoading ? 0.9 : 1.0)
         .accessibilityLabel(label ?? "Action")
-        .accessibilityHint(isLoading ? "Processing" : nil)
-        .accessibilityEnabled(isEnabled)
     }
 }
 

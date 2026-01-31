@@ -15,7 +15,7 @@ struct ProjectListView: View {
                 if let viewModel = viewModel {
                     projectContent(viewModel)
                 } else {
-                    LoadingView(message: "Loading...")
+                    LoadingView( "Loading...")
                 }
             }
             .navigationTitle("Projects")
@@ -58,7 +58,7 @@ struct ProjectListView: View {
             // Content
             if viewModel.isLoading && viewModel.projects.isEmpty {
                 Spacer()
-                LoadingView(message: "Loading projects...")
+                LoadingView( "Loading projects...")
                 Spacer()
             } else if viewModel.isEmpty {
                 emptyStateView

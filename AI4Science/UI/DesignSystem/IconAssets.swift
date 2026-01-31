@@ -114,6 +114,10 @@ public struct IconAssets {
     public static let battery = Image(systemName: "battery.100")
     public static let checkmark = Image(systemName: "checkmark")
     public static let menu = Image(systemName: "line.3.horizontal")
+    public static let lock = Image(systemName: "lock.fill")
+    public static let lockOutline = Image(systemName: "lock")
+    public static let clock = Image(systemName: "clock.fill")
+    public static let clockOutline = Image(systemName: "clock")
 
     // MARK: - File/Document Icons
     public static let document = Image(systemName: "doc.fill")

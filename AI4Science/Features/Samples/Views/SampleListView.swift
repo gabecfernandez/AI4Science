@@ -93,7 +93,7 @@ struct SampleListView: View {
                         VStack(spacing: 12) {
                             ForEach(filteredSamples) { sample in
                                 NavigationLink(value: sample) {
-                                    SampleCard(sample: sample)
+                                    SampleListItemCard(sample: sample)
                                 }
                             }
                         }
@@ -116,7 +116,7 @@ struct SampleListView: View {
     }
 }
 
-struct SampleCard: View {
+struct SampleListItemCard: View {
     let sample: SampleDisplayItem
 
     var body: some View {

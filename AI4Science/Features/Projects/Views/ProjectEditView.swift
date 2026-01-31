@@ -30,7 +30,7 @@ struct ProjectEditView: View {
                 if let viewModel = viewModel {
                     projectFormContent(viewModel)
                 } else {
-                    LoadingView(message: "Loading...")
+                    LoadingView( "Loading...")
                 }
             }
             .navigationTitle("Edit Project")
@@ -265,20 +265,7 @@ struct ProjectEditView: View {
     }
 }
 
-#Preview {
-    let mockProject = Project(
-        title: "Test Project",
-        description: "A test project description",
-        status: .active,
-        principalInvestigatorID: UUID(),
-        labAffiliation: LabAffiliation(name: "Test Lab", institution: "UTSA")
-    )
-
-    return ProjectEditView(
-        project: mockProject,
-        repository: ProjectRepositoryFactory.makeRepository(
-            modelContainer: try! ModelContainer(for: ProjectEntity.self)
-        ),
-        isPresented: .constant(true)
-    )
-}
+// Preview disabled - requires SwiftData container setup
+// #Preview {
+//     ProjectEditView(...)
+// }

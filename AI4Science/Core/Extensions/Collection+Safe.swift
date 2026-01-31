@@ -38,7 +38,7 @@ extension Array {
 
     /// Insert element safely
     public mutating func insertSafely(_ element: Element, at index: Int) {
-        let validIndex = max(0, min(index, count))
+        let validIndex = Swift.max(0, Swift.min(index, count))
         insert(element, at: validIndex)
     }
 
@@ -71,11 +71,11 @@ extension Array {
     }
 
     /// Transpose 2D array
-    public func transposed() -> [[Element]] where Element: Sequence {
+    public func transposed<T>() -> [[T]] where Element == [T] {
         guard let first = self.first else { return [] }
         let count = first.count
         return (0 ..< count).map { index in
-            compactMap { Array($0)[safe: index] }
+            compactMap { $0[safe: index] }
         }
     }
 }

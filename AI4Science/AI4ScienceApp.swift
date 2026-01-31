@@ -211,7 +211,7 @@ struct LaunchScreenView: View {
 
 struct AuthenticationFlowView: View {
     var body: some View {
-        LoginView()
+        AppLoginView()
     }
 }
 
@@ -227,7 +227,7 @@ struct OnboardingFlowView: View {
                 .font(Typography.body)
                 .foregroundStyle(.secondary)
 
-            PrimaryButton(title: "Get Started") {
+            PrimaryButton("Get Started") {
                 appState.authState = .authenticated
             }
         }
@@ -272,7 +272,7 @@ struct ProfileRootView: View {
     }
 }
 
-struct LoginView: View {
+struct AppLoginView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
@@ -288,7 +288,7 @@ struct LoginView: View {
                 .font(Typography.body)
                 .foregroundStyle(.secondary)
 
-            PrimaryButton(title: "Sign In (Demo)") {
+            PrimaryButton("Sign In (Demo)") {
                 appState.authState = .authenticated
             }
             .padding(.top, Spacing.xl)

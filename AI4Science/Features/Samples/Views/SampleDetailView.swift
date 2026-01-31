@@ -81,7 +81,7 @@ struct SampleDetailView: View {
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
+                            .contentShape(.rect)
                             .onTapGesture { selectedTab = tab }
                         }
                     }
@@ -125,7 +125,7 @@ struct SampleDetailView: View {
 }
 
 struct SampleDetailsContent: View {
-    let sample: SampleDisplayItemDisplayItem
+    let sample: SampleDisplayItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -160,7 +160,7 @@ struct SampleDetailsContent: View {
 }
 
 struct SampleImagesContent: View {
-    let sample: SampleDisplayItemDisplayItem
+    let sample: SampleDisplayItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -204,7 +204,7 @@ struct SampleImagesContent: View {
 }
 
 struct SampleAnalysisContent: View {
-    let sample: SampleDisplayItemDisplayItem
+    let sample: SampleDisplayItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

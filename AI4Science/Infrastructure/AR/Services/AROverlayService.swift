@@ -93,8 +93,8 @@ actor AROverlayService {
         let transform: simd_float4x4
     }
 
-    nonisolated init() {
-        // Empty init for actor
+    init() {
+        logger.info("AROverlayService initialized")
     }
 
     /// Create a defect overlay
@@ -130,7 +130,7 @@ actor AROverlayService {
 
         activeOverlays[id] = overlay
 
-        logger.info("Defect overlay created: \(id) with severity: \(severity.description)")
+        logger.info("Defect overlay created: \(id)")
         return overlay
     }
 
@@ -281,20 +281,22 @@ actor AROverlayService {
 
     /// Update overlay position
     func updateOverlayPosition(id: String, newPosition: SIMD3<Float>) throws {
-        guard var overlay = activeOverlays[id] else {
+        guard let overlay = activeOverlays[id] else {
             throw OverlayError.overlayNotFound
         }
 
-        var updatedAnchor = overlay.anchor
-        updatedAnchor.position = newPosition
-        overlay = AROverlay(
+        let updatedAnchor = AnchorData(
+            position: newPosition,
+            transform: overlay.anchor.transform
+        )
+        let updatedOverlay = AROverlay(
             id: overlay.id,
             type: overlay.type,
             anchor: updatedAnchor,
             isVisible: overlay.isVisible,
             createdAt: overlay.createdAt
         )
-        activeOverlays[id] = overlay
+        activeOverlays[id] = updatedOverlay
 
         logger.debug("Overlay \(id) position updated")
     }

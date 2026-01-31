@@ -2,9 +2,9 @@ import Foundation
 import os.log
 
 /// Download error types
-public enum DownloadError: LocalizedError {
+public enum MLDownloadError: LocalizedError {
     case invalidURL
-    case downloadFailed(URLError)
+    case downloadFailed(String)
     case validationFailed(String)
     case insufficientSpace
     case networkError(String)
@@ -15,7 +15,7 @@ public enum DownloadError: LocalizedError {
         case .invalidURL:
             return "Invalid download URL"
         case .downloadFailed(let error):
-            return "Download failed: \(error.localizedDescription)"
+            return "Download failed: \(error)"
         case .validationFailed(let reason):
             return "Downloaded file validation failed: \(reason)"
         case .insufficientSpace:
@@ -32,7 +32,7 @@ public enum DownloadError: LocalizedError {
 public typealias DownloadProgressCallback = @Sendable (Double) -> Void
 
 /// Download task information
-public struct DownloadTask: Sendable {
+public struct DownloadTaskInfo: Sendable {
     public let taskId: UUID
     public let modelId: String
     public let sourceURL: URL
@@ -58,30 +58,17 @@ public struct DownloadTask: Sendable {
 }
 
 /// Actor managing model downloads
-public actor MLModelDownloader: NSObject, URLSessionDelegate {
+public actor MLModelDownloader {
     private let logger = Logger(subsystem: "com.ai4science.ml", category: "MLModelDownloader")
 
-    /// Download session with delegate
-    private lazy var downloadSession: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 60
-        config.timeoutIntervalForResource = 3600 // 1 hour
-        config.waitsForConnectivity = true
-        return URLSession(configuration: config, delegate: self, delegateQueue: nil)
-    }()
-
-    /// Active downloads: [taskId: (task, progressCallback)]
-    private var activeDownloads: [UUID: (task: URLSessionDownloadTask, callback: DownloadProgressCallback?)] = [:]
-
     /// Download tasks info: [taskId: downloadTask]
-    private var downloadTasks: [UUID: DownloadTask] = [:]
+    private var downloadTasks: [UUID: DownloadTaskInfo] = [:]
 
-    /// Model validator
-    private let validator: MLModelValidator
+    /// Active URL tasks
+    private var activeURLTasks: [UUID: Task<String, Error>] = [:]
 
-    public nonisolated override init() {
-        self.validator = MLModelValidator()
-        super.init()
+    public init() {
+        logger.info("MLModelDownloader initialized")
     }
 
     /// Start downloading a model
@@ -94,7 +81,7 @@ public actor MLModelDownloader: NSObject, URLSessionDelegate {
     ) async throws -> String {
         // Validate URL
         guard sourceURL.scheme == "https" || sourceURL.scheme == "http" else {
-            throw DownloadError.invalidURL
+            throw MLDownloadError.invalidURL
         }
 
         // Check available space
@@ -103,30 +90,37 @@ public actor MLModelDownloader: NSObject, URLSessionDelegate {
         logger.info("Starting download for model: \(modelId)")
 
         let taskId = UUID()
-        let request = URLRequest(url: sourceURL, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
 
-        let downloadTask = downloadSession.downloadTask(with: request)
-        activeDownloads[taskId] = (downloadTask, progressCallback)
+        // Use URLSession async methods
+        let (downloadURL, response) = try await URLSession.shared.download(from: sourceURL)
 
-        downloadTask.resume()
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw MLDownloadError.downloadFailed("Invalid response")
+        }
 
-        // Wait for completion
-        let result = try await waitForDownloadCompletion(
-            taskId: taskId,
-            destinationPath: destinationPath,
-            checksumSHA256: checksumSHA256
-        )
+        // Move to destination
+        let destinationURL = URL(fileURLWithPath: destinationPath)
+        let fileManager = FileManager.default
 
-        return result
+        // Remove existing file if present
+        if fileManager.fileExists(atPath: destinationPath) {
+            try fileManager.removeItem(at: destinationURL)
+        }
+
+        try fileManager.moveItem(at: downloadURL, to: destinationURL)
+
+        logger.info("Download completed for model: \(modelId)")
+        return destinationPath
     }
 
     /// Cancel a download
     public func cancelDownload(taskId: UUID) throws {
-        guard let (downloadTask, _) = activeDownloads.removeValue(forKey: taskId) else {
-            throw DownloadError.downloadFailed(URLError(.unknown))
+        guard let task = activeURLTasks.removeValue(forKey: taskId) else {
+            throw MLDownloadError.downloadFailed("Task not found")
         }
 
-        downloadTask.cancel()
+        task.cancel()
         downloadTasks.removeValue(forKey: taskId)
         logger.info("Download cancelled: \(taskId)")
     }
@@ -137,7 +131,7 @@ public actor MLModelDownloader: NSObject, URLSessionDelegate {
     }
 
     /// Get all active downloads
-    public func getActiveDownloads() -> [DownloadTask] {
+    public func getActiveDownloads() -> [DownloadTaskInfo] {
         Array(downloadTasks.values)
     }
 
@@ -152,74 +146,7 @@ public actor MLModelDownloader: NSObject, URLSessionDelegate {
               let freeSpace = attributes[.systemFreeSize] as? Int64,
               freeSpace > 1024 * 1024 * 500 // At least 500MB
         else {
-            throw DownloadError.insufficientSpace
+            throw MLDownloadError.insufficientSpace
         }
-    }
-
-    private func waitForDownloadCompletion(
-        taskId: UUID,
-        destinationPath: String,
-        checksumSHA256: String?
-    ) async throws -> String {
-        // This is simplified - in production, use a more robust continuation mechanism
-        try? await Task.sleep(nanoseconds: 1)
-        return destinationPath
-    }
-
-    // MARK: - URLSessionDelegate
-
-    nonisolated public func urlSession(
-        _ session: URLSession,
-        downloadTask: URLSessionDownloadTask,
-        didFinishDownloadingTo location: URL
-    ) {
-        Task {
-            await handleDownloadCompletion(downloadTask: downloadTask, location: location)
-        }
-    }
-
-    nonisolated public func urlSession(
-        _ session: URLSession,
-        downloadTask: URLSessionDownloadTask,
-        didWriteData bytesWritten: Int64,
-        totalBytesWritten: Int64,
-        totalBytesExpectedToWrite: Int64
-    ) {
-        Task {
-            await updateDownloadProgress(
-                downloadTask: downloadTask,
-                totalBytesWritten: totalBytesWritten,
-                totalBytesExpectedToWrite: totalBytesExpectedToWrite
-            )
-        }
-    }
-
-    nonisolated public func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didCompleteWithError error: Error?
-    ) {
-        if let error = error {
-            Task {
-                await handleDownloadError(task: task, error: error)
-            }
-        }
-    }
-
-    private func handleDownloadCompletion(downloadTask: URLSessionDownloadTask, location: URL) {
-        logger.info("Download completed")
-    }
-
-    private func updateDownloadProgress(
-        downloadTask: URLSessionDownloadTask,
-        totalBytesWritten: Int64,
-        totalBytesExpectedToWrite: Int64
-    ) {
-        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-        logger.debug("Download progress: \(String(format: "%.1f", progress * 100))%")
-    }
-
-    private func handleDownloadError(task: URLSessionTask, error: Error) {
-        logger.error("Download error: \(error.localizedDescription)")
     }
 }

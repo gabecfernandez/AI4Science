@@ -77,8 +77,8 @@ public actor Configuration {
         }
     }
 
-    /// Feature flags
-    public struct FeatureFlags: Sendable {
+    /// Configuration-specific feature flags
+    public struct ConfigFeatureFlags: Sendable {
         public var enableOfflineMode: Bool
         public var enableAnalytics: Bool
         public var enableCrashReporting: Bool
@@ -108,7 +108,7 @@ public actor Configuration {
     private var apiEndpoints: APIEndpoints
     private var networkConfig: NetworkConfig
     private var storageConfig: StorageConfig
-    private var featureFlags: FeatureFlags
+    private var featureFlags: ConfigFeatureFlags
     private var environment: AppEnvironment
 
     private init() {
@@ -116,7 +116,7 @@ public actor Configuration {
         self.apiEndpoints = APIEndpoints(baseURL: URL(string: "https://api.ai4science.local")!)
         self.networkConfig = NetworkConfig()
         self.storageConfig = StorageConfig()
-        self.featureFlags = FeatureFlags()
+        self.featureFlags = ConfigFeatureFlags()
     }
 
     /// Get shared configuration instance
@@ -151,7 +151,7 @@ public actor Configuration {
         }
     }
 
-    nonisolated public var features: FeatureFlags {
+    nonisolated public var features: ConfigFeatureFlags {
         get async {
             await Self.instance.featureFlags
         }
@@ -181,11 +181,11 @@ public actor Configuration {
         self.storageConfig = config
     }
 
-    func setFeatureFlags(_ flags: FeatureFlags) {
+    func setFeatureFlags(_ flags: ConfigFeatureFlags) {
         self.featureFlags = flags
     }
 
-    func updateFeatureFlag(_ keyPath: WritableKeyPath<FeatureFlags, Bool>, to value: Bool) {
+    func updateFeatureFlag(_ keyPath: WritableKeyPath<ConfigFeatureFlags, Bool>, to value: Bool) {
         self.featureFlags[keyPath: keyPath] = value
     }
 

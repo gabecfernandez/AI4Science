@@ -2,6 +2,9 @@ import Foundation
 import CoreML
 import Vision
 
+// MARK: - Stub Implementation for Initial Build
+// TODO: Restore full implementation after initial build verification
+
 /// Protocol for wrapping different CoreML model types
 /// Provides unified interface for various ML models
 protocol MLModelWrapper: Sendable {
@@ -27,10 +30,7 @@ protocol MLModelWrapper: Sendable {
     var estimatedMemoryFootprint: Int { get }
 
     /// Perform inference on input
-    /// - Parameter input: MLFeatureProvider containing model input
-    /// - Returns: MLFeatureProvider with model output
-    /// - Throws: MLModelError if inference fails
-    func predict(from input: MLFeatureProvider) async throws -> MLFeatureProvider
+    func predict(from input: MLFeatureProvider) throws -> MLFeatureProvider
 }
 
 /// Supported ML model output types
@@ -65,19 +65,10 @@ enum MLOutputType: String, Sendable, Codable, CaseIterable {
 
 /// Model inference configuration
 struct ModelInferenceConfig: Sendable {
-    /// Maximum inference time in milliseconds
     let maxInferenceTime: Int = 5000
-
-    /// Whether to use GPU if available
     let useGPU: Bool = true
-
-    /// Whether to use Neural Engine if available
     let useNeuralEngine: Bool = true
-
-    /// Whether to cache results
     let cacheResults: Bool = false
-
-    /// Batch size for inference
     let batchSize: Int = 1
 }
 
@@ -105,16 +96,9 @@ struct ModelMetadata: Sendable, Codable {
 
 /// Model performance characteristics
 struct ModelPerformanceInfo: Sendable, Codable {
-    /// Average inference time in milliseconds
     let averageInferenceTime: Int
-
-    /// Memory used during inference in bytes
     let peakMemoryUsage: Int
-
-    /// Model accuracy percentage
     let accuracy: Float?
-
-    /// Precision of model
     let precision: ModelPrecision
 
     enum ModelPrecision: String, Codable {
@@ -125,8 +109,20 @@ struct ModelPerformanceInfo: Sendable, Codable {
     }
 }
 
-/// Base implementation for ML model wrappers
-class BaseMLModelWrapper: MLModelWrapper {
+/// ML model wrapper error
+enum MLModelWrapperError: LocalizedError {
+    case stubImplementation
+
+    var errorDescription: String? {
+        switch self {
+        case .stubImplementation:
+            return "Stub implementation - full inference not available"
+        }
+    }
+}
+
+/// Base implementation for ML model wrappers (stubbed)
+final class BaseMLModelWrapper: MLModelWrapper, @unchecked Sendable {
     let modelIdentifier: String
     let modelName: String
     let version: String
@@ -135,8 +131,9 @@ class BaseMLModelWrapper: MLModelWrapper {
     let requiresGPU: Bool
     let estimatedMemoryFootprint: Int
 
-    private let mlModel: MLModel
-    private let config: MLModelConfiguration
+    /// Using nonisolated(unsafe) for non-Sendable CoreML.MLModel
+    /// Safety: Access is controlled through this class
+    nonisolated(unsafe) private var mlModel: CoreML.MLModel?
 
     init(
         modelIdentifier: String,
@@ -146,8 +143,7 @@ class BaseMLModelWrapper: MLModelWrapper {
         supportedOutputTypes: [MLOutputType],
         requiresGPU: Bool = false,
         estimatedMemoryFootprint: Int = 50_000_000,
-        mlModel: MLModel,
-        config: MLModelConfiguration
+        mlModel: CoreML.MLModel
     ) {
         self.modelIdentifier = modelIdentifier
         self.modelName = modelName
@@ -157,80 +153,32 @@ class BaseMLModelWrapper: MLModelWrapper {
         self.requiresGPU = requiresGPU
         self.estimatedMemoryFootprint = estimatedMemoryFootprint
         self.mlModel = mlModel
-        self.config = config
     }
 
-    func predict(from input: MLFeatureProvider) async throws -> MLFeatureProvider {
-        return try mlModel.prediction(from: input)
+    nonisolated func predict(from input: MLFeatureProvider) throws -> MLFeatureProvider {
+        guard let model = mlModel else {
+            throw MLModelWrapperError.stubImplementation
+        }
+        return try model.prediction(from: input)
     }
 }
 
-/// Factory for creating model wrappers
+/// Factory for creating model wrappers (stubbed)
 struct MLModelWrapperFactory {
     /// Create wrapper for a loaded model
-    /// - Parameters:
-    ///   - model: Loaded MLModel
-    ///   - metadata: Model metadata
-    /// - Returns: MLModelWrapper instance
     static func createWrapper(
-        for model: MLModel,
+        for model: CoreML.MLModel,
         metadata: ModelMetadata
     ) -> MLModelWrapper {
-        let config = MLModelConfiguration()
-        config.computeUnits = .all
-
         return BaseMLModelWrapper(
             modelIdentifier: metadata.identifier,
             modelName: metadata.name,
             version: metadata.version,
-            inputSize: CGSize(width: 224, height: 224), // Default, should be detected
-            supportedOutputTypes: [], // Should be determined from model
+            inputSize: CGSize(width: 224, height: 224),
+            supportedOutputTypes: [],
             requiresGPU: metadata.supportedDevices.contains(.iPhone),
             estimatedMemoryFootprint: metadata.estimatedSize,
-            mlModel: model,
-            config: config
-        )
-    }
-
-    /// Create wrapper from model bundle
-    /// - Parameters:
-    ///   - modelName: Name of model in bundle
-    ///   - modelManager: MLModelManager for loading
-    /// - Returns: MLModelWrapper instance
-    /// - Throws: MLModelError if creation fails
-    static func createWrapper(
-        modelName: String,
-        modelManager: MLModelManager
-    ) async throws -> MLModelWrapper {
-        let model = try await modelManager.loadModel(named: modelName)
-
-        let config = MLModelConfiguration()
-        config.computeUnits = .all
-
-        // Extract input size from model
-        var inputSize = CGSize(width: 224, height: 224)
-        if let imageConstraint = model.modelDescription.inputDescriptionsByName.values.first?.imageConstraint {
-            inputSize = CGSize(width: imageConstraint.pixelsWide, height: imageConstraint.pixelsHigh)
-        }
-
-        // Determine output types from model outputs
-        var outputTypes: [MLOutputType] = []
-        if model.modelDescription.outputDescriptionsByName.keys.contains(where: { $0.contains("class") }) {
-            outputTypes.append(.classification)
-        }
-        if model.modelDescription.outputDescriptionsByName.keys.contains(where: { $0.contains("box") }) {
-            outputTypes.append(.objectDetection)
-        }
-
-        return BaseMLModelWrapper(
-            modelIdentifier: modelName,
-            modelName: modelName,
-            version: "1.0",
-            inputSize: inputSize,
-            supportedOutputTypes: outputTypes,
-            estimatedMemoryFootprint: 50_000_000,
-            mlModel: model,
-            config: config
+            mlModel: model
         )
     }
 }

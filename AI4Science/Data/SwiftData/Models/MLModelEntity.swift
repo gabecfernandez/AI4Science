@@ -90,6 +90,8 @@ final class MLModelEntity {
         self.framework = framework
         self.inputSpec = inputSpec
         self.outputSpec = outputSpec
+        self.createdAt = Date()
+        self.updatedAt = Date()
     }
 
     /// Update download status

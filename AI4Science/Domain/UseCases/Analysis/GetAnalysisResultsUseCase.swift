@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - Stub Implementation for Initial Build
+
 public struct GetAnalysisResultsUseCase: Sendable {
     private let analysisRepository: any AnalysisRepositoryProtocol
 
@@ -7,11 +9,8 @@ public struct GetAnalysisResultsUseCase: Sendable {
         self.analysisRepository = analysisRepository
     }
 
-    /// Fetches analysis history for a capture
-    /// - Parameter captureId: Capture identifier
-    /// - Returns: Sorted array of analysis results
-    /// - Throws: AnalysisError if fetch fails
-    public func execute(captureId: String) async throws -> [AnalysisResult] {
+    /// Fetches analysis history for a capture (stubbed)
+    public func execute(captureId: String) async throws -> [AnalysisUseCaseResult] {
         guard !captureId.isEmpty else {
             throw AnalysisError.validationFailed("Capture ID is required.")
         }
@@ -20,11 +19,8 @@ public struct GetAnalysisResultsUseCase: Sendable {
         return results.sorted { $0.createdAt > $1.createdAt }
     }
 
-    /// Gets a single analysis result
-    /// - Parameter id: Analysis result identifier
-    /// - Returns: AnalysisResult
-    /// - Throws: AnalysisError if fetch fails
-    public func getResult(id: String) async throws -> AnalysisResult {
+    /// Gets a single analysis result (stubbed)
+    public func getResult(id: String) async throws -> AnalysisUseCaseResult {
         guard !id.isEmpty else {
             throw AnalysisError.validationFailed("Analysis ID is required.")
         }
@@ -32,16 +28,11 @@ public struct GetAnalysisResultsUseCase: Sendable {
         return try await analysisRepository.getAnalysisResult(id: id)
     }
 
-    /// Filters analysis results by confidence threshold
-    /// - Parameters:
-    ///   - captureId: Capture identifier
-    ///   - minConfidence: Minimum confidence threshold
-    /// - Returns: Filtered analysis results
-    /// - Throws: AnalysisError if fetch fails
+    /// Filters analysis results by confidence threshold (stubbed)
     public func execute(
         captureId: String,
         minConfidence: Float
-    ) async throws -> [AnalysisResult] {
+    ) async throws -> [AnalysisUseCaseResult] {
         guard minConfidence >= 0 && minConfidence <= 1.0 else {
             throw AnalysisError.validationFailed("Confidence must be between 0 and 1.")
         }
@@ -50,10 +41,7 @@ public struct GetAnalysisResultsUseCase: Sendable {
         return results.filter { $0.confidence >= minConfidence }
     }
 
-    /// Gets analysis summary statistics
-    /// - Parameter captureId: Capture identifier
-    /// - Returns: Analysis statistics
-    /// - Throws: AnalysisError if calculation fails
+    /// Gets analysis summary statistics (stubbed)
     public func getStatistics(captureId: String) async throws -> AnalysisStatistics {
         guard !captureId.isEmpty else {
             throw AnalysisError.validationFailed("Capture ID is required.")
@@ -87,16 +75,13 @@ public struct GetAnalysisResultsUseCase: Sendable {
         )
     }
 
-    /// Compares analysis results across multiple captures
-    /// - Parameter captureIds: Array of capture identifiers
-    /// - Returns: Comparative analysis results
-    /// - Throws: AnalysisError if fetch fails
+    /// Compares analysis results across multiple captures (stubbed)
     public func compare(captureIds: [String]) async throws -> ComparativeAnalysis {
         guard !captureIds.isEmpty else {
             throw AnalysisError.validationFailed("At least one capture ID is required.")
         }
 
-        var allResults: [String: [AnalysisResult]] = [:]
+        var allResults: [String: [AnalysisUseCaseResult]] = [:]
 
         for captureId in captureIds {
             let results = try await execute(captureId: captureId)
@@ -138,7 +123,7 @@ public struct AnalysisStatistics: Sendable {
 }
 
 public struct ComparativeAnalysis: Sendable {
-    public let analysisResultsByCapture: [String: [AnalysisResult]]
+    public let analysisResultsByCapture: [String: [AnalysisUseCaseResult]]
 
     public var captureCount: Int {
         analysisResultsByCapture.count
@@ -156,7 +141,7 @@ public struct ComparativeAnalysis: Sendable {
         return allResults.reduce(0) { $0 + $1.confidence } / Float(allResults.count)
     }
 
-    public init(analysisResultsByCapture: [String: [AnalysisResult]]) {
+    public init(analysisResultsByCapture: [String: [AnalysisUseCaseResult]]) {
         self.analysisResultsByCapture = analysisResultsByCapture
     }
 }

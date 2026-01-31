@@ -18,7 +18,7 @@ public struct BoundingBox: Codable, Sendable, Equatable {
 
     // MARK: - Initialization
 
-    public init(x: Float, y: Float, width: Float, height: Float) {
+    public nonisolated init(x: Float, y: Float, width: Float, height: Float) {
         self.x = max(0, min(1, x))
         self.y = max(0, min(1, y))
         self.width = max(0, min(1 - x, width))

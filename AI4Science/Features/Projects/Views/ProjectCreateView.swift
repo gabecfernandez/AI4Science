@@ -26,7 +26,7 @@ struct ProjectCreateView: View {
                 if let viewModel = viewModel {
                     projectFormContent(viewModel)
                 } else {
-                    LoadingView(message: "Loading...")
+                    LoadingView( "Loading...")
                 }
             }
             .navigationTitle("Create Project")
@@ -234,11 +234,7 @@ struct ProjectCreateView: View {
     }
 }
 
-#Preview {
-    ProjectCreateView(
-        repository: ProjectRepositoryFactory.makeRepository(
-            modelContainer: try! ModelContainer(for: ProjectEntity.self)
-        ),
-        isPresented: .constant(true)
-    )
-}
+// Preview disabled - requires SwiftData container setup
+// #Preview {
+//     ProjectCreateView(...)
+// }

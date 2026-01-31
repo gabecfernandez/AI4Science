@@ -2,6 +2,7 @@ import Foundation
 import CoreML
 import CoreImage
 import Vision
+import UIKit
 import os.log
 
 /// Service for preprocessing images before ML inference
@@ -22,7 +23,7 @@ actor ImagePreprocessor {
     ///   - model: MLModel to determine input requirements
     /// - Returns: CVPixelBuffer ready for inference
     /// - Throws: MLModelError if preparation fails
-    func prepareImage(_ image: UIImage, for model: MLModel) async throws -> CVPixelBuffer {
+    func prepareImage(_ image: UIImage, for model: CoreML.MLModel) async throws -> CVPixelBuffer {
         // Get model input dimensions
         let modelInputDimensions = try getModelInputDimensions(model)
 
@@ -41,7 +42,7 @@ actor ImagePreprocessor {
     ///   - model: MLModel for dimension requirements
     /// - Returns: Array of CVPixelBuffer
     /// - Throws: MLModelError if any preparation fails
-    func prepareImages(_ images: [UIImage], for model: MLModel) async throws -> [CVPixelBuffer] {
+    func prepareImages(_ images: [UIImage], for model: CoreML.MLModel) async throws -> [CVPixelBuffer] {
         let modelInputDimensions = try getModelInputDimensions(model)
 
         var pixelBuffers: [CVPixelBuffer] = []
@@ -72,7 +73,7 @@ actor ImagePreprocessor {
             image.draw(in: CGRect(origin: .zero, size: targetSize))
         }
 
-        logger.debug("Resized image from \(image.size) to \(targetSize)")
+        logger.debug("Resized image from \(image.size.width)x\(image.size.height) to \(targetSize.width)x\(targetSize.height)")
 
         return resizedImage
     }
@@ -125,8 +126,8 @@ actor ImagePreprocessor {
             throw MLModelError.invalidInput
         }
 
-        CVPixelBufferLockBaseAddress(pixelBuffer, .readAndWrite)
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readAndWrite) }
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
 
         let pixelData = CVPixelBufferGetBaseAddress(pixelBuffer)
         let bytesPerPixel = 4
@@ -157,7 +158,9 @@ actor ImagePreprocessor {
     /// - Returns: UIImage representation
     func pixelBufferToImage(_ pixelBuffer: CVPixelBuffer) throws -> UIImage {
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let cgImage = try ciContext.createCGImage(ciImage, from: ciImage.extent)
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else {
+            throw MLModelError.invalidOutput
+        }
         return UIImage(cgImage: cgImage)
     }
 
@@ -190,8 +193,8 @@ actor ImagePreprocessor {
         mean: [Float],
         std: [Float]
     ) throws -> CVPixelBuffer {
-        CVPixelBufferLockBaseAddress(pixelBuffer, .readAndWrite)
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readAndWrite) }
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
 
         guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
             throw MLModelError.invalidInput
@@ -228,7 +231,7 @@ actor ImagePreprocessor {
     /// - Parameter model: MLModel to inspect
     /// - Returns: CGSize with input dimensions
     /// - Throws: MLModelError if dimensions cannot be determined
-    private func getModelInputDimensions(_ model: MLModel) throws -> CGSize {
+    private func getModelInputDimensions(_ model: CoreML.MLModel) throws -> CGSize {
         guard let modelDescription = model.modelDescription.inputDescriptionsByName.first?.value else {
             throw MLModelError.configurationError("Cannot determine model input dimensions")
         }

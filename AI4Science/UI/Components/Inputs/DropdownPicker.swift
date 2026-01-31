@@ -75,7 +75,7 @@ public struct DropdownPicker<T: Identifiable & Hashable>: View {
                                         .foregroundColor(ColorPalette.utsa_primary)
                                 }
                             }
-                            .contentShape(Rectangle())
+                            .contentShape(.rect)
                             .padding(.horizontal, Spacing.md)
                             .padding(.vertical, Spacing.sm)
                         }

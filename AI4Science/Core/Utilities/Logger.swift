@@ -3,6 +3,9 @@ import os.log
 
 /// Centralized logger using os.log
 public actor AppLogger {
+    // MARK: - Shared Instance Wrapper
+    public static let shared = AppLoggerShared()
+
     public enum Level: Sendable {
         case debug
         case info
@@ -12,6 +15,12 @@ public actor AppLogger {
     }
 
     private static let subsystem = "com.ai4science.ios"
+    private nonisolated(unsafe) static var configuredLevel: Level = .debug
+
+    /// Configure the minimum log level
+    public nonisolated static func configure(level: Level) {
+        configuredLevel = level
+    }
 
     public static func debug(_ message: String, subsystem: String? = nil) {
         log(message, level: .debug, subsystem: subsystem)
@@ -87,5 +96,29 @@ public actor AppLogger {
         case .error: "ERROR"
         case .fault: "FAULT"
         }
+    }
+}
+
+/// Non-actor wrapper for AppLogger that provides instance methods
+/// Use `AppLogger.shared` to access these methods
+public struct AppLoggerShared: Sendable {
+    public func debug(_ message: String) {
+        AppLogger.debug(message)
+    }
+
+    public func info(_ message: String) {
+        AppLogger.info(message)
+    }
+
+    public func warning(_ message: String) {
+        AppLogger.warning(message)
+    }
+
+    public func error(_ message: String) {
+        AppLogger.error(message)
+    }
+
+    public func fault(_ message: String) {
+        AppLogger.fault(message)
     }
 }

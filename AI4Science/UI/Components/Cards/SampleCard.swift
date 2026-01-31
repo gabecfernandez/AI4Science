@@ -58,16 +58,17 @@ public struct SampleCard: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             // Image Placeholder
-            RoundedRectangle(cornerRadius: BorderStyles.radiusSmall)
-                .fill(ColorPalette.surfaceVariant)
-                .frame(height: 120)
-                .overlay(
-                    if imageURL == nil {
-                        IconAssets.image
-                            .font(.system(size: 32))
-                            .foregroundColor(ColorPalette.onSurfaceVariant)
-                    }
-                )
+            ZStack {
+                RoundedRectangle(cornerRadius: BorderStyles.radiusSmall)
+                    .fill(ColorPalette.surfaceVariant)
+                    .frame(height: 120)
+
+                if imageURL == nil {
+                    IconAssets.image
+                        .font(.system(size: 32))
+                        .foregroundColor(ColorPalette.onSurfaceVariant)
+                }
+            }
 
             // Content
             VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -125,7 +126,7 @@ public struct SampleCard: View {
         )
         .shadow(Shadows.small)
         .onTapGesture(perform: onTap)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
     }
 
     private func formatTime(_ date: Date) -> String {

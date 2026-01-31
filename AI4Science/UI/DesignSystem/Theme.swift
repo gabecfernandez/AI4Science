@@ -84,8 +84,7 @@ public struct ThemePreview: View {
                     HStack(spacing: Spacing.sm) {
                         ForEach([4, 8, 12, 16, 24], id: \.self) { size in
                             VStack {
-                                Rectangle()
-                                    .fill(ColorPalette.utsa_primary)
+                                ColorPalette.utsa_primary
                                     .frame(width: CGFloat(size), height: CGFloat(size))
 
                                 Text("\(size)").font(.caption)

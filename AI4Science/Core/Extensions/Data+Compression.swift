@@ -2,21 +2,24 @@ import Foundation
 import Compression
 
 extension Data {
-    /// Compress data using COMPRESSION_ZSTD algorithm
+    /// Compress data using COMPRESSION_LZFSE algorithm
     public func compressed() throws -> Data {
         guard count > 0 else { return self }
 
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: count)
         defer { buffer.deallocate() }
 
-        let compressedSize = withUnsafeBytes { inputBytes in
-            compression_encode_buffer(
+        let compressedSize = withUnsafeBytes { (inputBytes: UnsafeRawBufferPointer) -> Int in
+            guard let inputPointer = inputBytes.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
+                return 0
+            }
+            return compression_encode_buffer(
                 buffer,
                 count,
-                inputBytes.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? buffer,
+                inputPointer,
                 count,
                 nil,
-                COMPRESSION_ZSTD
+                COMPRESSION_LZFSE
             )
         }
 
@@ -34,14 +37,17 @@ extension Data {
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: count * 2)
         defer { buffer.deallocate() }
 
-        let decompressedSize = withUnsafeBytes { inputBytes in
-            compression_decode_buffer(
+        let decompressedSize = withUnsafeBytes { (inputBytes: UnsafeRawBufferPointer) -> Int in
+            guard let inputPointer = inputBytes.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
+                return 0
+            }
+            return compression_decode_buffer(
                 buffer,
                 count * 2,
-                inputBytes.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? buffer,
+                inputPointer,
                 count,
                 nil,
-                COMPRESSION_ZSTD
+                COMPRESSION_LZFSE
             )
         }
 

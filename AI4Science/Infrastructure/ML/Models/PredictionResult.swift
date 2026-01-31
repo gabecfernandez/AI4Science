@@ -202,11 +202,12 @@ struct ConfidenceInfo: Sendable, Codable {
             self.minimum = 0
             self.standardDeviation = 0
         } else {
-            self.average = scores.reduce(0, +) / Float(scores.count)
+            let avg = scores.reduce(0, +) / Float(scores.count)
+            self.average = avg
             self.maximum = scores.max() ?? 0
             self.minimum = scores.min() ?? 0
 
-            let variance = scores.map { pow($0 - average, 2) }.reduce(0, +) / Float(scores.count)
+            let variance = scores.map { pow($0 - avg, 2) }.reduce(0, +) / Float(scores.count)
             self.standardDeviation = sqrt(variance)
         }
     }

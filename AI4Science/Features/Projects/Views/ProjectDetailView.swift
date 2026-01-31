@@ -28,14 +28,14 @@ struct ProjectDetailView: View {
 
             if let viewModel = viewModel {
                 if viewModel.isLoading && viewModel.project == nil {
-                    LoadingView(message: "Loading project...")
+                    LoadingView( "Loading project...")
                 } else if let project = viewModel.project {
                     projectContent(project: project, viewModel: viewModel)
                 } else {
                     errorView(viewModel)
                 }
             } else {
-                LoadingView(message: "Loading...")
+                LoadingView( "Loading...")
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -178,8 +178,7 @@ struct ProjectDetailView: View {
                             .fontWeight(selectedTab == tab ? .semibold : .regular)
                             .foregroundColor(selectedTab == tab ? ColorPalette.utsa_primary : ColorPalette.onSurfaceVariant)
 
-                        Rectangle()
-                            .fill(selectedTab == tab ? ColorPalette.utsa_primary : Color.clear)
+                        (selectedTab == tab ? ColorPalette.utsa_primary : Color.clear)
                             .frame(height: 2)
                     }
                 }
@@ -420,13 +419,7 @@ struct FlowLayout: Layout {
     }
 }
 
-#Preview {
-    NavigationStack {
-        ProjectDetailView(
-            projectId: UUID(),
-            repository: ProjectRepositoryFactory.makeRepository(
-                modelContainer: try! ModelContainer(for: ProjectEntity.self)
-            )
-        )
-    }
-}
+// Preview disabled - requires SwiftData container setup
+// #Preview {
+//     ProjectDetailView(...)
+// }
