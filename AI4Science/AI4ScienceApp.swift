@@ -79,6 +79,10 @@ struct AI4ScienceApp: App {
     private func initializeApp() async {
         AppLogger.shared.info("Starting app initialization")
 
+        // Seed sample data if database is empty (development/demo only)
+        let context = modelContainer.mainContext
+        await SampleDataSeeder.seedIfEmpty(modelContext: context)
+
         // Check authentication state
         await appState.checkAuthenticationState()
 
