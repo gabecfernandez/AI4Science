@@ -202,23 +202,6 @@ struct SampleCard: View {
     }
 }
 
-struct Sample: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let type: String
-    let date: Date
-    let imageCount: Int
-    let hasAnalysis: Bool
-    let analysisStatus: AnalysisStatus
-
-    enum AnalysisStatus: String {
-        case pending = "Pending"
-        case processing = "Processing"
-        case completed = "Completed"
-        case error = "Error"
-    }
-}
-
 #Preview {
     NavigationStack {
         SampleListView(projectID: "1")

@@ -35,8 +35,7 @@ public struct DownloadMLModelUseCase: Sendable {
 
         // Download models in parallel
         let downloadResults = try await withThrowingTaskGroup(
-            of: (String, ModelDownloadProgress?).self,
-            returning: [(String, ModelDownloadProgress?)]
+            of: (String, ModelDownloadProgress?).self
         ) { taskGroup in
             for modelId in modelIds {
                 taskGroup.addTask {

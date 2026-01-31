@@ -271,16 +271,6 @@ actor ResultPostprocessor {
 
 // MARK: - Supporting Types
 
-/// Type representing defects for safe array indexing
-enum DefectType: String, CaseIterable {
-    case crack
-    case scratch
-    case dent
-    case corrosion
-    case discoloration
-    case unknown
-}
-
 /// Extended result types
 struct SegmentationResult: Sendable {
     let classMap: [[Int]]

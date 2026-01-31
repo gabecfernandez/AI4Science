@@ -1,9 +1,14 @@
 import Foundation
 
-public struct SaveCaptureUseCase: Sendable {
-    private let captureRepository: any CaptureRepositoryProtocol
+/// Minimal repository protocol for saving captures
+public protocol SaveCaptureRepositoryProtocol: Sendable {
+    func saveCapture(projectId: String, type: CaptureType, data: Data, metadata: CaptureMetadata) async throws -> Capture
+}
 
-    public init(captureRepository: any CaptureRepositoryProtocol) {
+public struct SaveCaptureUseCase: Sendable {
+    private let captureRepository: any SaveCaptureRepositoryProtocol
+
+    public init(captureRepository: any SaveCaptureRepositoryProtocol) {
         self.captureRepository = captureRepository
     }
 
@@ -23,11 +28,11 @@ public struct SaveCaptureUseCase: Sendable {
     ) async throws -> Capture {
         // Validate inputs
         guard !projectId.isEmpty else {
-            throw CaptureError.validationFailed("Project ID is required.")
+            throw CaptureError.captureFailure("Project ID is required.")
         }
 
         guard !data.isEmpty else {
-            throw CaptureError.validationFailed("Capture data is empty.")
+            throw CaptureError.captureFailure("Capture data is empty.")
         }
 
         // Save through repository
@@ -52,11 +57,11 @@ public struct SaveCaptureUseCase: Sendable {
         captures: [BatchCaptureData]
     ) async throws -> BatchSaveResult {
         guard !projectId.isEmpty else {
-            throw CaptureError.validationFailed("Project ID is required.")
+            throw CaptureError.captureFailure("Project ID is required.")
         }
 
         guard !captures.isEmpty else {
-            throw CaptureError.validationFailed("At least one capture is required.")
+            throw CaptureError.captureFailure("At least one capture is required.")
         }
 
         var successCount = 0

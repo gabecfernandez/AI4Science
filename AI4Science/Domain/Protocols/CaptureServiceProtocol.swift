@@ -25,84 +25,6 @@ public protocol CaptureServiceProtocol: Sendable {
     func updateCapture(_ request: UpdateCaptureRequest) async throws -> Capture
 }
 
-/// Capture domain model
-public struct Capture: Sendable {
-    public let id: String
-    public let sampleId: String
-    public let projectId: String
-    public let type: CaptureType
-    public let fileUrl: String
-    public let thumbnailUrl: String?
-    public let createdAt: Date
-    public let updatedAt: Date
-    public let metadata: CaptureMetadata
-    public let processingStatus: ProcessingStatus
-    public let analysisResults: [AnalysisResult]
-
-    public init(
-        id: String,
-        sampleId: String,
-        projectId: String,
-        type: CaptureType,
-        fileUrl: String,
-        thumbnailUrl: String?,
-        createdAt: Date,
-        updatedAt: Date,
-        metadata: CaptureMetadata,
-        processingStatus: ProcessingStatus,
-        analysisResults: [AnalysisResult]
-    ) {
-        self.id = id
-        self.sampleId = sampleId
-        self.projectId = projectId
-        self.type = type
-        self.fileUrl = fileUrl
-        self.thumbnailUrl = thumbnailUrl
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-        self.metadata = metadata
-        self.processingStatus = processingStatus
-        self.analysisResults = analysisResults
-    }
-}
-
-/// Capture type
-public enum CaptureType: String, Sendable {
-    case photo
-    case video
-    case scan
-    case microscopy
-}
-
-/// Capture metadata
-public struct CaptureMetadata: Sendable {
-    public let deviceInfo: String
-    public let location: CaptureLocation?
-    public let lighting: LightingCondition?
-    public let scale: Double?
-    public let notes: String?
-    public let tags: [String]
-    public let customFields: [String: String]
-
-    public init(
-        deviceInfo: String,
-        location: CaptureLocation? = nil,
-        lighting: LightingCondition? = nil,
-        scale: Double? = nil,
-        notes: String? = nil,
-        tags: [String] = [],
-        customFields: [String: String] = [:]
-    ) {
-        self.deviceInfo = deviceInfo
-        self.location = location
-        self.lighting = lighting
-        self.scale = scale
-        self.notes = notes
-        self.tags = tags
-        self.customFields = customFields
-    }
-}
-
 /// Capture location
 public struct CaptureLocation: Sendable {
     public let latitude: Double
@@ -132,21 +54,6 @@ public enum ProcessingStatus: String, Sendable {
     case completed
     case failed
     case cancelled
-}
-
-/// Analysis result
-public struct AnalysisResult: Sendable {
-    public let id: String
-    public let modelName: String
-    public let timestamp: Date
-    public let data: [String: AnyCodable]
-
-    public init(id: String, modelName: String, timestamp: Date, data: [String: AnyCodable]) {
-        self.id = id
-        self.modelName = modelName
-        self.timestamp = timestamp
-        self.data = data
-    }
 }
 
 /// Type-erased Codable value

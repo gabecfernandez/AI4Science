@@ -18,11 +18,11 @@ public struct QueueForSyncUseCase: Sendable {
     public func execute(
         type: SyncItemType,
         resourceId: String,
-        operation: SyncOperation,
+        operation: SyncOperationType,
         priority: Int = 0
     ) async throws -> SyncQueueItem {
         guard !resourceId.isEmpty else {
-            throw SyncError.validationFailed("Resource ID is required.")
+            throw SyncUseCaseError.validationFailed("Resource ID is required.")
         }
 
         let item = SyncQueueItem(
@@ -42,7 +42,7 @@ public struct QueueForSyncUseCase: Sendable {
     /// - Throws: SyncError if queuing fails
     public func queueBatch(_ items: [SyncQueueItem]) async throws -> [SyncQueueItem] {
         guard !items.isEmpty else {
-            throw SyncError.validationFailed("At least one item is required.")
+            throw SyncUseCaseError.validationFailed("At least one item is required.")
         }
 
         var queuedItems: [SyncQueueItem] = []
@@ -106,14 +106,14 @@ public struct QueueForSyncUseCase: Sendable {
 public struct QueueStatistics: Sendable {
     public let totalItems: Int
     public let itemsByType: [SyncItemType: Int]
-    public let itemsByOperation: [SyncOperation: Int]
+    public let itemsByOperation: [SyncOperationType: Int]
     public let averageRetryCount: Int
     public let oldestItemAge: TimeInterval
 
     public init(
         totalItems: Int,
         itemsByType: [SyncItemType: Int],
-        itemsByOperation: [SyncOperation: Int],
+        itemsByOperation: [SyncOperationType: Int],
         averageRetryCount: Int,
         oldestItemAge: TimeInterval
     ) {

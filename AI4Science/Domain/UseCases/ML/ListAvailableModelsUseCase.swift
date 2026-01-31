@@ -8,11 +8,11 @@ public struct ListAvailableModelsUseCase: Sendable {
     }
 
     /// Lists all available ML models
-    /// - Returns: Array of ModelInfo sorted by relevance
+    /// - Returns: Array of ModelInfo sorted by name
     /// - Throws: MLError if fetch fails
     public func execute() async throws -> [ModelInfo] {
         let models = try await mlRepository.listAvailableModels()
-        return models.sorted { $0.accuracy > $1.accuracy }
+        return models.sorted { $0.name < $1.name }
     }
 
     /// Filters models by type
@@ -24,35 +24,30 @@ public struct ListAvailableModelsUseCase: Sendable {
         return allModels.filter { matchesType($0, type: type) }
     }
 
-    /// Filters models by compatibility
-    /// - Parameter deviceModel: Device model string
+    /// Filters models by minimum iOS version compatibility
+    /// - Parameter minIOSVersion: Minimum iOS version string
     /// - Returns: Compatible models
     /// - Throws: MLError if fetch fails
-    public func execute(compatibleWith deviceModel: String) async throws -> [ModelInfo] {
+    public func execute(compatibleWith minIOSVersion: String) async throws -> [ModelInfo] {
         let allModels = try await execute()
-        return allModels.filter { $0.compatibility.contains(deviceModel) }
+        return allModels.filter { $0.minimumIOSVersion <= minIOSVersion }
     }
 
     /// Filters models by size constraints
     /// - Parameter maxSizeInBytes: Maximum model size
     /// - Returns: Models within size limit
     /// - Throws: MLError if fetch fails
-    public func execute(maxSize maxSizeInBytes: Int) async throws -> [ModelInfo] {
+    public func execute(maxSize maxSizeInBytes: UInt64) async throws -> [ModelInfo] {
         let allModels = try await execute()
-        return allModels.filter { $0.sizeInBytes <= maxSizeInBytes }
+        return allModels.filter { $0.sizeBytes <= maxSizeInBytes }
     }
 
-    /// Filters models by minimum accuracy
-    /// - Parameter minAccuracy: Minimum accuracy threshold (0.0 to 1.0)
-    /// - Returns: Models meeting accuracy threshold
+    /// Filters models that are required
+    /// - Returns: Required models
     /// - Throws: MLError if fetch fails
-    public func execute(minAccuracy: Float) async throws -> [ModelInfo] {
-        guard minAccuracy >= 0 && minAccuracy <= 1.0 else {
-            throw MLError.validationFailed("Accuracy must be between 0 and 1.")
-        }
-
+    public func executeRequired() async throws -> [ModelInfo] {
         let allModels = try await execute()
-        return allModels.filter { $0.accuracy >= minAccuracy }
+        return allModels.filter { $0.isRequired }
     }
 
     /// Searches models by name or description
@@ -69,7 +64,7 @@ public struct ListAvailableModelsUseCase: Sendable {
 
         return allModels.filter { model in
             model.name.lowercased().contains(searchQuery) ||
-            model.description.lowercased().contains(searchQuery)
+            model.id.lowercased().contains(searchQuery)
         }
     }
 
@@ -85,12 +80,12 @@ public struct ListAvailableModelsUseCase: Sendable {
             case .microscopy:
                 return model.type == .objectDetection || model.type == .segmentation
             case .spectroscopy:
-                return model.type == .imageClassification
+                return model.type == .classification
             case .general:
                 return true
             }
         }
-        .sorted { $0.accuracy > $1.accuracy }
+        .sorted { $0.name < $1.name }
         .prefix(5)
         .map { $0 }
     }
@@ -98,18 +93,7 @@ public struct ListAvailableModelsUseCase: Sendable {
     // MARK: - Private Methods
 
     private func matchesType(_ model: ModelInfo, type: ModelType) -> Bool {
-        switch (model.type, type) {
-        case (.objectDetection, .objectDetection):
-            return true
-        case (.imageClassification, .imageClassification):
-            return true
-        case (.segmentation, .segmentation):
-            return true
-        case (.customModel, .customModel):
-            return true
-        default:
-            return false
-        }
+        model.type == type
     }
 }
 
@@ -134,21 +118,18 @@ public enum ResearchUseCase: Sendable {
 
 public struct ModelFilterOptions: Sendable {
     public var type: ModelType?
-    public var maxSize: Int?
-    public var minAccuracy: Float?
+    public var maxSize: UInt64?
     public var deviceModel: String?
     public var sortBy: ModelSortOption
 
     public init(
         type: ModelType? = nil,
-        maxSize: Int? = nil,
-        minAccuracy: Float? = nil,
+        maxSize: UInt64? = nil,
         deviceModel: String? = nil,
         sortBy: ModelSortOption = .accuracy
     ) {
         self.type = type
         self.maxSize = maxSize
-        self.minAccuracy = minAccuracy
         self.deviceModel = deviceModel
         self.sortBy = sortBy
     }
@@ -173,7 +154,7 @@ public struct ModelCatalog: Sendable {
     }
 
     public var classificationModels: [ModelInfo] {
-        models.filter { $0.type == .imageClassification }
+        models.filter { $0.type == .classification }
     }
 
     public var segmentationModels: [ModelInfo] {

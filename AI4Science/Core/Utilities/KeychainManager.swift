@@ -39,7 +39,7 @@ public actor KeychainManager: Sendable {
     }
 
     public func retrieve(for key: String) throws -> String {
-        let data = try retrieve(for: key)
+        let data: Data = try retrieve(for: key)
         guard let string = String(data: data, encoding: .utf8) else {
             throw KeychainError.invalidData
         }

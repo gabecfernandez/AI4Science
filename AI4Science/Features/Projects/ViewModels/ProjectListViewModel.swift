@@ -3,86 +3,57 @@ import Observation
 
 @Observable
 @MainActor
-final class ProjectListViewModel {
+final class ProjectsViewModel {
     var projects: [Project] = []
+    var filterStatus: ProjectStatus? = nil
+    var searchText: String = ""
     var isLoading = false
-    var errorMessage = ""
     var showError = false
-    var searchText = ""
+    var errorMessage = ""
+
+    private let repository: any ProjectRepositoryProtocol
+
+    init(repository: any ProjectRepositoryProtocol) {
+        self.repository = repository
+    }
+
+    var filteredProjects: [Project] {
+        var result = projects
+        if let status = filterStatus {
+            result = result.filter { $0.status == status }
+        }
+        if !searchText.isEmpty {
+            let lower = searchText.lowercased()
+            result = result.filter {
+                $0.name.lowercased().contains(lower) ||
+                $0.description.lowercased().contains(lower)
+            }
+        }
+        return result
+    }
 
     func loadProjects() async {
         isLoading = true
         defer { isLoading = false }
-
         do {
-            // Simulate API call
-            try await Task.sleep(nanoseconds: 2_000_000_000)
-
-            // Create sample projects
-            projects = [
-                Project(
-                    id: "1",
-                    name: "Materials Analysis 2024",
-                    description: "Comprehensive analysis of novel composite materials",
-                    status: .active,
-                    sampleCount: 24,
-                    memberCount: 5,
-                    createdDate: Date().addingTimeInterval(-86400 * 30)
-                ),
-                Project(
-                    id: "2",
-                    name: "Protein Structure Study",
-                    description: "AI-driven protein folding predictions",
-                    status: .active,
-                    sampleCount: 15,
-                    memberCount: 3,
-                    createdDate: Date().addingTimeInterval(-86400 * 60)
-                ),
-                Project(
-                    id: "3",
-                    name: "Crystal Growth Optimization",
-                    description: "Testing growth parameters for semiconductor crystals",
-                    status: .paused,
-                    sampleCount: 8,
-                    memberCount: 2,
-                    createdDate: Date().addingTimeInterval(-86400 * 90)
-                )
-            ]
+            projects = try await repository.findAll()
         } catch {
             errorMessage = "Failed to load projects"
             showError = true
         }
     }
 
-    func deleteProject(_ projectID: String) async {
-        isLoading = true
-        defer { isLoading = false }
-
+    func deleteProject(id: UUID) async {
         do {
-            // Simulate API call
-            try await Task.sleep(nanoseconds: 1_500_000_000)
-
-            projects.removeAll { $0.id == projectID }
+            try await repository.delete(id)
+            projects.removeAll { $0.id == id }
         } catch {
             errorMessage = "Failed to delete project"
             showError = true
         }
     }
 
-    func archiveProject(_ projectID: String) async {
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            // Simulate API call
-            try await Task.sleep(nanoseconds: 1_500_000_000)
-
-            if let index = projects.firstIndex(where: { $0.id == projectID }) {
-                // Update project status
-            }
-        } catch {
-            errorMessage = "Failed to archive project"
-            showError = true
-        }
+    func refresh() async {
+        await loadProjects()
     }
 }

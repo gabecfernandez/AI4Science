@@ -61,11 +61,10 @@ actor ModelDownloadService {
 
         activeDownloads[modelName] = task
 
-        do {
-            try await task.value
-        } finally {
+        defer {
             activeDownloads.removeValue(forKey: modelName)
         }
+        try await task.value
     }
 
     /// Download multiple models concurrently

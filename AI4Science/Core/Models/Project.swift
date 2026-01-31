@@ -1,88 +1,102 @@
 import Foundation
 
-/// Status of a research project
-@frozen
+// MARK: - ProjectStatus
+
 public enum ProjectStatus: String, Codable, Sendable, CaseIterable {
-    case planning
+    case draft
     case active
-    case onHold = "on_hold"
+    case paused
     case completed
     case archived
+
+    public var displayName: String {
+        switch self {
+        case .draft:      return "Draft"
+        case .active:     return "Active"
+        case .paused:     return "Paused"
+        case .completed:  return "Completed"
+        case .archived:   return "Archived"
+        }
+    }
 }
 
-/// Represents a research project
+// MARK: - Project
+
 public struct Project: Identifiable, Codable, Sendable {
     public let id: UUID
-    public var title: String
+    public var name: String
     public var description: String
+    public var ownerId: UUID
     public var status: ProjectStatus
-    public var principalInvestigatorID: UUID
-    public var labAffiliation: LabAffiliation
-    public var participantIDs: [UUID]
-    public var sampleIDs: [UUID]
-    public var startDate: Date
-    public var endDate: Date?
-    public var metadata: [String: String]
-    public var tags: [String]
-    public var thumbnailURL: URL?
+    public var sampleIds: [UUID]
+    public var collaboratorIds: [UUID]
     public var createdAt: Date
     public var updatedAt: Date
 
-    public init(
+    public nonisolated init(
         id: UUID = UUID(),
-        title: String,
+        name: String,
         description: String,
-        status: ProjectStatus = .planning,
-        principalInvestigatorID: UUID,
-        labAffiliation: LabAffiliation,
-        participantIDs: [UUID] = [],
-        sampleIDs: [UUID] = [],
-        startDate: Date = Date(),
-        endDate: Date? = nil,
-        metadata: [String: String] = [:],
-        tags: [String] = [],
-        thumbnailURL: URL? = nil,
+        ownerId: UUID,
+        status: ProjectStatus = .draft,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        sampleIds: [UUID] = [],
+        collaboratorIds: [UUID] = []
     ) {
         self.id = id
-        self.title = title
+        self.name = name
         self.description = description
+        self.ownerId = ownerId
         self.status = status
-        self.principalInvestigatorID = principalInvestigatorID
-        self.labAffiliation = labAffiliation
-        self.participantIDs = participantIDs
-        self.sampleIDs = sampleIDs
-        self.startDate = startDate
-        self.endDate = endDate
-        self.metadata = metadata
-        self.tags = tags
-        self.thumbnailURL = thumbnailURL
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.sampleIds = sampleIds
+        self.collaboratorIds = collaboratorIds
     }
 
-    public var isActive: Bool {
-        status == .active
-    }
-
-    public var participantCount: Int {
-        participantIDs.count
-    }
+    // MARK: - Computed Properties
 
     public var sampleCount: Int {
-        sampleIDs.count
+        sampleIds.count
+    }
+
+    public nonisolated var isArchived: Bool {
+        status == .archived
+    }
+
+    public func isCollaborator(userId: UUID) -> Bool {
+        collaboratorIds.contains(userId)
+    }
+
+    // MARK: - Status Transitions
+
+    public func canTransitionTo(_ target: ProjectStatus) -> Bool {
+        switch status {
+        case .draft:
+            return target == .active
+        case .active:
+            return target == .paused || target == .completed || target == .archived
+        case .paused:
+            return target == .active || target == .archived
+        case .completed:
+            return target == .archived
+        case .archived:
+            return false
+        }
     }
 }
 
-// MARK: - Equatable
+// MARK: - Equatable (by id only)
+
 extension Project: Equatable {
     public static func == (lhs: Project, rhs: Project) -> Bool {
         lhs.id == rhs.id
     }
 }
 
-// MARK: - Hashable
+// MARK: - Hashable (by id only)
+
 extension Project: Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)

@@ -8,11 +8,11 @@ struct LabAffiliationView: View {
     @Environment(\.dismiss) var dismiss
 
     let labs: [LabAffiliation] = [
-        LabAffiliation(id: "1", name: "MIT Department of Materials Science", location: "Cambridge, MA"),
-        LabAffiliation(id: "2", name: "Stanford Materials Research Lab", location: "Stanford, CA"),
-        LabAffiliation(id: "3", name: "Harvard School of Engineering", location: "Cambridge, MA"),
-        LabAffiliation(id: "4", name: "Berkeley Lab - Advanced Light Source", location: "Berkeley, CA"),
-        LabAffiliation(id: "5", name: "Caltech Materials Science", location: "Pasadena, CA"),
+        LabAffiliation(name: "Materials Science", institution: "MIT", location: "Cambridge, MA"),
+        LabAffiliation(name: "Materials Research Lab", institution: "Stanford", location: "Stanford, CA"),
+        LabAffiliation(name: "School of Engineering", institution: "Harvard", location: "Cambridge, MA"),
+        LabAffiliation(name: "Advanced Light Source", institution: "Berkeley Lab", location: "Berkeley, CA"),
+        LabAffiliation(name: "Materials Science", institution: "Caltech", location: "Pasadena, CA"),
     ]
 
     var filteredLabs: [LabAffiliation] {
@@ -135,7 +135,7 @@ struct LabAffiliationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isCustom) {
             CreateLabSheet(isPresented: $isCustom) { labName in
-                selectedLab = LabAffiliation(id: UUID().uuidString, name: labName, location: "")
+                selectedLab = LabAffiliation(name: labName, institution: "")
             }
         }
     }
@@ -254,12 +254,6 @@ struct CreateLabSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
     }
-}
-
-struct LabAffiliation: Identifiable {
-    let id: String
-    let name: String
-    let location: String
 }
 
 extension Color {

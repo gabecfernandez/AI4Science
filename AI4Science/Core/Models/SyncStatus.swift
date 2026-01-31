@@ -2,11 +2,12 @@ import Foundation
 
 /// Sync status for data entities
 @frozen
-public enum SyncStatus: String, Sendable, Codable, Hashable {
+public enum SyncStatus: String, Sendable, Codable, Hashable, CaseIterable {
     case pending
     case syncing
     case synced
     case failed
+    case conflict
 
     // MARK: - Helpers
     public var isPending: Bool {

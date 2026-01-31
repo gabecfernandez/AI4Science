@@ -43,22 +43,6 @@ public struct ClassificationResult: InferenceResultProtocol, Sendable {
     }
 }
 
-/// Defect type enumeration
-public enum DefectType: String, Sendable, Codable {
-    case noDefect = "no_defect"
-    case scratch = "scratch"
-    case crack = "crack"
-    case dent = "dent"
-    case discoloration = "discoloration"
-    case foreign = "foreign_object"
-    case unknown = "unknown"
-
-    public init?(from label: String) {
-        let normalized = label.lowercased().trimmingCharacters(in: .whitespaces)
-        self = DefectType(rawValue: normalized) ?? .unknown
-    }
-}
-
 /// Image classification inference actor
 public actor ImageClassificationInference {
     private let logger = Logger(subsystem: "com.ai4science.ml", category: "ImageClassificationInference")

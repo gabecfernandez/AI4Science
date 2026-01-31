@@ -4,7 +4,7 @@ import SwiftData
 /// Capture persistence model for SwiftData
 /// Represents a capture event (image, video, scan, etc.) of a sample
 @Model
-final class CaptureEntity {
+final class CaptureEntity: @unchecked Sendable {
     /// Unique identifier for the capture
     @Attribute(.unique) var id: String
 
@@ -57,7 +57,7 @@ final class CaptureEntity {
     @Relationship(deleteRule: .cascade, inverse: \AnalysisResultEntity.capture) var analysisResults: [AnalysisResultEntity] = []
 
     /// Relationship to capture metadata
-    @Relationship(deleteRule: .cascade) var captureMetadata: CaptureMetadata?
+    @Relationship(deleteRule: .cascade) var captureMetadata: CaptureMetadataEntity?
 
     /// Initialization
     init(
@@ -133,9 +133,9 @@ final class CaptureEntity {
     }
 }
 
-/// Capture metadata for additional information
+/// Capture metadata entity for additional information
 @Model
-final class CaptureMetadata {
+final class CaptureMetadataEntity {
     var resolution: String?
     var bitDepth: Int?
     var colorSpace: String?

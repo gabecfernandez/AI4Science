@@ -95,8 +95,7 @@ public struct UpdateMLModelUseCase: Sendable {
 
         // Install updates in parallel
         let updateResults = try await withThrowingTaskGroup(
-            of: (ModelUpdateInfo, Bool).self,
-            returning: [(ModelUpdateInfo, Bool)]
+            of: (ModelUpdateInfo, Bool).self
         ) { taskGroup in
             for update in availableUpdates {
                 taskGroup.addTask {

@@ -9,6 +9,8 @@ public enum RepositoryError: LocalizedError, Sendable {
     case deleteFailed(Error?)
     case fetchFailed(Error?)
     case syncFailed(Error?)
+    case saveError(String)
+    case fetchError(String)
 
     public var errorDescription: String? {
         switch self {
@@ -26,6 +28,10 @@ public enum RepositoryError: LocalizedError, Sendable {
             return "Failed to fetch entity"
         case .syncFailed:
             return "Failed to sync data"
+        case .saveError(let message):
+            return "Save error: \(message)"
+        case .fetchError(let message):
+            return "Fetch error: \(message)"
         }
     }
 }

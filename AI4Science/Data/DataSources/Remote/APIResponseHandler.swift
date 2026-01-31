@@ -1,70 +1,48 @@
 import Foundation
 
 /// Handler for parsing API responses
-actor APIResponseHandler {
-    // MARK: - Properties
-
-    private let decoder: JSONDecoder
-    private let encoder: JSONEncoder
-
-    // MARK: - Initialization
-
-    init() {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        self.decoder = decoder
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        self.encoder = encoder
-    }
+struct APIResponseHandler: @unchecked Sendable {
 
     // MARK: - Public Methods
 
     /// Decode response data
-    /// - Parameters:
-    ///   - data: Response data
-    ///   - type: Expected response type
-    /// - Returns: Decoded object
-    func decode<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
+    nonisolated func decode<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
         do {
             return try decoder.decode(type, from: data)
         } catch let DecodingError.dataCorrupted(context) {
-            Logger.error("Data corrupted: \(context.debugDescription)")
+            AppLogger.error("Data corrupted: \(context.debugDescription)")
             throw APIError.decodingError
         } catch let DecodingError.keyNotFound(key, context) {
-            Logger.error("Key not found: \(key), \(context.debugDescription)")
+            AppLogger.error("Key not found: \(key), \(context.debugDescription)")
             throw APIError.decodingError
         } catch let DecodingError.typeMismatch(type, context) {
-            Logger.error("Type mismatch: \(type), \(context.debugDescription)")
+            AppLogger.error("Type mismatch: \(type), \(context.debugDescription)")
             throw APIError.decodingError
         } catch let DecodingError.valueNotFound(type, context) {
-            Logger.error("Value not found: \(type), \(context.debugDescription)")
+            AppLogger.error("Value not found: \(type), \(context.debugDescription)")
             throw APIError.decodingError
         } catch {
-            Logger.error("Decoding failed: \(error.localizedDescription)")
+            AppLogger.error("Decoding failed: \(error.localizedDescription)")
             throw APIError.decodingError
         }
     }
 
     /// Encode object to data
-    /// - Parameter object: Object to encode
-    /// - Returns: Encoded data
-    func encode<T: Encodable>(_ object: T) throws -> Data {
+    nonisolated func encode<T: Encodable>(_ object: T) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
         do {
             return try encoder.encode(object)
         } catch {
-            Logger.error("Encoding failed: \(error.localizedDescription)")
+            AppLogger.error("Encoding failed: \(error.localizedDescription)")
             throw APIError.encodingError
         }
     }
 
     /// Parse generic API response
-    /// - Parameters:
-    ///   - data: Response data
-    ///   - response: URLResponse
-    /// - Returns: Parsed response
-    func parseResponse(_ data: Data, response: URLResponse) throws -> APIResponse {
+    nonisolated func parseResponse(_ data: Data, response: URLResponse) throws -> APIResponse {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
@@ -86,9 +64,7 @@ actor APIResponseHandler {
     }
 
     /// Get JSON from response
-    /// - Parameter data: Response data
-    /// - Returns: JSON dictionary
-    func getJSON(_ data: Data) throws -> [String: Any] {
+    nonisolated func getJSON(_ data: Data) throws -> [String: Any] {
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw APIError.invalidResponse
         }
@@ -96,9 +72,7 @@ actor APIResponseHandler {
     }
 
     /// Get JSON array from response
-    /// - Parameter data: Response data
-    /// - Returns: JSON array
-    func getJSONArray(_ data: Data) throws -> [[String: Any]] {
+    nonisolated func getJSONArray(_ data: Data) throws -> [[String: Any]] {
         guard let json = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             throw APIError.invalidResponse
         }
@@ -106,13 +80,11 @@ actor APIResponseHandler {
     }
 
     /// Create pagination info from headers
-    /// - Parameter response: HTTP response
-    /// - Returns: Pagination info
-    func extractPaginationInfo(from response: HTTPURLResponse) -> PaginationInfo {
+    nonisolated func extractPaginationInfo(from response: HTTPURLResponse) -> PaginationInfo {
         var pageInfo = PaginationInfo()
 
         if let linkHeader = response.value(forHTTPHeaderField: "Link") {
-            parseLink Header(linkHeader, into: &pageInfo)
+            parseLinkHeader(linkHeader, into: &pageInfo)
         }
 
         if let pageHeader = response.value(forHTTPHeaderField: "X-Page") {
@@ -132,7 +104,7 @@ actor APIResponseHandler {
 
     // MARK: - Private Methods
 
-    private func parseSuccessResponse(_ data: Data) throws -> APIResponse {
+    private nonisolated func parseSuccessResponse(_ data: Data) throws -> APIResponse {
         let json = try getJSON(data)
 
         let statusCode: Int
@@ -155,7 +127,7 @@ actor APIResponseHandler {
         )
     }
 
-    private func parseLinkHeader(_ header: String, into pageInfo: inout PaginationInfo) {
+    private nonisolated func parseLinkHeader(_ header: String, into pageInfo: inout PaginationInfo) {
         let links = header.split(separator: ",")
 
         for link in links {
@@ -181,11 +153,18 @@ actor APIResponseHandler {
 // MARK: - Models
 
 /// Generic API response
-struct APIResponse: Sendable {
+struct APIResponse: @unchecked Sendable {
     let statusCode: Int
     let message: String
     let data: Any?
     let timestamp: Date
+
+    nonisolated init(statusCode: Int, message: String, data: Any?, timestamp: Date) {
+        self.statusCode = statusCode
+        self.message = message
+        self.data = data
+        self.timestamp = timestamp
+    }
 }
 
 /// Pagination information

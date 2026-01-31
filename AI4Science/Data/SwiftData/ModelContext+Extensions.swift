@@ -10,7 +10,7 @@ extension ModelContext {
         do {
             try save()
         } catch {
-            Logger.error("Failed to save model context: \(error.localizedDescription)")
+            AppLogger.error("Failed to save model context: \(error.localizedDescription)")
             throw error
         }
     }

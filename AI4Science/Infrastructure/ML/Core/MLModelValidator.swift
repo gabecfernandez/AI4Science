@@ -3,7 +3,7 @@ import CoreML
 import os.log
 
 /// Model validation error types
-public enum ValidationError: LocalizedError {
+public enum MLValidationError: LocalizedError {
     case fileNotFound(String)
     case invalidChecksum(String)
     case unsupportedIOSVersion(String)
@@ -33,9 +33,9 @@ public enum ValidationError: LocalizedError {
 }
 
 /// Validation result
-public struct ValidationResult: Sendable {
+public struct MLValidationResult: Sendable {
     public let isValid: Bool
-    public let errors: [ValidationError]
+    public let errors: [MLValidationError]
     public let warnings: [String]
     public let modelFormat: String?
     public let inputFeatures: [String]
@@ -44,7 +44,7 @@ public struct ValidationResult: Sendable {
 
     public init(
         isValid: Bool,
-        errors: [ValidationError] = [],
+        errors: [MLValidationError] = [],
         warnings: [String] = [],
         modelFormat: String? = nil,
         inputFeatures: [String] = [],
@@ -73,7 +73,7 @@ public actor MLModelValidator {
     public func validateFileExists(path: String) throws {
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: path) else {
-            throw ValidationError.fileNotFound(path)
+            throw MLValidationError.fileNotFound(path)
         }
     }
 
@@ -84,7 +84,7 @@ public actor MLModelValidator {
 
         let calculatedChecksum = calculateSHA256(data: data)
         guard calculatedChecksum == expectedSHA256 else {
-            throw ValidationError.invalidChecksum(expectedSHA256)
+            throw MLValidationError.invalidChecksum(expectedSHA256)
         }
 
         logger.debug("Checksum validation passed for: \(path)")
@@ -94,12 +94,12 @@ public actor MLModelValidator {
     public func validateIOSVersion(_ requiredVersion: String) throws {
         let currentVersion = UIDevice.current.systemVersion
         guard isVersionCompatible(current: currentVersion, required: requiredVersion) else {
-            throw ValidationError.unsupportedIOSVersion(requiredVersion)
+            throw MLValidationError.unsupportedIOSVersion(requiredVersion)
         }
     }
 
     /// Validate CoreML model
-    public func validateModel(at path: String) async throws -> ValidationResult {
+    public func validateModel(at path: String) async throws -> MLValidationResult {
         do {
             let modelURL = URL(fileURLWithPath: path)
             let model = try MLModel(contentsOf: modelURL)
@@ -107,7 +107,7 @@ public actor MLModelValidator {
             let inputFeatures = model.modelDescription.inputDescriptionsByName.keys.map { $0 }
             let outputFeatures = model.modelDescription.outputDescriptionsByName.keys.map { $0 }
 
-            var errors: [ValidationError] = []
+            var errors: [MLValidationError] = []
             var warnings: [String] = []
 
             // Validate input features
@@ -124,7 +124,7 @@ public actor MLModelValidator {
             let computeUnits = detectComputeUnits(model: model)
 
             let isValid = errors.isEmpty
-            return ValidationResult(
+            return MLValidationResult(
                 isValid: isValid,
                 errors: errors,
                 warnings: warnings,
@@ -134,8 +134,8 @@ public actor MLModelValidator {
                 computeUnits: computeUnits
             )
         } catch {
-            let errors: [ValidationError] = [.incompatibleModelFormat("Invalid CoreML model")]
-            return ValidationResult(isValid: false, errors: errors)
+            let errors: [MLValidationError] = [.incompatibleModelFormat("Invalid CoreML model")]
+            return MLValidationResult(isValid: false, errors: errors)
         }
     }
 
@@ -145,7 +145,7 @@ public actor MLModelValidator {
         expectedShape: [Int]
     ) throws {
         guard shape == expectedShape else {
-            throw ValidationError.invalidInputShape(
+            throw MLValidationError.invalidInputShape(
                 "Expected \(expectedShape), got \(shape)"
             )
         }
@@ -156,7 +156,7 @@ public actor MLModelValidator {
         path: String,
         expectedChecksum: String? = nil,
         minimumIOSVersion: String = "17.0"
-    ) async throws -> ValidationResult {
+    ) async throws -> MLValidationResult {
         // File existence check
         try validateFileExists(path: path)
 

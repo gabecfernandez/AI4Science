@@ -1,166 +1,163 @@
 import Foundation
+import CoreGraphics
 
-/// Annotation geometry type
+// MARK: - AnnotationType
+
 @frozen
-public enum AnnotationGeometry: Codable, Sendable {
-    case point(Point)
-    case rectangle(Rectangle)
-    case polygon(Polygon)
+public enum AnnotationType: String, Codable, Sendable, CaseIterable {
+    case point
+    case rectangle
+    case polygon
+    case freeform
+}
 
-    public enum CodingKeys: String, CodingKey {
-        case type
-        case data
-    }
+// MARK: - Geometry
 
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(String.self, forKey: .type)
+public enum Geometry: Codable, Sendable {
+    case point(CGPoint)
+    case rectangle(CGRect)
+    case polygon([CGPoint])
+    case freeform([CGPoint])
 
-        switch type {
-        case "point":
-            let point = try container.decode(Point.self, forKey: .data)
-            self = .point(point)
-        case "rectangle":
-            let rect = try container.decode(Rectangle.self, forKey: .data)
-            self = .rectangle(rect)
-        case "polygon":
-            let poly = try container.decode(Polygon.self, forKey: .data)
-            self = .polygon(poly)
-        default:
-            throw DecodingError.dataCorrupted(
-                DecodingError.Context(
-                    codingPath: decoder.codingPath,
-                    debugDescription: "Invalid geometry type: \(type)"
-                )
-            )
-        }
+    // MARK: Codable
+
+    enum CodingKeys: String, CodingKey {
+        case type, pointX, pointY, rectX, rectY, rectW, rectH, points
     }
 
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-
+        var c = encoder.container(keyedBy: CodingKeys.self)
         switch self {
-        case .point(let point):
-            try container.encode("point", forKey: .type)
-            try container.encode(point, forKey: .data)
-        case .rectangle(let rect):
-            try container.encode("rectangle", forKey: .type)
-            try container.encode(rect, forKey: .data)
-        case .polygon(let poly):
-            try container.encode("polygon", forKey: .type)
-            try container.encode(poly, forKey: .data)
+        case .point(let p):
+            try c.encode("point", forKey: .type)
+            try c.encode(p.x, forKey: .pointX)
+            try c.encode(p.y, forKey: .pointY)
+        case .rectangle(let r):
+            try c.encode("rectangle", forKey: .type)
+            try c.encode(r.origin.x, forKey: .rectX)
+            try c.encode(r.origin.y, forKey: .rectY)
+            try c.encode(r.size.width, forKey: .rectW)
+            try c.encode(r.size.height, forKey: .rectH)
+        case .polygon(let pts):
+            try c.encode("polygon", forKey: .type)
+            try c.encode(pts.map { [$0.x, $0.y] }, forKey: .points)
+        case .freeform(let pts):
+            try c.encode("freeform", forKey: .type)
+            try c.encode(pts.map { [$0.x, $0.y] }, forKey: .points)
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try c.decode(String.self, forKey: .type)
+        switch type {
+        case "point":
+            let x = try c.decode(Double.self, forKey: .pointX)
+            let y = try c.decode(Double.self, forKey: .pointY)
+            self = .point(CGPoint(x: x, y: y))
+        case "rectangle":
+            let x = try c.decode(Double.self, forKey: .rectX)
+            let y = try c.decode(Double.self, forKey: .rectY)
+            let w = try c.decode(Double.self, forKey: .rectW)
+            let h = try c.decode(Double.self, forKey: .rectH)
+            self = .rectangle(CGRect(x: x, y: y, width: w, height: h))
+        case "polygon":
+            let raw = try c.decode([[Double]].self, forKey: .points)
+            self = .polygon(raw.map { CGPoint(x: $0[0], y: $0[1]) })
+        case "freeform":
+            let raw = try c.decode([[Double]].self, forKey: .points)
+            self = .freeform(raw.map { CGPoint(x: $0[0], y: $0[1]) })
+        default:
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(codingPath: decoder.codingPath,
+                                      debugDescription: "Unknown geometry type: \(type)")
+            )
         }
     }
 }
 
-/// 2D point in normalized coordinates (0.0 - 1.0)
-public struct Point: Codable, Sendable {
-    public var x: Double
-    public var y: Double
+// MARK: - DefectCategory
 
-    public init(x: Double, y: Double) {
-        self.x = x
-        self.y = y
-    }
+public enum DefectCategory: String, Codable, Sendable {
+    case structural
+    case contamination
+    case surface
 }
 
-/// Rectangle in normalized coordinates
-public struct Rectangle: Codable, Sendable {
-    public var x: Double
-    public var y: Double
-    public var width: Double
-    public var height: Double
+// MARK: - Annotation
 
-    public init(x: Double, y: Double, width: Double, height: Double) {
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-    }
-
-    public var minX: Double { x }
-    public var minY: Double { y }
-    public var maxX: Double { x + width }
-    public var maxY: Double { y + height }
-
-    public var centerX: Double { x + (width / 2) }
-    public var centerY: Double { y + (height / 2) }
-
-    public var area: Double { width * height }
-}
-
-/// Polygon defined by vertices in normalized coordinates
-public struct Polygon: Codable, Sendable {
-    public var vertices: [Point]
-
-    public init(vertices: [Point]) {
-        self.vertices = vertices
-    }
-
-    public var vertexCount: Int {
-        vertices.count
-    }
-
-    public var isClosed: Bool {
-        vertices.count >= 3
-    }
-}
-
-/// Annotation of a defect on a capture
 public struct Annotation: Identifiable, Codable, Sendable {
     public let id: UUID
-    public var captureID: UUID
-    public var geometry: AnnotationGeometry
-    public var label: String
-    public var confidence: Double?
-    public var annotatorID: UUID?
-    public var notes: String?
-    public var isAutomatic: Bool
-    public var metadata: [String: String]
-    public var createdAt: Date
-    public var updatedAt: Date
+    public let captureId: UUID
+    public let type: AnnotationType
+    public let geometry: Geometry
+    public let label: String
+    public let defectType: DefectType
+    public let severity: DefectSeverity
+    public let confidence: Double
+    public let createdAt: Date
+    public let createdBy: UUID
 
     public init(
         id: UUID = UUID(),
-        captureID: UUID,
-        geometry: AnnotationGeometry,
+        captureId: UUID,
+        type: AnnotationType,
+        geometry: Geometry,
         label: String,
-        confidence: Double? = nil,
-        annotatorID: UUID? = nil,
-        notes: String? = nil,
-        isAutomatic: Bool = false,
-        metadata: [String: String] = [:],
+        defectType: DefectType,
+        severity: DefectSeverity,
+        confidence: Double,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        createdBy: UUID
     ) {
         self.id = id
-        self.captureID = captureID
+        self.captureId = captureId
+        self.type = type
         self.geometry = geometry
         self.label = label
+        self.defectType = defectType
+        self.severity = severity
         self.confidence = confidence
-        self.annotatorID = annotatorID
-        self.notes = notes
-        self.isAutomatic = isAutomatic
-        self.metadata = metadata
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
+        self.createdBy = createdBy
+    }
+
+    /// Bounding box that encloses the annotation geometry.
+    public var boundingBox: CGRect {
+        switch geometry {
+        case .point(let p):
+            return CGRect(x: p.x, y: p.y, width: 0, height: 0)
+        case .rectangle(let r):
+            return r
+        case .polygon(let pts), .freeform(let pts):
+            guard !pts.isEmpty else { return .zero }
+            let minX = pts.min(by: { $0.x < $1.x })!.x
+            let minY = pts.min(by: { $0.y < $1.y })!.y
+            let maxX = pts.max(by: { $0.x < $1.x })!.x
+            let maxY = pts.max(by: { $0.y < $1.y })!.y
+            return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        }
+    }
+
+    /// Area of the annotation in pixels (for rectangles only; polygons approximate via bounding box).
+    public var area: Double {
+        switch geometry {
+        case .rectangle(let r):
+            return r.width * r.height
+        default:
+            return boundingBox.width * boundingBox.height
+        }
     }
 }
 
-// MARK: - Equatable
 extension Annotation: Equatable {
     public static func == (lhs: Annotation, rhs: Annotation) -> Bool {
         lhs.id == rhs.id
     }
 }
 
-// MARK: - Hashable
 extension Annotation: Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
-
-extension Point: Equatable, Hashable {}
-extension Rectangle: Equatable, Hashable {}
-extension Polygon: Equatable, Hashable {}

@@ -1,6 +1,7 @@
 import Foundation
 
-/// Type of media capture
+// MARK: - CaptureType
+
 @frozen
 public enum CaptureType: String, Codable, Sendable, CaseIterable {
     case photo
@@ -8,111 +9,134 @@ public enum CaptureType: String, Codable, Sendable, CaseIterable {
     case burst
 }
 
-/// Represents a photo or video capture of a sample
-public struct Capture: Identifiable, Codable, Sendable {
-    public let id: UUID
-    public var sampleID: UUID
-    public var type: CaptureType
-    public var fileURL: URL
-    public var thumbnailURL: URL?
-    public var mediaType: String // e.g., "image/jpeg", "video/mp4"
-    public var fileSize: Int64
-    public var duration: TimeInterval? // for videos
-    public var resolution: CGSize?
-    public var cameraModel: String?
-    public var lensModel: String?
-    public var focalLength: Double?
+// MARK: - ColorSpace
+
+public enum ColorSpace: String, Codable, Sendable {
+    case sRGB
+    case displayP3
+    case adobeRGB
+}
+
+// MARK: - CaptureMetadata
+
+public struct CaptureMetadata: Codable, Sendable {
+    public let width: Int
+    public let height: Int
+    public let colorSpace: ColorSpace
+    public let captureDate: Date
+    public let deviceModel: String
+
+    // EXIF
     public var exposureTime: Double?
     public var iso: Int?
-    public var focusMode: String?
-    public var whiteBalance: String?
-    public var geoLocation: GeoLocation?
-    public var isProcessed: Bool
-    public var processingProgress: Double
-    public var metadata: [String: String]
-    public var createdAt: Date
-    public var updatedAt: Date
+    public var focalLength: Double?
+    public var aperture: Double?
+    public var flashFired: Bool?
+
+    // Video
+    public var duration: TimeInterval?
+    public var frameRate: Int?
+
+    // GPS
+    public var latitude: Double?
+    public var longitude: Double?
+
+    public nonisolated init(
+        width: Int,
+        height: Int,
+        colorSpace: ColorSpace,
+        captureDate: Date,
+        deviceModel: String,
+        exposureTime: Double? = nil,
+        iso: Int? = nil,
+        focalLength: Double? = nil,
+        aperture: Double? = nil,
+        flashFired: Bool? = nil,
+        duration: TimeInterval? = nil,
+        frameRate: Int? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
+    ) {
+        self.width = width
+        self.height = height
+        self.colorSpace = colorSpace
+        self.captureDate = captureDate
+        self.deviceModel = deviceModel
+        self.exposureTime = exposureTime
+        self.iso = iso
+        self.focalLength = focalLength
+        self.aperture = aperture
+        self.flashFired = flashFired
+        self.duration = duration
+        self.frameRate = frameRate
+        self.latitude = latitude
+        self.longitude = longitude
+    }
+
+    public var aspectRatio: Double {
+        guard height > 0 else { return 0 }
+        return Double(width) / Double(height)
+    }
+
+    public var hasLocation: Bool {
+        latitude != nil && longitude != nil
+    }
+}
+
+// MARK: - Capture
+
+public struct Capture: Identifiable, Codable, Sendable {
+    public let id: UUID
+    public let sampleId: UUID
+    public let type: CaptureType
+    public let fileURL: URL
+    public var thumbnailURL: URL?
+    public let metadata: CaptureMetadata
+    public var fileSize: Int64
+    public let createdAt: Date
+    public let createdBy: UUID
 
     public init(
         id: UUID = UUID(),
-        sampleID: UUID,
+        sampleId: UUID,
         type: CaptureType,
         fileURL: URL,
         thumbnailURL: URL? = nil,
-        mediaType: String,
-        fileSize: Int64,
-        duration: TimeInterval? = nil,
-        resolution: CGSize? = nil,
-        cameraModel: String? = nil,
-        lensModel: String? = nil,
-        focalLength: Double? = nil,
-        exposureTime: Double? = nil,
-        iso: Int? = nil,
-        focusMode: String? = nil,
-        whiteBalance: String? = nil,
-        geoLocation: GeoLocation? = nil,
-        isProcessed: Bool = false,
-        processingProgress: Double = 0,
-        metadata: [String: String] = [:],
+        metadata: CaptureMetadata,
+        fileSize: Int64 = 0,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        createdBy: UUID
     ) {
         self.id = id
-        self.sampleID = sampleID
+        self.sampleId = sampleId
         self.type = type
         self.fileURL = fileURL
         self.thumbnailURL = thumbnailURL
-        self.mediaType = mediaType
-        self.fileSize = fileSize
-        self.duration = duration
-        self.resolution = resolution
-        self.cameraModel = cameraModel
-        self.lensModel = lensModel
-        self.focalLength = focalLength
-        self.exposureTime = exposureTime
-        self.iso = iso
-        self.focusMode = focusMode
-        self.whiteBalance = whiteBalance
-        self.geoLocation = geoLocation
-        self.isProcessed = isProcessed
-        self.processingProgress = processingProgress
         self.metadata = metadata
+        self.fileSize = fileSize
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
+        self.createdBy = createdBy
     }
 
-    public var isVideo: Bool {
-        type == .video
-    }
-}
-
-/// Geographic location data
-public struct GeoLocation: Codable, Sendable {
-    public var latitude: Double
-    public var longitude: Double
-    public var altitude: Double?
-    public var accuracy: Double?
-
-    public init(latitude: Double, longitude: Double, altitude: Double? = nil, accuracy: Double? = nil) {
-        self.latitude = latitude
-        self.longitude = longitude
-        self.altitude = altitude
-        self.accuracy = accuracy
+    public var formattedFileSize: String {
+        if fileSize < 1024 {
+            return "\(fileSize) B"
+        } else if fileSize < 1024 * 1024 {
+            return String(format: "%.1f KB", Double(fileSize) / 1024)
+        } else {
+            return String(format: "%.1f MB", Double(fileSize) / (1024 * 1024))
+        }
     }
 }
 
-// MARK: - Equatable
 extension Capture: Equatable {
     public static func == (lhs: Capture, rhs: Capture) -> Bool {
         lhs.id == rhs.id
     }
 }
 
-// MARK: - Hashable
 extension Capture: Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
-
-extension GeoLocation: Equatable, Hashable {}

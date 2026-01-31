@@ -1,6 +1,22 @@
 import Foundation
 import SwiftData
 
+/// Internal result type for SyncCoordinator operations.
+/// Distinct from the domain-layer SyncResult in SyncTypes.swift.
+struct SyncCoordinatorResult: Sendable {
+    let success: Bool
+    let error: String?
+    let itemsSynced: Int
+}
+
+/// Internal status type for SyncCoordinator.
+/// Distinct from the domain-layer SyncStatusValue in SyncTypes.swift.
+struct CoordinatorSyncStatus: Sendable {
+    let isSyncing: Bool
+    let lastSyncTime: Date?
+    let pendingItemsCount: Int
+}
+
 /// Actor responsible for coordinating synchronization operations
 actor SyncCoordinator: Sendable {
     // MARK: - Properties
@@ -27,10 +43,10 @@ actor SyncCoordinator: Sendable {
     // MARK: - Public Methods
 
     /// Start full synchronization
-    /// - Returns: SyncResult containing sync outcome
-    func startFullSync() async -> SyncResult {
+    /// - Returns: CoordinatorSyncStatus containing sync outcome
+    func startFullSync() async -> SyncCoordinatorResult {
         guard !syncInProgress else {
-            return SyncResult(
+            return SyncCoordinatorResult(
                 success: false,
                 error: "Sync already in progress",
                 itemsSynced: 0
@@ -40,65 +56,56 @@ actor SyncCoordinator: Sendable {
         syncInProgress = true
         defer { syncInProgress = false }
 
-        Logger.info("Starting full sync...")
+        AppLogger.info("Starting full sync...")
 
         var itemsSynced = 0
         var errors: [String] = []
 
-        do {
-            // Sync users
-            let userResult = await syncUsers()
-            itemsSynced += userResult.itemsSynced
-            if let error = userResult.error {
-                errors.append("Users: \(error)")
-            }
-
-            // Sync projects
-            let projectResult = await syncProjects()
-            itemsSynced += projectResult.itemsSynced
-            if let error = projectResult.error {
-                errors.append("Projects: \(error)")
-            }
-
-            // Sync samples
-            let sampleResult = await syncSamples()
-            itemsSynced += sampleResult.itemsSynced
-            if let error = sampleResult.error {
-                errors.append("Samples: \(error)")
-            }
-
-            // Sync captures
-            let captureResult = await syncCaptures()
-            itemsSynced += captureResult.itemsSynced
-            if let error = captureResult.error {
-                errors.append("Captures: \(error)")
-            }
-
-            // Process sync queue
-            let queueResult = await syncQueue.processQueue()
-            itemsSynced += queueResult
-
-            lastSyncTime = Date()
-
-            return SyncResult(
-                success: errors.isEmpty,
-                error: errors.isEmpty ? nil : errors.joined(separator: "; "),
-                itemsSynced: itemsSynced
-            )
-        } catch {
-            Logger.error("Full sync failed: \(error.localizedDescription)")
-            return SyncResult(
-                success: false,
-                error: error.localizedDescription,
-                itemsSynced: itemsSynced
-            )
+        // Sync users
+        let userResult = await syncUsers()
+        itemsSynced += userResult.itemsSynced
+        if let error = userResult.error {
+            errors.append("Users: \(error)")
         }
+
+        // Sync projects
+        let projectResult = await syncProjects()
+        itemsSynced += projectResult.itemsSynced
+        if let error = projectResult.error {
+            errors.append("Projects: \(error)")
+        }
+
+        // Sync samples
+        let sampleResult = await syncSamples()
+        itemsSynced += sampleResult.itemsSynced
+        if let error = sampleResult.error {
+            errors.append("Samples: \(error)")
+        }
+
+        // Sync captures
+        let captureResult = await syncCaptures()
+        itemsSynced += captureResult.itemsSynced
+        if let error = captureResult.error {
+            errors.append("Captures: \(error)")
+        }
+
+        // Process sync queue
+        let queueResult = await syncQueue.processQueue()
+        itemsSynced += queueResult
+
+        lastSyncTime = Date()
+
+        return SyncCoordinatorResult(
+            success: errors.isEmpty,
+            error: errors.isEmpty ? nil : errors.joined(separator: "; "),
+            itemsSynced: itemsSynced
+        )
     }
 
     /// Sync specific entity type
     /// - Parameter entityType: Type of entity to sync
-    func syncEntity(type entityType: String) async -> SyncResult {
-        Logger.info("Syncing \(entityType)...")
+    func syncEntity(type entityType: String) async -> SyncCoordinatorResult {
+        AppLogger.info("Syncing \(entityType)...")
 
         switch entityType {
         case "users":
@@ -112,7 +119,7 @@ actor SyncCoordinator: Sendable {
         case "annotations":
             return await syncAnnotations()
         default:
-            return SyncResult(
+            return SyncCoordinatorResult(
                 success: false,
                 error: "Unknown entity type: \(entityType)",
                 itemsSynced: 0
@@ -121,17 +128,18 @@ actor SyncCoordinator: Sendable {
     }
 
     /// Get current sync status
-    func getSyncStatus() -> SyncStatus {
-        return SyncStatus(
+    func getSyncStatus() async -> CoordinatorSyncStatus {
+        let pending = await syncQueue.pendingCount
+        return CoordinatorSyncStatus(
             isSyncing: syncInProgress,
             lastSyncTime: lastSyncTime,
-            pendingItemsCount: syncQueue.pendingCount
+            pendingItemsCount: pending
         )
     }
 
     // MARK: - Private Methods
 
-    private func syncUsers() async -> SyncResult {
+    private func syncUsers() async -> SyncCoordinatorResult {
         do {
             let context = ModelContext(modelContainer)
             let predicate = #Predicate<SyncMetadataEntity> { $0.entityType == "user" && $0.syncStatus != "synced" }
@@ -143,7 +151,6 @@ actor SyncCoordinator: Sendable {
             for syncMeta in pendingSync {
                 do {
                     try await syncMeta.markSyncStarted()
-                    // Sync to server
                     try await syncMeta.markSyncSuccess()
                     synced += 1
                 } catch {
@@ -151,13 +158,13 @@ actor SyncCoordinator: Sendable {
                 }
             }
 
-            return SyncResult(success: true, error: nil, itemsSynced: synced)
+            return SyncCoordinatorResult(success: true, error: nil, itemsSynced: synced)
         } catch {
-            return SyncResult(success: false, error: error.localizedDescription, itemsSynced: 0)
+            return SyncCoordinatorResult(success: false, error: error.localizedDescription, itemsSynced: 0)
         }
     }
 
-    private func syncProjects() async -> SyncResult {
+    private func syncProjects() async -> SyncCoordinatorResult {
         do {
             let context = ModelContext(modelContainer)
             let predicate = #Predicate<SyncMetadataEntity> { $0.entityType == "project" && $0.syncStatus != "synced" }
@@ -176,13 +183,13 @@ actor SyncCoordinator: Sendable {
                 }
             }
 
-            return SyncResult(success: true, error: nil, itemsSynced: synced)
+            return SyncCoordinatorResult(success: true, error: nil, itemsSynced: synced)
         } catch {
-            return SyncResult(success: false, error: error.localizedDescription, itemsSynced: 0)
+            return SyncCoordinatorResult(success: false, error: error.localizedDescription, itemsSynced: 0)
         }
     }
 
-    private func syncSamples() async -> SyncResult {
+    private func syncSamples() async -> SyncCoordinatorResult {
         do {
             let context = ModelContext(modelContainer)
             let predicate = #Predicate<SyncMetadataEntity> { $0.entityType == "sample" && $0.syncStatus != "synced" }
@@ -201,13 +208,13 @@ actor SyncCoordinator: Sendable {
                 }
             }
 
-            return SyncResult(success: true, error: nil, itemsSynced: synced)
+            return SyncCoordinatorResult(success: true, error: nil, itemsSynced: synced)
         } catch {
-            return SyncResult(success: false, error: error.localizedDescription, itemsSynced: 0)
+            return SyncCoordinatorResult(success: false, error: error.localizedDescription, itemsSynced: 0)
         }
     }
 
-    private func syncCaptures() async -> SyncResult {
+    private func syncCaptures() async -> SyncCoordinatorResult {
         do {
             let context = ModelContext(modelContainer)
             let predicate = #Predicate<SyncMetadataEntity> { $0.entityType == "capture" && $0.syncStatus != "synced" }
@@ -226,13 +233,13 @@ actor SyncCoordinator: Sendable {
                 }
             }
 
-            return SyncResult(success: true, error: nil, itemsSynced: synced)
+            return SyncCoordinatorResult(success: true, error: nil, itemsSynced: synced)
         } catch {
-            return SyncResult(success: false, error: error.localizedDescription, itemsSynced: 0)
+            return SyncCoordinatorResult(success: false, error: error.localizedDescription, itemsSynced: 0)
         }
     }
 
-    private func syncAnnotations() async -> SyncResult {
+    private func syncAnnotations() async -> SyncCoordinatorResult {
         do {
             let context = ModelContext(modelContainer)
             let predicate = #Predicate<SyncMetadataEntity> { $0.entityType == "annotation" && $0.syncStatus != "synced" }
@@ -251,9 +258,9 @@ actor SyncCoordinator: Sendable {
                 }
             }
 
-            return SyncResult(success: true, error: nil, itemsSynced: synced)
+            return SyncCoordinatorResult(success: true, error: nil, itemsSynced: synced)
         } catch {
-            return SyncResult(success: false, error: error.localizedDescription, itemsSynced: 0)
+            return SyncCoordinatorResult(success: false, error: error.localizedDescription, itemsSynced: 0)
         }
     }
 }

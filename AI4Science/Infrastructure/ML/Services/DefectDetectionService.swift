@@ -176,14 +176,6 @@ struct DefectPrediction: Codable, Sendable {
     }
 }
 
-/// Severity level of detected defect
-enum DefectSeverity: String, Codable, Sendable {
-    case low
-    case medium
-    case high
-    case critical
-}
-
 /// Complete defect detection result for an image
 struct DefectDetectionResult: Sendable {
     let imageIndex: Int

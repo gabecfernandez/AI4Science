@@ -1,48 +1,33 @@
 import Foundation
 
-/// Use case for creating a new research project
-@available(iOS 15.0, *)
 public actor CreateProjectUseCase: Sendable {
-    private let projectService: any ProjectServiceProtocol
+    private let repository: any ProjectRepositoryProtocol
 
-    public init(projectService: any ProjectServiceProtocol) {
-        self.projectService = projectService
+    public init(repository: any ProjectRepositoryProtocol) {
+        self.repository = repository
     }
 
-    /// Execute project creation
-    /// - Parameters:
-    ///   - name: Project name
-    ///   - description: Project description
-    /// - Returns: Created project
-    /// - Throws: ProjectError if creation fails
-    public func execute(name: String, description: String) async throws -> Project {
-        try validateInput(name: name, description: description)
-
-        let request = CreateProjectRequest(name: name, description: description)
-
-        do {
-            let project = try await projectService.createProject(request)
-            return project
-        } catch let error as ProjectError {
-            throw error
-        } catch {
-            throw ProjectError.unknownError(error.localizedDescription)
+    public func execute(_ request: CreateProjectRequest) async throws -> Project {
+        let trimmedName = request.name.trimmingCharacters(in: .whitespaces)
+        guard !trimmedName.isEmpty, trimmedName.count >= 3 else {
+            throw ValidationError(message: "Project name must be at least 3 characters")
         }
-    }
-
-    /// Validate project input
-    private func validateInput(name: String, description: String) throws {
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty else {
-            throw ProjectError.invalidName
+        guard trimmedName.count <= 100 else {
+            throw ValidationError(message: "Project name must be 100 characters or fewer")
         }
 
-        guard trimmedName.count >= 3 && trimmedName.count <= 100 else {
-            throw ProjectError.invalidName
-        }
+        let now = Date()
+        let project = Project(
+            id: UUID(),
+            name: trimmedName,
+            description: request.description,
+            ownerId: request.ownerId,
+            status: .draft,
+            createdAt: now,
+            updatedAt: now
+        )
 
-        guard description.count <= 5000 else {
-            throw ProjectError.invalidName
-        }
+        try await repository.save(project)
+        return project
     }
 }

@@ -59,11 +59,15 @@ public struct AuthSession: Sendable {
 
 /// Authentication errors
 public enum AuthError: LocalizedError, Sendable {
+    case invalidEmail
+    case invalidPassword
     case invalidCredentials
     case userNotFound
     case userAlreadyExists
     case weakPassword
     case sessionExpired
+    case tokenExpired
+    case unauthorized
     case biometricNotAvailable
     case biometricFailed
     case networkError(String)
@@ -71,8 +75,12 @@ public enum AuthError: LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
+        case .invalidEmail:
+            return "The email address is invalid."
+        case .invalidPassword:
+            return "The password is invalid."
         case .invalidCredentials:
-            return "Invalid email or password"
+            return "Email or password is incorrect."
         case .userNotFound:
             return "User not found"
         case .userAlreadyExists:
@@ -81,6 +89,10 @@ public enum AuthError: LocalizedError, Sendable {
             return "Password does not meet security requirements"
         case .sessionExpired:
             return "Session has expired"
+        case .tokenExpired:
+            return "Authentication token has expired."
+        case .unauthorized:
+            return "User is not authorized."
         case .biometricNotAvailable:
             return "Biometric authentication is not available"
         case .biometricFailed:

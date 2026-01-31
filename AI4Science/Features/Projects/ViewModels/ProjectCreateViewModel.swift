@@ -4,83 +4,101 @@ import Observation
 @Observable
 @MainActor
 final class ProjectCreateViewModel {
-    var projectName = ""
-    var projectDescription = ""
-    var researchArea = "materials"
-    var visibility = "private"
-    var collaborators = ""
+    var name: String = ""
+    var description: String = ""
     var isLoading = false
     var showError = false
     var errorMessage = ""
+    var isEditMode = false
+    var isDirty = false
 
-    func createProject() async {
-        guard !projectName.isEmpty else {
-            errorMessage = "Project name is required"
+    private let repository: any ProjectRepositoryProtocol
+    private let ownerId: UUID
+    private var editingProjectId: UUID?
+
+    // MARK: - Create Mode
+
+    init(repository: any ProjectRepositoryProtocol, ownerId: UUID) {
+        self.repository = repository
+        self.ownerId = ownerId
+    }
+
+    // MARK: - Edit Mode
+
+    init(repository: any ProjectRepositoryProtocol, project: Project) {
+        self.repository = repository
+        self.ownerId = project.ownerId
+        self.name = project.name
+        self.description = project.description
+        self.isEditMode = true
+        self.editingProjectId = project.id
+    }
+
+    // MARK: - Validation
+
+    var nameValidationError: String? {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty { return "Project name is required" }
+        if trimmed.count < 3 { return "Project name must be at least 3 characters" }
+        if trimmed.count > 100 { return "Project name must be 100 characters or fewer" }
+        return nil
+    }
+
+    var descriptionValidationError: String? {
+        if description.count > 500 { return "Description must be 500 characters or fewer" }
+        return nil
+    }
+
+    var canSubmit: Bool {
+        nameValidationError == nil && descriptionValidationError == nil && !isLoading
+    }
+
+    // MARK: - Actions
+
+    func submit() async -> Project? {
+        guard canSubmit else {
             showError = true
-            return
+            errorMessage = nameValidationError ?? descriptionValidationError ?? "Invalid input"
+            return nil
         }
 
         isLoading = true
         defer { isLoading = false }
 
         do {
-            // Validate inputs
-            try validateInputs()
-
-            // Simulate API call
-            try await Task.sleep(nanoseconds: 2_000_000_000)
-
-            // Project created successfully
-            resetForm()
-        } catch let error as ValidationError {
-            errorMessage = error.message
-            showError = true
-        } catch {
-            errorMessage = "Failed to create project"
-            showError = true
-        }
-    }
-
-    private func validateInputs() throws {
-        let trimmedName = projectName.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty && trimmedName.count >= 3 else {
-            throw ValidationError(message: "Project name must be at least 3 characters")
-        }
-
-        if !projectDescription.isEmpty && projectDescription.count < 10 {
-            throw ValidationError(message: "Description must be at least 10 characters")
-        }
-
-        // Validate collaborator emails if any
-        if !collaborators.isEmpty {
-            let emails = collaborators.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-            for email in emails {
-                guard isValidEmail(email) else {
-                    throw ValidationError(message: "Invalid email: \(email)")
+            if isEditMode, let editId = editingProjectId {
+                guard var existing = try await repository.findById(editId) else {
+                    showError = true
+                    errorMessage = "Project not found"
+                    return nil
                 }
+                existing.name = name.trimmingCharacters(in: .whitespaces)
+                existing.description = description
+                existing.updatedAt = Date()
+                try await repository.save(existing)
+                return existing
+            } else {
+                let now = Date()
+                let project = Project(
+                    id: UUID(),
+                    name: name.trimmingCharacters(in: .whitespaces),
+                    description: description,
+                    ownerId: ownerId,
+                    status: .draft,
+                    createdAt: now,
+                    updatedAt: now
+                )
+                try await repository.save(project)
+                return project
             }
+        } catch {
+            showError = true
+            errorMessage = error.localizedDescription
+            return nil
         }
     }
 
-    private func isValidEmail(_ email: String) -> Bool {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        return emailPredicate.evaluate(with: email)
-    }
-
-    private func resetForm() {
-        projectName = ""
-        projectDescription = ""
-        researchArea = "materials"
-        visibility = "private"
-        collaborators = ""
-    }
-}
-
-struct ValidationError: LocalizedError {
-    let message: String
-
-    var errorDescription: String? {
-        message
+    func markDirty() {
+        isDirty = true
     }
 }

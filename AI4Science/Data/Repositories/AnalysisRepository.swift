@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 /// Protocol for analysis result operations
-protocol AnalysisRepositoryProtocol: Sendable {
+protocol AnalysisDataSourceProtocol: Sendable {
     func createAnalysisResult(_ result: AnalysisResultEntity) async throws
     func getAnalysisResult(id: String) async throws -> AnalysisResultEntity?
     func getAnalysisResultsByCapture(captureID: String) async throws -> [AnalysisResultEntity]
@@ -16,7 +16,7 @@ protocol AnalysisRepositoryProtocol: Sendable {
 }
 
 /// Analysis repository implementation
-actor AnalysisRepository: AnalysisRepositoryProtocol {
+actor AnalysisRepository: AnalysisDataSourceProtocol {
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {

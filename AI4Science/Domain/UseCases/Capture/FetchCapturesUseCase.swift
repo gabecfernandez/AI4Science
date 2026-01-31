@@ -55,14 +55,14 @@ public actor FetchCapturesUseCase: Sendable {
         return try await fetchByType(sampleId: sampleId, type: .video)
     }
 
-    /// Fetch captures by tag
+    /// Fetch captures by device model
     /// - Parameters:
     ///   - sampleId: Sample ID
-    ///   - tag: Tag to filter by
-    /// - Returns: Captures with specified tag
+    ///   - deviceModel: Device model to filter by
+    /// - Returns: Captures matching the device model
     /// - Throws: CaptureError if fetch fails
-    public func fetchByTag(sampleId: String, tag: String) async throws -> [Capture] {
+    public func fetchByDevice(sampleId: String, deviceModel: String) async throws -> [Capture] {
         let allCaptures = try await execute(sampleId: sampleId)
-        return allCaptures.filter { $0.metadata.tags.contains(tag) }
+        return allCaptures.filter { $0.metadata.deviceModel == deviceModel }
     }
 }

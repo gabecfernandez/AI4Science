@@ -1,80 +1,55 @@
 import Foundation
 
-/// Material composition type
+// MARK: - SampleStatus
+
 @frozen
-public enum MaterialType: String, Codable, Sendable, CaseIterable {
-    case metal
-    case ceramic
-    case polymer
-    case composite
-    case semiconductor
-    case glass
-    case other
+public enum SampleStatus: String, Codable, Sendable, CaseIterable {
+    case pending
+    case inProgress
+    case analyzed
+    case reviewed
+    case archived
 }
 
-/// Represents a physical material sample being analyzed
+// MARK: - Sample
+
 public struct Sample: Identifiable, Codable, Sendable {
     public let id: UUID
-    public var projectID: UUID
-    public var name: String
-    public var description: String?
-    public var materialType: MaterialType
-    public var batchNumber: String?
-    public var manufacturingDate: Date?
-    public var sampleLocation: String?
-    public var metadata: [String: String]
-    public var captureIDs: [UUID]
-    public var analysisResultIDs: [UUID]
-    public var createdAt: Date
-    public var updatedAt: Date
+    public let projectId: UUID
+    public let name: String
+    public var description: String
+    public var materialType: String
+    public var status: SampleStatus
+    public let createdAt: Date
+    public let createdBy: UUID
 
     public init(
         id: UUID = UUID(),
-        projectID: UUID,
+        projectId: UUID,
         name: String,
-        description: String? = nil,
-        materialType: MaterialType,
-        batchNumber: String? = nil,
-        manufacturingDate: Date? = nil,
-        sampleLocation: String? = nil,
-        metadata: [String: String] = [:],
-        captureIDs: [UUID] = [],
-        analysisResultIDs: [UUID] = [],
+        description: String = "",
+        materialType: String = "",
+        status: SampleStatus = .pending,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        createdBy: UUID
     ) {
         self.id = id
-        self.projectID = projectID
+        self.projectId = projectId
         self.name = name
         self.description = description
         self.materialType = materialType
-        self.batchNumber = batchNumber
-        self.manufacturingDate = manufacturingDate
-        self.sampleLocation = sampleLocation
-        self.metadata = metadata
-        self.captureIDs = captureIDs
-        self.analysisResultIDs = analysisResultIDs
+        self.status = status
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
-    }
-
-    public var captureCount: Int {
-        captureIDs.count
-    }
-
-    public var analysisCount: Int {
-        analysisResultIDs.count
+        self.createdBy = createdBy
     }
 }
 
-// MARK: - Equatable
 extension Sample: Equatable {
     public static func == (lhs: Sample, rhs: Sample) -> Bool {
         lhs.id == rhs.id
     }
 }
 
-// MARK: - Hashable
 extension Sample: Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)

@@ -150,7 +150,7 @@ actor AppleIntelligenceService {
 
     // MARK: - Helper Methods
 
-    private func detectIntent(_ entities: [Entity]) -> String {
+    private func detectIntent(_ entities: [NLPEntity]) -> String {
         // Simple intent detection based on entities
         if entities.contains(where: { $0.type == .action }) {
             return "action_requested"
@@ -165,7 +165,7 @@ actor AppleIntelligenceService {
 
 struct ProcessedTextResult: Sendable {
     let originalText: String
-    let entities: [Entity]
+    let entities: [NLPEntity]
     let language: String
     let sentiment: TextSentiment
     let keywords: [String]
@@ -174,14 +174,14 @@ struct ProcessedTextResult: Sendable {
 
 struct ContextAnalysis: Sendable {
     let inputContext: String
-    let entities: [Entity]
+    let entities: [NLPEntity]
     let intent: String
     let confidence: Float
     let suggestedActions: [String]
     let timestamp: Date
 }
 
-struct Entity: Sendable {
+struct NLPEntity: Sendable {
     let text: String
     let type: EntityType
     let confidence: Float

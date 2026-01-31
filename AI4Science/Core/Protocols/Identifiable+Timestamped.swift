@@ -10,8 +10,4 @@ public protocol Timestamped: Sendable {
 public protocol IdentifiableTimestamped: Identifiable, Timestamped where ID == UUID {}
 
 /// Protocol combining common entity patterns
-public protocol Entity: IdentifiableTimestamped, Codable, Equatable, Hashable {
-    var id: UUID { get }
-    var createdAt: Date { get }
-    var updatedAt: Date { get }
-}
+public protocol Entity: IdentifiableTimestamped, Codable, Equatable, Hashable {}

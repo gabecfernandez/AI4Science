@@ -44,6 +44,11 @@ final class NavigationCoordinator {
         projectsPath.append(ProjectDestination.newProject)
     }
 
+    func showProjectEdit(_ projectId: UUID) {
+        selectedTab = .projects
+        projectsPath.append(ProjectDestination.edit(projectId))
+    }
+
     func showCamera() {
         selectedTab = .capture
         capturePath.append(CaptureDestination.camera)

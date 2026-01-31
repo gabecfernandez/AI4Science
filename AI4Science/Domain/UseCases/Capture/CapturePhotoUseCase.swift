@@ -35,19 +35,19 @@ public actor CapturePhotoUseCase: Sendable {
 
     /// Create metadata for photo capture
     /// - Parameters:
-    ///   - deviceInfo: Device information
-    ///   - notes: Optional notes about the capture
-    ///   - tags: Optional tags for categorization
+    ///   - deviceModel: Device model string
+    ///   - captureDate: Date of capture
     /// - Returns: Configured capture metadata
-    public func createMetadata(
-        deviceInfo: String,
-        notes: String? = nil,
-        tags: [String] = []
+    func createMetadata(
+        deviceModel: String,
+        captureDate: Date = Date()
     ) -> CaptureMetadata {
         return CaptureMetadata(
-            deviceInfo: deviceInfo,
-            notes: notes,
-            tags: tags
+            width: 0,
+            height: 0,
+            colorSpace: .sRGB,
+            captureDate: captureDate,
+            deviceModel: deviceModel
         )
     }
 }

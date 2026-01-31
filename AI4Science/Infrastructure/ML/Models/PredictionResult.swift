@@ -159,21 +159,6 @@ enum PredictionValue: Sendable, Codable {
     case object([String: PredictionValue])
 }
 
-/// Model information for prediction
-struct ModelInfo: Sendable, Codable {
-    /// Name of the model
-    let name: String
-
-    /// Unique model identifier
-    let identifier: String
-
-    /// Model version
-    let version: String
-
-    /// Framework used
-    let framework: String = "CoreML"
-}
-
 /// Confidence/score information
 struct ConfidenceInfo: Sendable, Codable {
     /// Average confidence across all predictions

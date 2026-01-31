@@ -1,5 +1,13 @@
 import Foundation
 
+/// Supported ML model types for inference.
+public enum MLModelType: String, Hashable, Sendable, CaseIterable {
+    case defectDetection
+    case materialClassification
+    case segmentation
+    case custom
+}
+
 /// Represents metadata for an ML model
 public struct MLModel: Identifiable, Codable, Sendable {
     public let id: UUID

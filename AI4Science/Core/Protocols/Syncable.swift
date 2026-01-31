@@ -7,16 +7,6 @@ public protocol Syncable: Sendable {
     var syncStatus: SyncStatus { get }
 }
 
-/// Sync status
-@frozen
-public enum SyncStatus: String, Codable, Sendable, CaseIterable {
-    case synced
-    case pending
-    case syncing
-    case failed
-    case conflict
-}
-
 /// Protocol for sync operations
 public protocol SyncEngine: Sendable {
     /// Sync all pending changes

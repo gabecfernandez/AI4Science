@@ -59,41 +59,6 @@ public struct CaptureData: Sendable {
     }
 }
 
-/// Metadata from a capture
-public struct CaptureMetadata: Sendable {
-    public var timestamp: Date
-    public var resolution: CGSize
-    public var focalLength: Double?
-    public var iso: Int?
-    public var exposureTime: Double?
-    public var brightness: Double?
-    public var whiteBalance: WhiteBalanceMode?
-    public var focusMode: FocusMode?
-    public var deviceModel: String?
-
-    public init(
-        timestamp: Date,
-        resolution: CGSize,
-        focalLength: Double? = nil,
-        iso: Int? = nil,
-        exposureTime: Double? = nil,
-        brightness: Double? = nil,
-        whiteBalance: WhiteBalanceMode? = nil,
-        focusMode: FocusMode? = nil,
-        deviceModel: String? = nil
-    ) {
-        self.timestamp = timestamp
-        self.resolution = resolution
-        self.focalLength = focalLength
-        self.iso = iso
-        self.exposureTime = exposureTime
-        self.brightness = brightness
-        self.whiteBalance = whiteBalance
-        self.focusMode = focusMode
-        self.deviceModel = deviceModel
-    }
-}
-
 /// Camera device
 public struct CameraDevice: Identifiable, Sendable {
     public let id: String

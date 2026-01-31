@@ -66,15 +66,6 @@ public struct MLAnalysisResult: Sendable {
     }
 }
 
-/// Analysis status
-public enum AnalysisStatus: String, Sendable {
-    case queued
-    case running
-    case completed
-    case failed
-    case cancelled
-}
-
 /// ML Prediction
 public struct Prediction: Sendable {
     public let label: String
@@ -131,41 +122,6 @@ public enum ProcessingPriority: String, Sendable {
     case normal
     case high
     case critical
-}
-
-/// ML Model information
-public struct MLModel: Sendable {
-    public let id: String
-    public let name: String
-    public let version: String
-    public let description: String
-    public let category: ModelCategory
-    public let inputTypes: [InputType]
-    public let outputTypes: [OutputType]
-    public let minIOSVersion: String
-    public let isLocalOnly: Bool
-
-    public init(
-        id: String,
-        name: String,
-        version: String,
-        description: String,
-        category: ModelCategory,
-        inputTypes: [InputType],
-        outputTypes: [OutputType],
-        minIOSVersion: String,
-        isLocalOnly: Bool
-    ) {
-        self.id = id
-        self.name = name
-        self.version = version
-        self.description = description
-        self.category = category
-        self.inputTypes = inputTypes
-        self.outputTypes = outputTypes
-        self.minIOSVersion = minIOSVersion
-        self.isLocalOnly = isLocalOnly
-    }
 }
 
 /// Model category

@@ -42,7 +42,7 @@ actor SyncQueue: Sendable {
         context.insert(queueEntry)
         try context.save()
 
-        Logger.info("Queued \(operationType) for \(entityType):\(entityID)")
+        AppLogger.info("Queued \(operationType) for \(entityType):\(entityID)")
         return queueEntry
     }
 
@@ -66,7 +66,7 @@ actor SyncQueue: Sendable {
 
             return synced
         } catch {
-            Logger.error("Failed to process queue: \(error.localizedDescription)")
+            AppLogger.error("Failed to process queue: \(error.localizedDescription)")
             return 0
         }
     }
@@ -80,7 +80,7 @@ actor SyncQueue: Sendable {
                 let descriptor = FetchDescriptor(predicate: predicate)
                 return try context.fetchCount(descriptor)
             } catch {
-                Logger.error("Failed to count pending items: \(error.localizedDescription)")
+                AppLogger.error("Failed to count pending items: \(error.localizedDescription)")
                 return 0
             }
         }
@@ -96,7 +96,7 @@ actor SyncQueue: Sendable {
         if let item = try context.fetch(descriptor).first {
             context.delete(item)
             try context.save()
-            Logger.info("Removed from queue: \(id)")
+            AppLogger.info("Removed from queue: \(id)")
         }
     }
 
@@ -111,7 +111,7 @@ actor SyncQueue: Sendable {
         }
 
         try context.save()
-        Logger.warning("Queue cleared")
+        AppLogger.warning("Queue cleared")
     }
 
     /// Get queue items by entity type
@@ -138,10 +138,10 @@ actor SyncQueue: Sendable {
             // For now, just mark as synced
             item.markSynced()
 
-            Logger.info("Synced \(item.operationType) for \(item.entityType)")
+            AppLogger.info("Synced \(item.operationType) for \(item.entityType)")
         } catch {
             item.markFailedWithRetry(errorMessage: error.localizedDescription)
-            Logger.warning("Failed to sync \(item.entityType):\(item.entityID) - will retry")
+            AppLogger.warning("Failed to sync \(item.entityType):\(item.entityID) - will retry")
         }
 
         try? context.save()

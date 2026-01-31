@@ -147,7 +147,7 @@ actor AuthenticatedAPIClient {
             throw APIError.unauthorized
         }
 
-        let builder = APIRequestBuilder(baseURL: URL(string: "http://api.ai4science.com") ?? URL(fileURLWithPath: ""))
+        var builder = APIRequestBuilder(baseURL: URL(string: "http://api.ai4science.com") ?? URL(fileURLWithPath: ""))
         builder.addAuthHeader(token)
 
         let request: URLRequest

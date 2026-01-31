@@ -52,11 +52,19 @@ public struct ValidateAnnotationsUseCase: Sendable {
 
         for result in results {
             do {
+                // Map predictions to findings for validation
+                let findings = result.predictions.map { pred in
+                    Finding(
+                        type: pred.className,
+                        label: pred.className,
+                        confidence: Float(pred.confidence)
+                    )
+                }
                 let validation = try await execute(
-                    findings: result.findings,
+                    findings: findings,
                     rules: validationRules
                 )
-                individualResults[result.id] = validation
+                individualResults[result.id.uuidString] = validation
                 allIssues.append(contentsOf: validation.issues)
             } catch {
                 print("Validation failed for result \(result.id): \(error)")

@@ -127,7 +127,7 @@ struct MainTabView: View {
         TabView(selection: $selectedTab) {
             Tab("Projects", systemImage: "folder.fill", value: .projects) {
                 NavigationStack(path: $nav.projectsPath) {
-                    ProjectsListView()
+                    ProjectListView()
                         .navigationDestination(for: ProjectDestination.self) { destination in
                             destination.view
                         }
@@ -237,12 +237,6 @@ struct OnboardingFlowView: View {
 
 // MARK: - Root Views for Each Tab
 
-struct ProjectsListView: View {
-    var body: some View {
-        Text("Projects")
-            .navigationTitle("Projects")
-    }
-}
 
 struct CaptureRootView: View {
     var body: some View {
@@ -303,16 +297,19 @@ enum ProjectDestination: Hashable {
     case detail(UUID)
     case samples(UUID)
     case newProject
+    case edit(UUID)
 
     @ViewBuilder
     var view: some View {
         switch self {
         case .detail(let id):
-            Text("Project Detail: \(id.uuidString.prefix(8))")
+            ProjectDetailView(projectId: id)
         case .samples(let projectId):
             Text("Samples for: \(projectId.uuidString.prefix(8))")
         case .newProject:
-            Text("New Project")
+            ProjectCreateView(editingProject: nil)
+        case .edit(let id):
+            ProjectEditView(projectId: id)
         }
     }
 }

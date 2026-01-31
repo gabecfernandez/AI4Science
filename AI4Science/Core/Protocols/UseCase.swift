@@ -32,5 +32,5 @@ public protocol UseCaseObserver<Request, Response>: Sendable {
     associatedtype Request: Sendable
     associatedtype Response: Sendable
 
-    func observe(request: Request) async -> AsyncThrowingSequence<Response, Error>
+    func observe(request: Request) async -> AsyncThrowingStream<Response, Error>
 }

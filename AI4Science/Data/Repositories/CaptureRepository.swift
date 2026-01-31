@@ -1,121 +1,59 @@
 import Foundation
 import SwiftData
 
-/// Protocol for capture operations
-protocol CaptureRepositoryProtocol: Sendable {
-    func createCapture(_ capture: CaptureEntity) async throws
-    func getCapture(id: String) async throws -> CaptureEntity?
-    func getCapturesBySample(sampleID: String) async throws -> [CaptureEntity]
-    func updateCapture(_ capture: CaptureEntity) async throws
-    func deleteCapture(id: String) async throws
-    func getAllCaptures() async throws -> [CaptureEntity]
-    func getCapturesByType(_ type: String) async throws -> [CaptureEntity]
-    func getCapturesByStatus(_ status: String) async throws -> [CaptureEntity]
-    func markCaptureProcessed(id: String) async throws
-    func updateProcessingStatus(id: String, status: String) async throws
-}
-
-/// Capture repository implementation
-actor CaptureRepository: CaptureRepositoryProtocol {
+/// Capture repository with domain-model interface
+actor CaptureRepository {
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
 
-    /// Create a new capture
-    func createCapture(_ capture: CaptureEntity) async throws {
-        modelContext.insert(capture)
+    func save(_ capture: Capture) async throws {
+        let idStr = capture.id.uuidString
+        let descriptor = FetchDescriptor<CaptureEntity>(
+            predicate: #Predicate { $0.id == idStr }
+        )
+        if let existing = try modelContext.fetch(descriptor).first {
+            existing.captureType = capture.type.rawValue
+            existing.fileURL = capture.fileURL.path
+            existing.fileSize = capture.fileSize
+            existing.deviceInfo = capture.metadata.deviceModel
+            existing.capturedAt = capture.metadata.captureDate
+        } else {
+            let entity = CaptureMapper.toEntity(from: capture)
+            modelContext.insert(entity)
+        }
         try modelContext.save()
     }
 
-    /// Get capture by ID
-    func getCapture(id: String) async throws -> CaptureEntity? {
+    func findById(_ id: UUID) async throws -> Capture? {
+        let idStr = id.uuidString
         let descriptor = FetchDescriptor<CaptureEntity>(
-            predicate: #Predicate { $0.id == id }
+            predicate: #Predicate { $0.id == idStr }
         )
-        return try modelContext.fetch(descriptor).first
+        guard let entity = try modelContext.fetch(descriptor).first else { return nil }
+        return CaptureMapper.toModel(from: entity)
     }
 
-    /// Get captures by sample
-    func getCapturesBySample(sampleID: String) async throws -> [CaptureEntity] {
+    func findBySample(_ sampleId: UUID) async throws -> [Capture] {
+        let sampleIdStr = sampleId.uuidString
         let descriptor = FetchDescriptor<CaptureEntity>(
-            predicate: #Predicate { capture in
-                capture.sample?.id == sampleID
-            },
+            predicate: #Predicate { $0.sample?.id == sampleIdStr },
             sortBy: [SortDescriptor(\.capturedAt, order: .reverse)]
         )
-        return try modelContext.fetch(descriptor)
+        return try modelContext.fetch(descriptor).map { CaptureMapper.toModel(from: $0) }
     }
 
-    /// Update capture
-    func updateCapture(_ capture: CaptureEntity) async throws {
-        capture.updatedAt = Date()
-        try modelContext.save()
-    }
-
-    /// Delete capture
-    func deleteCapture(id: String) async throws {
-        guard let capture = try getCapture(id: id) else {
+    func delete(_ id: UUID) async throws {
+        let idStr = id.uuidString
+        let descriptor = FetchDescriptor<CaptureEntity>(
+            predicate: #Predicate { $0.id == idStr }
+        )
+        guard let entity = try modelContext.fetch(descriptor).first else {
             throw RepositoryError.notFound
         }
-        modelContext.delete(capture)
+        modelContext.delete(entity)
         try modelContext.save()
-    }
-
-    /// Get all captures
-    func getAllCaptures() async throws -> [CaptureEntity] {
-        let descriptor = FetchDescriptor<CaptureEntity>(
-            sortBy: [SortDescriptor(\.capturedAt, order: .reverse)]
-        )
-        return try modelContext.fetch(descriptor)
-    }
-
-    /// Get captures by type
-    func getCapturesByType(_ type: String) async throws -> [CaptureEntity] {
-        let descriptor = FetchDescriptor<CaptureEntity>(
-            predicate: #Predicate { $0.captureType == type },
-            sortBy: [SortDescriptor(\.capturedAt, order: .reverse)]
-        )
-        return try modelContext.fetch(descriptor)
-    }
-
-    /// Get captures by status
-    func getCapturesByStatus(_ status: String) async throws -> [CaptureEntity] {
-        let descriptor = FetchDescriptor<CaptureEntity>(
-            predicate: #Predicate { $0.processingStatus == status },
-            sortBy: [SortDescriptor(\.capturedAt, order: .reverse)]
-        )
-        return try modelContext.fetch(descriptor)
-    }
-
-    /// Mark capture as processed
-    func markCaptureProcessed(id: String) async throws {
-        guard let capture = try getCapture(id: id) else {
-            throw RepositoryError.notFound
-        }
-        capture.markAsProcessed()
-        try modelContext.save()
-    }
-
-    /// Update processing status
-    func updateProcessingStatus(id: String, status: String) async throws {
-        guard let capture = try getCapture(id: id) else {
-            throw RepositoryError.notFound
-        }
-        capture.setProcessingStatus(status)
-        try modelContext.save()
-    }
-}
-
-/// Factory for creating capture repository
-struct CaptureRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> CaptureRepository {
-        CaptureRepository(modelContext: modelContext)
-    }
-
-    static func makeRepository(modelContainer: ModelContainer) -> CaptureRepository {
-        let context = ModelContext(modelContainer)
-        return CaptureRepository(modelContext: context)
     }
 }

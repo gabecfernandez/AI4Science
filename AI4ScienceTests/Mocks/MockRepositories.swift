@@ -8,6 +8,80 @@
 import Foundation
 @testable import AI4Science
 
+// MARK: - Mock Project Repository
+
+final class MockProjectRepository: ProjectRepositoryProtocol, @unchecked Sendable {
+    var savedProjects: [Project] = []
+
+    func save(_ project: Project) async throws {
+        if let index = savedProjects.firstIndex(where: { $0.id == project.id }) {
+            savedProjects[index] = project
+        } else {
+            savedProjects.append(project)
+        }
+    }
+
+    func findById(_ id: UUID) async throws -> Project? {
+        savedProjects.first { $0.id == id }
+    }
+
+    func findByOwner(_ ownerId: UUID) async throws -> [Project] {
+        savedProjects.filter { $0.ownerId == ownerId }
+    }
+
+    func findByStatus(_ status: ProjectStatus) async throws -> [Project] {
+        savedProjects.filter { $0.status == status }
+    }
+
+    func findAll() async throws -> [Project] {
+        savedProjects
+    }
+
+    func search(query: String) async throws -> [Project] {
+        let lower = query.lowercased()
+        return savedProjects.filter {
+            $0.name.lowercased().contains(lower) ||
+            $0.description.lowercased().contains(lower)
+        }
+    }
+
+    func delete(_ id: UUID) async throws {
+        savedProjects.removeAll { $0.id == id }
+    }
+}
+
+// MARK: - Failing Project Repository
+
+final class FailingProjectRepository: ProjectRepositoryProtocol, @unchecked Sendable {
+    func save(_ project: Project) async throws {
+        throw RepositoryError.saveError("Mock save failure")
+    }
+
+    func findById(_ id: UUID) async throws -> Project? {
+        throw RepositoryError.fetchError("Mock fetch failure")
+    }
+
+    func findByOwner(_ ownerId: UUID) async throws -> [Project] {
+        throw RepositoryError.fetchError("Mock fetch failure")
+    }
+
+    func findByStatus(_ status: ProjectStatus) async throws -> [Project] {
+        throw RepositoryError.fetchError("Mock fetch failure")
+    }
+
+    func findAll() async throws -> [Project] {
+        throw RepositoryError.fetchError("Mock fetch failure")
+    }
+
+    func search(query: String) async throws -> [Project] {
+        throw RepositoryError.fetchError("Mock fetch failure")
+    }
+
+    func delete(_ id: UUID) async throws {
+        throw RepositoryError.notFound
+    }
+}
+
 // MARK: - Mock User Repository
 
 actor MockUserRepository: UserRepositoryProtocol {
@@ -170,14 +244,14 @@ actor MockMLModelRepository: MLModelRepositoryProtocol {
 // MARK: - Mock Sync Repository
 
 actor MockSyncRepository {
-    private var pendingOperations: [SyncOperation] = []
-    private var completedOperations: [SyncOperation] = []
+    private var pendingOperations: [MockSyncOperationItem] = []
+    private var completedOperations: [MockSyncOperationItem] = []
 
-    func addPending(_ operation: SyncOperation) {
+    func addPending(_ operation: MockSyncOperationItem) {
         pendingOperations.append(operation)
     }
 
-    func getPending() -> [SyncOperation] {
+    func getPending() -> [MockSyncOperationItem] {
         pendingOperations
     }
 
@@ -196,15 +270,15 @@ actor MockSyncRepository {
 
 // MARK: - Supporting Types
 
-struct SyncOperation: Identifiable, Sendable {
+struct MockSyncOperationItem: Identifiable, Sendable {
     let id: UUID
     let entityType: String
     let entityId: UUID
-    let operationType: SyncOperationType
+    let operationType: MockSyncOperationType
     let createdAt: Date
 }
 
-enum SyncOperationType: String, Sendable {
+enum MockSyncOperationType: String, Sendable {
     case create
     case update
     case delete
@@ -246,10 +320,44 @@ protocol MLModelRepositoryProtocol: Sendable {
     func delete(_ type: MLModelType) async throws
 }
 
-enum SampleStatus: String, Sendable, CaseIterable {
-    case pending
-    case inProgress
-    case analyzed
-    case reviewed
-    case archived
+// MARK: - Mock Service Conformances
+
+extension MockAuthService: AuthServiceProtocol {}
+extension MockCameraManager: CameraManagerProtocol {}
+extension MockMLService: MLAnalysisService {}
+
+// MARK: - MLInferenceServiceProtocol conformance for MockMLInferenceService
+
+extension MockMLInferenceService: MLInferenceServiceProtocol {
+    typealias DetectionResult = Detection
+}
+
+// MARK: - AnalysisResultSaver conformance for MockAnalysisRepository
+
+extension MockAnalysisRepository: AnalysisResultSaver {
+    func saveAnalysisResult(_ result: AnalysisPipelineResult) async throws {
+        let detections = result.detections.compactMap { $0 as? DetectionResult }
+        let analysisResult = AnalysisResult(
+            id: result.id,
+            captureId: result.captureId,
+            modelType: result.modelType,
+            modelVersion: result.modelVersion,
+            detections: detections,
+            processingTime: result.processingTime,
+            createdAt: result.createdAt
+        )
+        try await save(analysisResult)
+    }
+}
+
+// MARK: - SyncServiceConsumer conformance for MockSyncService
+
+extension MockSyncService: SyncServiceConsumer {}
+
+// MARK: - CaptureRepositorySaver conformance for MockCaptureRepository
+
+extension MockCaptureRepository: CaptureRepositorySaver {
+    func findCapturesForProject(_ projectId: UUID) async throws -> [Capture] {
+        try await findByProject(projectId)
+    }
 }

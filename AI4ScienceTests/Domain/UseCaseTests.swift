@@ -269,34 +269,6 @@ struct ExportDataUseCaseTests {
 
 // MARK: - Mock Objects
 
-final class MockProjectRepository: ProjectRepositoryProtocol, @unchecked Sendable {
-    var savedProjects: [Project] = []
-
-    func save(_ project: Project) async throws {
-        if let index = savedProjects.firstIndex(where: { $0.id == project.id }) {
-            savedProjects[index] = project
-        } else {
-            savedProjects.append(project)
-        }
-    }
-
-    func findById(_ id: UUID) async throws -> Project? {
-        savedProjects.first { $0.id == id }
-    }
-
-    func findByOwner(_ ownerId: UUID) async throws -> [Project] {
-        savedProjects.filter { $0.ownerId == ownerId }
-    }
-
-    func findByStatus(_ status: ProjectStatus) async throws -> [Project] {
-        savedProjects.filter { $0.status == status }
-    }
-
-    func delete(_ id: UUID) async throws {
-        savedProjects.removeAll { $0.id == id }
-    }
-}
-
 final class MockAnalysisRepository: @unchecked Sendable {
     var savedResults: [AnalysisResult] = []
 

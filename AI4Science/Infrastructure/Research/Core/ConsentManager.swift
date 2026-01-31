@@ -1,4 +1,6 @@
+#if canImport(ResearchKit)
 import ResearchKit
+#endif
 import Foundation
 
 /// Manages informed consent flows and documentation

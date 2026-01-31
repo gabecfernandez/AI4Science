@@ -1,4 +1,6 @@
+#if canImport(ResearchKit)
 import ResearchKit
+#endif
 import Foundation
 
 /// Checks participant eligibility based on study criteria
@@ -187,7 +189,7 @@ struct EligibilityCriterion: Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case identifier, type, operator, minValue, maxValue, description
+        case identifier, type, `operator`, minValue, maxValue, description
     }
 
     init(from decoder: Decoder) throws {

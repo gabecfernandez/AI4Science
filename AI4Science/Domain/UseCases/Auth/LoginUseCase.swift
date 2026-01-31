@@ -49,31 +49,3 @@ public struct AuthToken: Sendable, Codable {
     }
 }
 
-public enum AuthError: LocalizedError, Sendable {
-    case invalidEmail
-    case invalidPassword
-    case invalidCredentials
-    case networkError
-    case serverError(message: String)
-    case tokenExpired
-    case unauthorized
-
-    public var errorDescription: String? {
-        switch self {
-        case .invalidEmail:
-            return "The email address is invalid."
-        case .invalidPassword:
-            return "The password is invalid."
-        case .invalidCredentials:
-            return "Email or password is incorrect."
-        case .networkError:
-            return "Network connection failed."
-        case .serverError(let message):
-            return "Server error: \(message)"
-        case .tokenExpired:
-            return "Authentication token has expired."
-        case .unauthorized:
-            return "User is not authorized."
-        }
-    }
-}

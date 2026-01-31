@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(ResearchKit)
 import ResearchKit
+#endif
 
 /// Factory for creating review steps
 enum ReviewStepFactory {
@@ -65,9 +67,9 @@ enum ReviewStepFactory {
         step.title = "Protocol Compliance Review"
         step.text = "Please confirm that you followed all protocols:\n\n"
 
-        for protocol in protocols {
-            step.text! += "✓ \(protocol.name)\n"
-            step.text! += "   \(protocol.description)\n\n"
+        for item in protocols {
+            step.text! += "✓ \(item.name)\n"
+            step.text! += "   \(item.description)\n\n"
         }
 
         step.image = UIImage(systemName: "list.clipboard.fill")

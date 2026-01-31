@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		00BB21922F2E531600589682 /* AI4Science.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AI4Science.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		00BB2200TEST000000000001 /* AI4ScienceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AI4ScienceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +17,22 @@
 			path = AI4Science;
 			sourceTree = "<group>";
 		};
+		00BB2200TEST000000000002 /* AI4ScienceTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AI4ScienceTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		00BB218F2F2E531600589682 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00BB2200TEST000000000003 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				00BB21942F2E531600589682 /* AI4Science */,
+				00BB2200TEST000000000002 /* AI4ScienceTests */,
 				00BB21932F2E531600589682 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				00BB21922F2E531600589682 /* AI4Science.app */,
+				00BB2200TEST000000000001 /* AI4ScienceTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +85,28 @@
 			productReference = 00BB21922F2E531600589682 /* AI4Science.app */;
 			productType = "com.apple.product-type.application";
 		};
+		00BB2200TEST000000000004 /* AI4ScienceTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00BB2200TEST000000000007 /* Build configuration list for PBXNativeTarget "AI4ScienceTests" */;
+			buildPhases = (
+				00BB2200TEST000000000005 /* Sources */,
+				00BB2200TEST000000000003 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				00BB2200TEST000000000006 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				00BB2200TEST000000000002 /* AI4ScienceTests */,
+			);
+			name = AI4ScienceTests;
+			packageProductDependencies = (
+			);
+			productName = AI4ScienceTests;
+			productReference = 00BB2200TEST000000000001 /* AI4ScienceTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +119,10 @@
 				TargetAttributes = {
 					00BB21912F2E531600589682 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					00BB2200TEST000000000004 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 00BB21912F2E531600589682;
 					};
 				};
 			};
@@ -100,6 +141,7 @@
 			projectRoot = "";
 			targets = (
 				00BB21912F2E531600589682 /* AI4Science */,
+				00BB2200TEST000000000004 /* AI4ScienceTests */,
 			);
 		};
 /* End PBXProject section */
@@ -122,7 +164,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		00BB2200TEST000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		00BB2200TEST000000000006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 00BB21912F2E531600589682 /* AI4Science */;
+			targetProxy = 00BB2200TEST000000000008 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		00BB2200TEST000000000008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00BB218A2F2E531600589682 /* Project object */;
+			proxyType = 1;
+			remoteGlobalID_String = 00BB21912F2E531600589682;
+			remoteInfo = AI4Science;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin XCBuildConfiguration section */
 		00BB219B2F2E531800589682 /* Debug */ = {
@@ -255,6 +322,46 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BBDB8N976S;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					"CompletionStepFactory.swift",
+					"ConsentConfiguration.swift",
+					"ConsentResultHandler.swift",
+					"ConsentService.swift",
+					"ConsentTask.swift",
+					"ConsentViewCoordinator.swift",
+					"DemographicsSurveyTask.swift",
+					"FormStepFactory.swift",
+					"InstructionStepFactory.swift",
+					"OnboardingSurveyTask.swift",
+					"QualityAssessmentTask.swift",
+					"QuestionStepFactory.swift",
+					"ResearchKitConfiguration.swift",
+					"ResearchKitManager.swift",
+					"ResearchKitViewControllerRepresentable.swift",
+					"ResultExporter.swift",
+					"ResultProcessor.swift",
+					"ReviewStepFactory.swift",
+					"SampleCollectionTask.swift",
+					"SurveyConfiguration.swift",
+					"SurveyResultHandler.swift",
+					"SurveyService.swift",
+					"SurveyViewCoordinator.swift",
+					"TaskService.swift",
+					"TaskViewCoordinator.swift",
+					"ActiveTaskBuilder.swift",
+					"AnnotationStep.swift",
+					"CalibrationStep.swift",
+					"ConsentManager.swift",
+					"ConsentTaskBuilder.swift",
+					"CustomInstructionStep.swift",
+					"EligibilityChecker.swift",
+					"ImageCaptureStep.swift",
+					"OnboardingTaskBuilder.swift",
+					"ResearchCoordinator.swift",
+					"StudyManager.swift",
+					"SurveyTaskBuilder.swift",
+					TaskFactory.swift
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -287,6 +394,46 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BBDB8N976S;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					"CompletionStepFactory.swift",
+					"ConsentConfiguration.swift",
+					"ConsentResultHandler.swift",
+					"ConsentService.swift",
+					"ConsentTask.swift",
+					"ConsentViewCoordinator.swift",
+					"DemographicsSurveyTask.swift",
+					"FormStepFactory.swift",
+					"InstructionStepFactory.swift",
+					"OnboardingSurveyTask.swift",
+					"QualityAssessmentTask.swift",
+					"QuestionStepFactory.swift",
+					"ResearchKitConfiguration.swift",
+					"ResearchKitManager.swift",
+					"ResearchKitViewControllerRepresentable.swift",
+					"ResultExporter.swift",
+					"ResultProcessor.swift",
+					"ReviewStepFactory.swift",
+					"SampleCollectionTask.swift",
+					"SurveyConfiguration.swift",
+					"SurveyResultHandler.swift",
+					"SurveyService.swift",
+					"SurveyViewCoordinator.swift",
+					"TaskService.swift",
+					"TaskViewCoordinator.swift",
+					"ActiveTaskBuilder.swift",
+					"AnnotationStep.swift",
+					"CalibrationStep.swift",
+					"ConsentManager.swift",
+					"ConsentTaskBuilder.swift",
+					"CustomInstructionStep.swift",
+					"EligibilityChecker.swift",
+					"ImageCaptureStep.swift",
+					"OnboardingTaskBuilder.swift",
+					"ResearchCoordinator.swift",
+					"StudyManager.swift",
+					"SurveyTaskBuilder.swift",
+					TaskFactory.swift
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -310,6 +457,50 @@
 			};
 			name = Release;
 		};
+		00BB2200TEST000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = BBDB8N976S;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.CodeHarmonic.AI4ScienceTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		00BB2200TEST00000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = BBDB8N976S;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.CodeHarmonic.AI4ScienceTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,6 +518,15 @@
 			buildConfigurations = (
 				00BB219E2F2E531800589682 /* Debug */,
 				00BB219F2F2E531800589682 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		00BB2200TEST000000000007 /* Build configuration list for PBXNativeTarget "AI4ScienceTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00BB2200TEST000000000009 /* Debug */,
+				00BB2200TEST00000000000A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,18 +1,5 @@
 import Foundation
 
-/// Protocol for local data source operations
-public protocol LocalDataSource<Entity>: Sendable {
-    associatedtype Entity: Identifiable where Entity.ID == UUID
-
-    func fetch(id: UUID) async throws -> Entity
-    func fetchAll() async throws -> [Entity]
-    func save(_ entity: Entity) async throws
-    func saveBatch(_ entities: [Entity]) async throws
-    func delete(id: UUID) async throws
-    func deleteAll() async throws
-    func exists(id: UUID) async throws -> Bool
-}
-
 /// Protocol for remote data source operations
 public protocol RemoteDataSource<Entity>: Sendable {
     associatedtype Entity: Identifiable where Entity.ID == UUID

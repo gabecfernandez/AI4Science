@@ -1,343 +1,148 @@
 import SwiftUI
 
 struct ProjectDetailView: View {
-    let project: Project
-    @State private var viewModel = ProjectDetailViewModel()
-    @State private var selectedTab: ProjectDetailTab = .overview
-    @Environment(\.dismiss) var dismiss
-
-    enum ProjectDetailTab {
-        case overview
-        case samples
-        case settings
-    }
+    let projectId: UUID
+    @Environment(ServiceContainer.self) private var services
+    @Environment(\.dismiss) private var dismiss
+    @State private var viewModel: ProjectDetailViewModel?
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.09, green: 0.17, blue: 0.26),
-                    Color(red: 0.12, green: 0.20, blue: 0.30)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 12) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(project.name)
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-
-                            HStack(spacing: 12) {
-                                Label(project.status.rawValue, systemImage: "circle.fill")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-
-                                Label(project.createdDate.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                        }
-
-                        Spacer()
-
-                        Menu {
-                            Button(action: {}) {
-                                Label("Edit", systemImage: "pencil")
-                            }
-
-                            Button(action: {}) {
-                                Label("Export", systemImage: "arrow.up.doc")
-                            }
-
-                            Button(action: {}) {
-                                Label("Share", systemImage: "square.and.arrow.up")
-                            }
-
-                            Divider()
-
-                            Button(role: .destructive, action: {}) {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
-                    // Tab selector
-                    HStack(spacing: 0) {
-                        ForEach([ProjectDetailTab.overview, .samples, .settings], id: \.self) { tab in
-                            VStack(spacing: 4) {
-                                Text(tabTitle(tab))
-                                    .font(.subheadline)
-                                    .fontWeight(selectedTab == tab ? .semibold : .regular)
-                                    .foregroundColor(selectedTab == tab ? .white : .white.opacity(0.6))
-
-                                if selectedTab == tab {
-                                    Capsule()
-                                        .fill(Color.blue)
-                                        .frame(height: 3)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
-                            .onTapGesture { selectedTab = tab }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                }
-                .padding(.vertical, 16)
-
-                // Content
-                ScrollView {
-                    VStack(spacing: 16) {
-                        switch selectedTab {
-                        case .overview:
-                            ProjectOverviewContent(project: project)
-                        case .samples:
-                            ProjectSamplesContent(project: project)
-                        case .settings:
-                            ProjectSettingsContent(project: project)
-                        }
-                    }
-                    .padding(20)
-                }
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
-        .task {
-            await viewModel.loadProjectDetails(for: project.id)
-        }
-    }
-
-    private func tabTitle(_ tab: ProjectDetailTab) -> String {
-        switch tab {
-        case .overview:
-            return "Overview"
-        case .samples:
-            return "Samples"
-        case .settings:
-            return "Settings"
-        }
-    }
-}
-
-struct ProjectOverviewContent: View {
-    let project: Project
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Description
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Description")
-                    .font(.headline)
-                    .foregroundColor(.white)
-
-                Text(project.description)
-                    .font(.body)
-                    .foregroundColor(.white.opacity(0.8))
-                    .lineSpacing(4)
-            }
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Stats
-            VStack(spacing: 12) {
-                StatRow(label: "Total Samples", value: "\(project.sampleCount)", icon: "beaker.fill")
-                StatRow(label: "Team Members", value: "\(project.memberCount)", icon: "person.2.fill")
-                StatRow(label: "Created Date", value: project.createdDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar")
-                StatRow(label: "Last Updated", value: Date().formatted(date: .abbreviated, time: .omitted), icon: "clock.fill")
-            }
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Quick actions
-            VStack(spacing: 10) {
-                Button(action: {}) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add Sample")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                }
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-
-                Button(action: {}) {
-                    HStack {
-                        Image(systemName: "person.badge.plus.fill")
-                        Text("Invite Member")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                }
-                .background(Color.white.opacity(0.1))
-                .foregroundColor(.blue)
-                .cornerRadius(8)
-            }
-        }
-    }
-}
-
-struct ProjectSamplesContent: View {
-    let project: Project
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Samples in this project")
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            if project.sampleCount > 0 {
-                ForEach(0..<min(3, project.sampleCount), id: \.self) { index in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Sample \(index + 1)")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-
-                            Text("Added \(Date().formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                    .padding(12)
-                    .background(Color.white.opacity(0.08))
-                    .cornerRadius(8)
+        Group {
+            if let vm = viewModel {
+                if vm.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let project = vm.project {
+                    projectContent(project, vm)
+                } else if vm.showError {
+                    errorView(vm.errorMessage)
                 }
             } else {
-                Text("No samples yet")
-                    .foregroundColor(.white.opacity(0.6))
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-    }
-}
-
-struct ProjectSettingsContent: View {
-    let project: Project
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Project Settings")
-                .font(.headline)
-                .foregroundColor(.white)
-
-            SettingRow(label: "Project Name", value: project.name)
-            SettingRow(label: "Status", value: project.status.rawValue)
-            SettingRow(label: "Members", value: "\(project.memberCount)")
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            Button(role: .destructive, action: {}) {
-                Text("Delete Project")
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+        .navigationTitle(viewModel?.project?.name ?? "Project")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    NavigationLink(value: ProjectDestination.edit(projectId)) {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Button(role: .destructive, action: { viewModel?.showDeleteConfirmation = true }) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
             }
-            .background(Color.red.opacity(0.2))
-            .foregroundColor(.red)
-            .cornerRadius(8)
+        }
+        .confirmationDialog(
+            "Delete Project?",
+            isPresented: Binding(get: { viewModel?.showDeleteConfirmation ?? false }, set: { viewModel?.showDeleteConfirmation = $0 }),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    if let vm = viewModel, await vm.deleteProject() {
+                        dismiss()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This action cannot be undone. All samples and captures in this project will be deleted.")
+        }
+        .task {
+            viewModel = ProjectDetailViewModel(repository: services.projectRepository)
+            await viewModel?.loadProject(id: projectId)
         }
     }
-}
 
-struct StatRow: View {
-    let label: String
-    let value: String
-    let icon: String
+    // MARK: - Project Content
 
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.blue)
-                .frame(width: 24)
+    private func projectContent(_ project: Project, _ vm: ProjectDetailViewModel) -> some View {
+        List {
+            // Stats grid
+            Section {
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 12) {
+                    statCard(
+                        icon: "beaker.fill",
+                        label: "Samples",
+                        value: "\(project.sampleIds.count)"
+                    )
+                    statCard(
+                        icon: "circle.fill",
+                        label: "Status",
+                        value: project.status.displayName
+                    )
+                    statCard(
+                        icon: "calendar",
+                        label: "Created",
+                        value: project.createdAt.formatted(date: .abbreviated, time: .omitted)
+                    )
+                    statCard(
+                        icon: "person.2.fill",
+                        label: "Members",
+                        value: "\(project.collaboratorIds.count + 1)"
+                    )
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+            }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
+            // Description
+            if !project.description.isEmpty {
+                Section(header: Text("Description")) {
+                    Text(project.description)
+                        .foregroundStyle(ColorPalette.onSurface)
+                }
+            }
 
-                Text(value)
+            // Samples placeholder
+            Section(header: Text("Samples")) {
+                Text("No samples yet — add samples to begin analysis")
+                    .foregroundStyle(ColorPalette.onSurfaceVariant)
                     .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
             }
-
-            Spacer()
         }
+        .listStyle(.insetGrouped)
     }
-}
 
-struct SettingRow: View {
-    let label: String
-    let value: String
+    // MARK: - Stat Card
 
-    var body: some View {
-        HStack {
+    private func statCard(icon: String, label: String, value: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(ColorPalette.utsa_primary)
             Text(label)
-                .foregroundColor(.white.opacity(0.7))
-
-            Spacer()
-
+                .font(.caption)
+                .foregroundStyle(ColorPalette.onSurfaceVariant)
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .foregroundStyle(ColorPalette.onSurface)
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .padding(.horizontal, 12)
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(8)
+        .background(ColorPalette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
-}
 
-struct Project: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let description: String
-    let status: Status
-    let sampleCount: Int
-    let memberCount: Int
-    let createdDate: Date
+    // MARK: - Error View
 
-    enum Status: String {
-        case active = "Active"
-        case paused = "Paused"
-        case completed = "Completed"
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ProjectDetailView(project: Project(
-            id: "1",
-            name: "Sample Project",
-            description: "A test project for demonstration",
-            status: .active,
-            sampleCount: 10,
-            memberCount: 3,
-            createdDate: Date()
-        ))
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(ColorPalette.error)
+            Text(message)
+                .foregroundStyle(ColorPalette.onSurface)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

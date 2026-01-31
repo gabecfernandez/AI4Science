@@ -1,175 +1,95 @@
 import Foundation
+import CoreGraphics
 
 /// Mapper for converting between Annotation domain models and persistence models
 struct AnnotationMapper {
     /// Map AnnotationEntity to domain Annotation model
     static func toModel(_ entity: AnnotationEntity) -> Annotation {
-        Annotation(
-            id: entity.id,
-            annotationType: entity.annotationType,
-            content: entity.content,
-            coordinates: entity.coordinates,
-            createdBy: entity.createdBy,
-            label: entity.label,
-            confidenceScore: entity.confidenceScore,
-            color: entity.color,
-            isVisible: entity.isVisible,
-            metadata: entity.metadata,
+        let captureId = UUID(uuidString: entity.capture?.id ?? "") ?? UUID()
+        let type = AnnotationType(rawValue: entity.annotationType) ?? .point
+        let geometry = parseGeometry(type: type, coordinates: entity.coordinates)
+        let defectType = DefectType(rawValue: entity.content) ?? .unknown
+        let severity = DefectSeverity(rawValue: entity.label ?? "low") ?? .low
+        let confidence = entity.confidenceScore ?? 0.0
+        let createdBy = UUID(uuidString: entity.createdBy) ?? UUID()
+        let id = UUID(uuidString: entity.id) ?? UUID()
+
+        return Annotation(
+            id: id,
+            captureId: captureId,
+            type: type,
+            geometry: geometry,
+            label: entity.label ?? "",
+            defectType: defectType,
+            severity: severity,
+            confidence: confidence,
             createdAt: entity.createdAt,
-            updatedAt: entity.updatedAt
+            createdBy: createdBy
         )
     }
 
     /// Map domain Annotation model to AnnotationEntity
     static func toEntity(from annotation: Annotation) -> AnnotationEntity {
         AnnotationEntity(
-            id: annotation.id,
-            annotationType: annotation.annotationType,
-            content: annotation.content,
-            coordinates: annotation.coordinates,
-            createdBy: annotation.createdBy,
+            id: annotation.id.uuidString,
+            annotationType: annotation.type.rawValue,
+            content: annotation.defectType.rawValue,
+            coordinates: serializeGeometry(annotation.geometry),
+            createdBy: annotation.createdBy.uuidString,
             createdAt: annotation.createdAt,
-            updatedAt: annotation.updatedAt
+            updatedAt: annotation.createdAt
         )
     }
 
     /// Update AnnotationEntity from domain Annotation
     static func update(_ entity: AnnotationEntity, with annotation: Annotation) {
-        entity.content = annotation.content
-        entity.coordinates = annotation.coordinates
+        entity.content = annotation.defectType.rawValue
+        entity.coordinates = serializeGeometry(annotation.geometry)
         entity.label = annotation.label
-        entity.confidenceScore = annotation.confidenceScore
-        entity.color = annotation.color
-        entity.isVisible = annotation.isVisible
-        entity.metadata = annotation.metadata
-        entity.updatedAt = annotation.updatedAt
+        entity.confidenceScore = annotation.confidence
+        entity.updatedAt = Date()
     }
 
-    /// Parse coordinates string to coordinates array
-    static func parseCoordinates(_ coordinatesString: String) -> [[Double]] {
-        guard let data = coordinatesString.data(using: .utf8),
-              let array = try? JSONDecoder().decode([[Double]].self, from: data) else {
-            return []
+    // MARK: - Geometry Serialization
+
+    private static func parseGeometry(type: AnnotationType, coordinates: String) -> Geometry {
+        guard let data = coordinates.data(using: .utf8),
+              let array = try? JSONDecoder().decode([[Double]].self, from: data),
+              !array.isEmpty else {
+            return .point(.zero)
         }
-        return array
+
+        switch type {
+        case .point:
+            guard array[0].count >= 2 else { return .point(.zero) }
+            return .point(CGPoint(x: array[0][0], y: array[0][1]))
+        case .rectangle:
+            guard array[0].count >= 4 else { return .rectangle(.zero) }
+            return .rectangle(CGRect(x: array[0][0], y: array[0][1],
+                                     width: array[0][2], height: array[0][3]))
+        case .polygon:
+            let points = array.compactMap { $0.count >= 2 ? CGPoint(x: $0[0], y: $0[1]) : nil }
+            return .polygon(points)
+        case .freeform:
+            let points = array.compactMap { $0.count >= 2 ? CGPoint(x: $0[0], y: $0[1]) : nil }
+            return .freeform(points)
+        }
     }
 
-    /// Serialize coordinates array to string
-    static func serializeCoordinates(_ coordinates: [[Double]]) -> String {
-        guard let data = try? JSONEncoder().encode(coordinates),
+    private static func serializeGeometry(_ geometry: Geometry) -> String {
+        let array: [[Double]]
+        switch geometry {
+        case .point(let p):
+            array = [[p.x, p.y]]
+        case .rectangle(let r):
+            array = [[r.origin.x, r.origin.y, r.size.width, r.size.height]]
+        case .polygon(let pts), .freeform(let pts):
+            array = pts.map { [$0.x, $0.y] }
+        }
+        guard let data = try? JSONEncoder().encode(array),
               let string = String(data: data, encoding: .utf8) else {
             return "[]"
         }
         return string
     }
-}
-
-/// Domain Annotation model
-struct Annotation: Codable, Identifiable {
-    let id: String
-    let annotationType: String
-    var content: String
-    var coordinates: String
-    let createdBy: String
-    var label: String?
-    var confidenceScore: Double?
-    var color: String
-    var isVisible: Bool
-    var metadata: [String: String]
-    var createdAt: Date
-    var updatedAt: Date
-
-    init(
-        id: String,
-        annotationType: String,
-        content: String,
-        coordinates: String,
-        createdBy: String,
-        label: String? = nil,
-        confidenceScore: Double? = nil,
-        color: String = "#FF0000",
-        isVisible: Bool = true,
-        metadata: [String: String] = [:],
-        createdAt: Date = Date(),
-        updatedAt: Date = Date()
-    ) {
-        self.id = id
-        self.annotationType = annotationType
-        self.content = content
-        self.coordinates = coordinates
-        self.createdBy = createdBy
-        self.label = label
-        self.confidenceScore = confidenceScore
-        self.color = color
-        self.isVisible = isVisible
-        self.metadata = metadata
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-    }
-
-    var isRegion: Bool {
-        annotationType == "region"
-    }
-
-    var isPoint: Bool {
-        annotationType == "point"
-    }
-
-    var isPolygon: Bool {
-        annotationType == "polygon"
-    }
-
-    var isMeasurement: Bool {
-        annotationType == "measurement"
-    }
-
-    var isHighConfidence: Bool {
-        guard let score = confidenceScore else { return false }
-        return score > 0.8
-    }
-
-    var parsedCoordinates: [[Double]] {
-        AnnotationMapper.parseCoordinates(coordinates)
-    }
-
-    mutating func updateCoordinates(_ newCoordinates: [[Double]]) {
-        coordinates = AnnotationMapper.serializeCoordinates(newCoordinates)
-        updatedAt = Date()
-    }
-
-    mutating func setColor(_ color: String) {
-        self.color = color
-        updatedAt = Date()
-    }
-
-    mutating func toggleVisibility() {
-        isVisible.toggle()
-        updatedAt = Date()
-    }
-
-    mutating func setLabel(_ label: String) {
-        self.label = label
-        updatedAt = Date()
-    }
-
-    mutating func setConfidenceScore(_ score: Double) {
-        confidenceScore = min(max(score, 0.0), 1.0)
-        updatedAt = Date()
-    }
-
-    mutating func addMetadata(key: String, value: String) {
-        metadata[key] = value
-        updatedAt = Date()
-    }
-}
-
-/// Annotation type definitions
-enum AnnotationType: String, Codable {
-    case region = "region"
-    case point = "point"
-    case polygon = "polygon"
-    case measurement = "measurement"
-    case freehand = "freehand"
-    case arrow = "arrow"
-    case text = "text"
 }

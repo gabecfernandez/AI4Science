@@ -64,34 +64,6 @@ public struct RunAnalysisUseCase: Sendable {
 
 // MARK: - Supporting Types
 
-public struct AnalysisResult: Sendable, Codable, Identifiable {
-    public let id: String
-    public let captureId: String
-    public let modelId: String
-    public let confidence: Float
-    public let findings: [Finding]
-    public let processingTime: Double
-    public let createdAt: Date
-
-    public init(
-        id: String,
-        captureId: String,
-        modelId: String,
-        confidence: Float,
-        findings: [Finding],
-        processingTime: Double,
-        createdAt: Date = Date()
-    ) {
-        self.id = id
-        self.captureId = captureId
-        self.modelId = modelId
-        self.confidence = confidence
-        self.findings = findings
-        self.processingTime = processingTime
-        self.createdAt = createdAt
-    }
-}
-
 public struct Finding: Sendable, Codable, Identifiable {
     public let id: String
     public let type: String
@@ -114,20 +86,6 @@ public struct Finding: Sendable, Codable, Identifiable {
         self.confidence = confidence
         self.boundingBox = boundingBox
         self.metadata = metadata
-    }
-}
-
-public struct BoundingBox: Sendable, Codable {
-    public let x: Float
-    public let y: Float
-    public let width: Float
-    public let height: Float
-
-    public init(x: Float, y: Float, width: Float, height: Float) {
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
     }
 }
 

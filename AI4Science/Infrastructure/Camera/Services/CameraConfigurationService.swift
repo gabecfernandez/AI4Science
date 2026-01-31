@@ -296,10 +296,10 @@ actor CameraConfigurationService {
     }
 
     /// Get camera capabilities
-    func getCameraCapabilities(device: AVCaptureDevice) -> CameraCapabilities {
+    func getCameraCapabilities(device: AVCaptureDevice) -> DeviceCameraCapabilities {
         let format = device.activeFormat
 
-        return CameraCapabilities(
+        return DeviceCameraCapabilities(
             supportsAutoFocus: device.isFocusModeSupported(.autoFocus),
             supportsManualFocus: device.isFocusModeSupported(.locked),
             supportsFocusPointOfInterest: device.isFocusPointOfInterestSupported,
@@ -317,7 +317,7 @@ actor CameraConfigurationService {
     }
 }
 
-struct CameraCapabilities {
+struct DeviceCameraCapabilities {
     let supportsAutoFocus: Bool
     let supportsManualFocus: Bool
     let supportsFocusPointOfInterest: Bool

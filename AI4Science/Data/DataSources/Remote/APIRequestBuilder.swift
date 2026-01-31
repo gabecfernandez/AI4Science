@@ -1,7 +1,7 @@
 import Foundation
 
 /// Builder for constructing API requests
-actor APIRequestBuilder {
+struct APIRequestBuilder: @unchecked Sendable {
     // MARK: - Properties
 
     private let baseURL: URL
@@ -10,45 +10,38 @@ actor APIRequestBuilder {
 
     // MARK: - Initialization
 
-    init(baseURL: URL) {
+    nonisolated init(baseURL: URL) {
         self.baseURL = baseURL
-        setDefaultHeaders()
+        self.headers = ["Accept": "application/json", "User-Agent": "AI4Science/1.0"]
+        self.queryParameters = [:]
     }
 
     // MARK: - Public Methods
 
     /// Add header to request
-    /// - Parameters:
-    ///   - key: Header key
-    ///   - value: Header value
     @discardableResult
-    func addHeader(_ key: String, _ value: String) -> Self {
+    nonisolated mutating func addHeader(_ key: String, _ value: String) -> Self {
         headers[key] = value
         return self
     }
 
     /// Add authentication header
-    /// - Parameter token: Bearer token
     @discardableResult
-    func addAuthHeader(_ token: String) -> Self {
-        addHeader("Authorization", "Bearer \(token)")
+    nonisolated mutating func addAuthHeader(_ token: String) -> Self {
+        headers["Authorization"] = "Bearer \(token)"
         return self
     }
 
     /// Add query parameter
-    /// - Parameters:
-    ///   - key: Parameter key
-    ///   - value: Parameter value
     @discardableResult
-    func addQueryParameter(_ key: String, _ value: String) -> Self {
+    nonisolated mutating func addQueryParameter(_ key: String, _ value: String) -> Self {
         queryParameters[key] = value
         return self
     }
 
     /// Add query parameters from dictionary
-    /// - Parameter parameters: Dictionary of parameters
     @discardableResult
-    func addQueryParameters(_ parameters: [String: String]) -> Self {
+    nonisolated mutating func addQueryParameters(_ parameters: [String: String]) -> Self {
         for (key, value) in parameters {
             queryParameters[key] = value
         }
@@ -56,9 +49,7 @@ actor APIRequestBuilder {
     }
 
     /// Build GET request
-    /// - Parameter endpoint: API endpoint path
-    /// - Returns: URLRequest
-    func buildGET(endpoint: String) throws -> URLRequest {
+    nonisolated func buildGET(endpoint: String) throws -> URLRequest {
         let url = try buildURL(endpoint: endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -67,11 +58,7 @@ actor APIRequestBuilder {
     }
 
     /// Build POST request
-    /// - Parameters:
-    ///   - endpoint: API endpoint path
-    ///   - body: Request body data
-    /// - Returns: URLRequest
-    func buildPOST(endpoint: String, body: Data?) throws -> URLRequest {
+    nonisolated func buildPOST(endpoint: String, body: Data?) throws -> URLRequest {
         let url = try buildURL(endpoint: endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -82,11 +69,7 @@ actor APIRequestBuilder {
     }
 
     /// Build PUT request
-    /// - Parameters:
-    ///   - endpoint: API endpoint path
-    ///   - body: Request body data
-    /// - Returns: URLRequest
-    func buildPUT(endpoint: String, body: Data?) throws -> URLRequest {
+    nonisolated func buildPUT(endpoint: String, body: Data?) throws -> URLRequest {
         let url = try buildURL(endpoint: endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
@@ -97,9 +80,7 @@ actor APIRequestBuilder {
     }
 
     /// Build DELETE request
-    /// - Parameter endpoint: API endpoint path
-    /// - Returns: URLRequest
-    func buildDELETE(endpoint: String) throws -> URLRequest {
+    nonisolated func buildDELETE(endpoint: String) throws -> URLRequest {
         let url = try buildURL(endpoint: endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
@@ -108,11 +89,7 @@ actor APIRequestBuilder {
     }
 
     /// Build PATCH request
-    /// - Parameters:
-    ///   - endpoint: API endpoint path
-    ///   - body: Request body data
-    /// - Returns: URLRequest
-    func buildPATCH(endpoint: String, body: Data?) throws -> URLRequest {
+    nonisolated func buildPATCH(endpoint: String, body: Data?) throws -> URLRequest {
         let url = try buildURL(endpoint: endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
@@ -124,19 +101,12 @@ actor APIRequestBuilder {
 
     // MARK: - Private Methods
 
-    private func setDefaultHeaders() {
-        headers["Accept"] = "application/json"
-        headers["User-Agent"] = "AI4Science/1.0"
-    }
-
-    private func buildURL(endpoint: String) throws -> URL {
+    private nonisolated func buildURL(endpoint: String) throws -> URL {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
 
-        // Append endpoint to path
         let currentPath = components?.path ?? ""
         components?.path = currentPath.isEmpty ? endpoint : "\(currentPath)/\(endpoint)"
 
-        // Add query parameters
         if !queryParameters.isEmpty {
             components?.queryItems = queryParameters.map { key, value in
                 URLQueryItem(name: key, value: value)
@@ -150,7 +120,7 @@ actor APIRequestBuilder {
         return url
     }
 
-    private func applyHeaders(_ request: inout URLRequest) {
+    private nonisolated func applyHeaders(_ request: inout URLRequest) {
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
         }

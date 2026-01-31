@@ -1,64 +1,32 @@
 import Foundation
 
-/// Use case for fetching user's projects
-@available(iOS 15.0, *)
 public actor FetchProjectsUseCase: Sendable {
-    private let projectService: any ProjectServiceProtocol
+    private let repository: any ProjectRepositoryProtocol
 
-    public init(projectService: any ProjectServiceProtocol) {
-        self.projectService = projectService
+    public init(repository: any ProjectRepositoryProtocol) {
+        self.repository = repository
     }
 
-    /// Fetch all projects for user
-    /// - Parameter userId: User ID
-    /// - Returns: Array of projects
-    /// - Throws: ProjectError if fetch fails
-    public func execute(userId: String) async throws -> [Project] {
-        guard !userId.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw ProjectError.projectNotFound
-        }
-
-        do {
-            let projects = try await projectService.fetchProjects(userId: userId)
-            return projects.sorted { $0.updatedAt > $1.updatedAt }
-        } catch let error as ProjectError {
-            throw error
-        } catch {
-            throw ProjectError.unknownError(error.localizedDescription)
-        }
+    public func execute(ownerId: UUID) async throws -> [Project] {
+        try await repository.findByOwner(ownerId)
     }
 
-    /// Fetch archived projects only
-    /// - Parameter userId: User ID
-    /// - Returns: Array of archived projects
-    /// - Throws: ProjectError if fetch fails
-    public func fetchArchived(userId: String) async throws -> [Project] {
-        let allProjects = try await execute(userId: userId)
-        return allProjects.filter { $0.isArchived }
+    public func fetchArchived(ownerId: UUID) async throws -> [Project] {
+        let projects = try await repository.findByOwner(ownerId)
+        return projects.filter { $0.isArchived }
     }
 
-    /// Fetch active projects only
-    /// - Parameter userId: User ID
-    /// - Returns: Array of active projects
-    /// - Throws: ProjectError if fetch fails
-    public func fetchActive(userId: String) async throws -> [Project] {
-        let allProjects = try await execute(userId: userId)
-        return allProjects.filter { !$0.isArchived }
+    public func fetchActive(ownerId: UUID) async throws -> [Project] {
+        let projects = try await repository.findByOwner(ownerId)
+        return projects.filter { !$0.isArchived }
     }
 
-    /// Search projects by name or description
-    /// - Parameters:
-    ///   - userId: User ID
-    ///   - query: Search query
-    /// - Returns: Filtered array of projects
-    /// - Throws: ProjectError if fetch fails
-    public func search(userId: String, query: String) async throws -> [Project] {
-        let allProjects = try await execute(userId: userId)
-        let lowercaseQuery = query.lowercased()
-
-        return allProjects.filter { project in
-            project.name.lowercased().contains(lowercaseQuery) ||
-            project.description.lowercased().contains(lowercaseQuery)
+    public func search(ownerId: UUID, query: String) async throws -> [Project] {
+        let projects = try await repository.findByOwner(ownerId)
+        let lower = query.lowercased()
+        return projects.filter {
+            $0.name.lowercased().contains(lower) ||
+            $0.description.lowercased().contains(lower)
         }
     }
 }

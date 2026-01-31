@@ -26,7 +26,7 @@ final class ServiceContainer {
     let mlService: MLService
     let cameraService: CameraServiceImpl
     let mediaService: MediaService
-    let syncService: SyncService
+    let syncService: SyncServiceImpl
     let exportService: DataExportService
 
     // MARK: - Initialization
@@ -47,7 +47,7 @@ final class ServiceContainer {
         self.mlService = MLService()
         self.cameraService = CameraServiceImpl()
         self.mediaService = MediaService()
-        self.syncService = SyncService(
+        self.syncService = SyncServiceImpl(
             projectRepository: projectRepository,
             captureRepository: captureRepository,
             annotationRepository: annotationRepository
@@ -178,7 +178,7 @@ enum MediaTypeEnum: String, Sendable {
 
 // MARK: - Sync Service
 
-final class SyncService: @unchecked Sendable {
+final class SyncServiceImpl: @unchecked Sendable {
     private let projectRepository: ProjectRepository
     private let captureRepository: CaptureRepository
     private let annotationRepository: AnnotationRepository
