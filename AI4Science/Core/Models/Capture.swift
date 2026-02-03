@@ -33,7 +33,7 @@ public struct Capture: Identifiable, Codable, Sendable {
     public var createdAt: Date
     public var updatedAt: Date
 
-    public init(
+    public nonisolated init(
         id: UUID = UUID(),
         sampleID: UUID,
         type: CaptureType,
@@ -93,7 +93,7 @@ public struct GeoLocation: Codable, Sendable {
     public var altitude: Double?
     public var accuracy: Double?
 
-    public init(latitude: Double, longitude: Double, altitude: Double? = nil, accuracy: Double? = nil) {
+    public nonisolated init(latitude: Double, longitude: Double, altitude: Double? = nil, accuracy: Double? = nil) {
         self.latitude = latitude
         self.longitude = longitude
         self.altitude = altitude

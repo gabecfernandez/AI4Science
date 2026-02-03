@@ -99,7 +99,6 @@ public struct SkeletonView: View {
                 RoundedRectangle(cornerRadius: BorderStyles.radiusSmall)
                     .fill(ColorPalette.surfaceVariant)
                     .frame(height: 16)
-                    .shimmer()
             }
         }
     }

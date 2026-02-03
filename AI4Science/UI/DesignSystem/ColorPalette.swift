@@ -8,6 +8,10 @@ public struct ColorPalette {
     public static let utsa_dark = Color(red: 0.0, green: 0.0, blue: 0.0) // #000000
     public static let utsa_light = Color(red: 0.973, green: 0.973, blue: 0.973) // #F8F8F8
 
+    // MARK: - Convenience Aliases
+    public static let primary = utsa_primary
+    public static let secondary = utsa_secondary
+
     // MARK: - Semantic Colors
     public static let success = Color(red: 0.051, green: 0.588, blue: 0.322) // #0E9652
     public static let error = Color(red: 0.941, green: 0.235, blue: 0.208) // #F03B35

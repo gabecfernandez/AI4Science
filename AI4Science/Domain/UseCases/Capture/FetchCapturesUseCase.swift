@@ -19,7 +19,8 @@ public actor FetchCapturesUseCase: Sendable {
         }
 
         do {
-            let captures = try await captureService.fetchCaptures(sampleId: sampleId)
+            let responses = try await captureService.fetchCaptures(sampleId: sampleId)
+            let captures = responses.toDomainCaptures()
             return captures.sorted { $0.createdAt > $1.createdAt }
         } catch let error as CaptureError {
             throw error
@@ -63,6 +64,11 @@ public actor FetchCapturesUseCase: Sendable {
     /// - Throws: CaptureError if fetch fails
     public func fetchByTag(sampleId: String, tag: String) async throws -> [Capture] {
         let allCaptures = try await execute(sampleId: sampleId)
-        return allCaptures.filter { $0.metadata.tags.contains(tag) }
+        // Tags are stored in metadata dictionary under "tags" key as comma-separated values
+        return allCaptures.filter { capture in
+            guard let tagsString = capture.metadata["tags"] else { return false }
+            let tags = tagsString.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }
+            return tags.contains(tag)
+        }
     }
 }

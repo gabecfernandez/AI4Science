@@ -12,26 +12,26 @@ public actor CompareAnalysisUseCase: Sendable {
     /// Compare multiple analysis results
     /// - Parameter resultIds: Array of result IDs to compare (minimum 2)
     /// - Returns: Comparison result with similarities and differences
-    /// - Throws: AnalysisError if comparison fails
+    /// - Throws: ServiceAnalysisError if comparison fails
     public func execute(resultIds: [String]) async throws -> ComparisonResult {
         guard resultIds.count >= 2 else {
-            throw AnalysisError.analysisNotFound
+            throw ServiceAnalysisError.analysisNotFound
         }
 
         // Validate all result IDs
         for resultId in resultIds {
             guard !resultId.trimmingCharacters(in: .whitespaces).isEmpty else {
-                throw AnalysisError.analysisNotFound
+                throw ServiceAnalysisError.analysisNotFound
             }
         }
 
         do {
             let comparison = try await analysisService.compareResults(resultIds: resultIds)
             return comparison
-        } catch let error as AnalysisError {
+        } catch let error as ServiceAnalysisError {
             throw error
         } catch {
-            throw AnalysisError.unknownError(error.localizedDescription)
+            throw ServiceAnalysisError.unknownError(error.localizedDescription)
         }
     }
 
@@ -40,7 +40,7 @@ public actor CompareAnalysisUseCase: Sendable {
     ///   - resultId1: First result ID
     ///   - resultId2: Second result ID
     /// - Returns: Comparison result
-    /// - Throws: AnalysisError if comparison fails
+    /// - Throws: ServiceAnalysisError if comparison fails
     public func comparePair(resultId1: String, resultId2: String) async throws -> ComparisonResult {
         return try await execute(resultIds: [resultId1, resultId2])
     }

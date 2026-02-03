@@ -20,39 +20,5 @@ public extension IDComparable {
     }
 }
 
-/// Protocol for entities with timestamps
-public protocol Timestamped: Sendable {
-    var createdAt: Date { get }
-    var updatedAt: Date { get }
-
-    var ageInSeconds: TimeInterval { get }
-    var isRecent(seconds: TimeInterval) -> Bool { get }
-}
-
-public extension Timestamped {
-    var ageInSeconds: TimeInterval {
-        Date().timeIntervalSince(createdAt)
-    }
-
-    func isRecent(seconds: TimeInterval) -> Bool {
-        ageInSeconds <= seconds
-    }
-}
-
-/// Protocol for entities with sync state
-public protocol Syncable: Sendable {
-    var syncStatus: SyncStatus { get set }
-
-    var isSynced: Bool { get }
-    var needsSync: Bool { get }
-}
-
-public extension Syncable {
-    var isSynced: Bool {
-        syncStatus == .synced
-    }
-
-    var needsSync: Bool {
-        syncStatus == .pending || syncStatus == .failed
-    }
-}
+// Timestamped protocol is defined in Identifiable+Timestamped.swift
+// Syncable protocol is defined in Syncable.swift

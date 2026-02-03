@@ -10,7 +10,7 @@ extension ModelContext {
         do {
             try save()
         } catch {
-            Logger.error("Failed to save model context: \(error.localizedDescription)")
+            AppLogger.error("Failed to save model context: \(error.localizedDescription)")
             throw error
         }
     }
@@ -130,47 +130,7 @@ extension ModelContext {
     }
 }
 
-/// Logger helper for data layer logging
-enum Logger {
-    enum LogLevel {
-        case info
-        case warning
-        case error
-        case debug
-    }
-
-    static func log(_ message: String, level: LogLevel = .info) {
-        let prefix: String
-        switch level {
-        case .info:
-            prefix = "ℹ️ [INFO]"
-        case .warning:
-            prefix = "⚠️ [WARNING]"
-        case .error:
-            prefix = "❌ [ERROR]"
-        case .debug:
-            prefix = "🔍 [DEBUG]"
-        }
-
-        print("\(prefix) [AI4Science Data] \(message)")
-    }
-
-    static func info(_ message: String) {
-        log(message, level: .info)
-    }
-
-    static func warning(_ message: String) {
-        log(message, level: .warning)
-    }
-
-    static func error(_ message: String) {
-        log(message, level: .error)
-    }
-
-    static func debug(_ message: String) {
-        log(message, level: .debug)
-    }
-}
+// Note: Logging is handled by AppLogger in Core/Utilities/Logger.swift
 
 // MARK: - Helper Protocols
 

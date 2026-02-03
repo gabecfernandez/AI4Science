@@ -11,25 +11,29 @@ public struct ResolveSyncConflictUseCase: Sendable {
     /// - Parameters:
     ///   - conflict: The sync conflict to resolve
     ///   - resolution: Resolution strategy
-    /// - Throws: SyncError if resolution fails
-    public func execute(
-        conflict: SyncConflict,
-        resolution: ConflictResolution
+    /// - Throws: SyncUseCaseError if resolution fails
+    func execute(
+        conflict: UseCaseSyncConflict,
+        resolution: UseCaseConflictResolution
     ) async throws {
-        try await syncRepository.resolveSyncConflict(conflict: conflict, resolution: resolution)
+        // Convert to repository types and resolve
+        try await syncRepository.resolveSyncConflict(
+            conflictId: conflict.id,
+            resolution: mapResolution(resolution)
+        )
     }
 
     /// Automatically resolves conflicts using default strategy
     /// - Parameter conflicts: Array of conflicts to resolve
-    /// - Returns: ConflictResolutionResult
-    /// - Throws: SyncError if resolution fails
-    public func autoResolve(conflicts: [SyncConflict]) async throws -> ConflictResolutionResult {
+    /// - Returns: UseCaseConflictResolutionResult
+    /// - Throws: SyncUseCaseError if resolution fails
+    func autoResolve(conflicts: [UseCaseSyncConflict]) async throws -> UseCaseConflictResolutionResult {
         guard !conflicts.isEmpty else {
-            throw SyncError.validationFailed("At least one conflict is required.")
+            throw SyncUseCaseError.validationFailed("At least one conflict is required.")
         }
 
         var resolvedCount = 0
-        var failedConflicts: [SyncConflict] = []
+        var failedConflicts: [UseCaseSyncConflict] = []
 
         for conflict in conflicts {
             do {
@@ -41,7 +45,7 @@ public struct ResolveSyncConflictUseCase: Sendable {
             }
         }
 
-        return ConflictResolutionResult(
+        return UseCaseConflictResolutionResult(
             totalConflicts: conflicts.count,
             resolvedCount: resolvedCount,
             failedCount: failedConflicts.count,
@@ -52,20 +56,20 @@ public struct ResolveSyncConflictUseCase: Sendable {
     /// Detects conflicts between local and remote versions
     /// - Parameter items: Items to check for conflicts
     /// - Returns: Array of detected conflicts
-    /// - Throws: SyncError if detection fails
-    public func detectConflicts(items: [SyncQueueItem]) async throws -> [SyncConflict] {
+    /// - Throws: SyncUseCaseError if detection fails
+    func detectConflicts(items: [SyncQueueItem]) async throws -> [UseCaseSyncConflict] {
         guard !items.isEmpty else {
             return []
         }
 
-        var conflicts: [SyncConflict] = []
+        var conflicts: [UseCaseSyncConflict] = []
 
         for item in items {
             // Placeholder for conflict detection logic
             // In production, this would compare local vs remote versions
             if item.retryCount >= 3 {
                 conflicts.append(
-                    SyncConflict(
+                    UseCaseSyncConflict(
                         id: UUID().uuidString,
                         type: .versionMismatch,
                         resourceId: item.resourceId,
@@ -82,7 +86,7 @@ public struct ResolveSyncConflictUseCase: Sendable {
 
     // MARK: - Private Methods
 
-    private func determineAutoResolution(for conflict: SyncConflict) -> ConflictResolution {
+    private func determineAutoResolution(for conflict: UseCaseSyncConflict) -> UseCaseConflictResolution {
         switch conflict.type {
         case .versionMismatch:
             return .useRemote
@@ -92,22 +96,34 @@ public struct ResolveSyncConflictUseCase: Sendable {
             return .useNewest
         }
     }
+
+    private func mapResolution(_ resolution: UseCaseConflictResolution) -> SyncResolutionType {
+        switch resolution {
+        case .useLocal, .keepLocal:
+            return .useLocal
+        case .useRemote:
+            return .useRemote
+        case .useNewest, .custom:
+            return .merge
+        }
+    }
 }
 
-// MARK: - Supporting Types
+// MARK: - Supporting Types (Local to this Use Case)
 
-public struct SyncConflict: Sendable, Identifiable {
-    public let id: String
-    public let type: ConflictType
-    public let resourceId: String
-    public let localVersion: Int
-    public let remoteVersion: Int
-    public let detectedAt: Date
-    public let description: String?
+/// Sync conflict representation for this use case
+struct UseCaseSyncConflict: Sendable, Identifiable {
+    let id: String
+    let type: UseCaseConflictType
+    let resourceId: String
+    let localVersion: Int
+    let remoteVersion: Int
+    let detectedAt: Date
+    let description: String?
 
-    public init(
+    init(
         id: String = UUID().uuidString,
-        type: ConflictType,
+        type: UseCaseConflictType,
         resourceId: String,
         localVersion: Int,
         remoteVersion: Int,
@@ -124,12 +140,12 @@ public struct SyncConflict: Sendable, Identifiable {
     }
 }
 
-public enum ConflictType: Sendable {
+enum UseCaseConflictType: Sendable {
     case versionMismatch
     case deletionConflict
     case modificationConflict
 
-    public var description: String {
+    var description: String {
         switch self {
         case .versionMismatch:
             return "Version Mismatch"
@@ -141,15 +157,16 @@ public enum ConflictType: Sendable {
     }
 }
 
-public enum ConflictResolution: Sendable {
+enum UseCaseConflictResolution: Sendable {
     case useLocal
     case useRemote
     case useNewest
+    case keepLocal
     case custom(String)
 
-    public var description: String {
+    var description: String {
         switch self {
-        case .useLocal:
+        case .useLocal, .keepLocal:
             return "Use local version"
         case .useRemote:
             return "Use remote version"
@@ -161,26 +178,26 @@ public enum ConflictResolution: Sendable {
     }
 }
 
-public struct ConflictResolutionResult: Sendable {
-    public let totalConflicts: Int
-    public let resolvedCount: Int
-    public let failedCount: Int
-    public let failedConflicts: [SyncConflict]
+struct UseCaseConflictResolutionResult: Sendable {
+    let totalConflicts: Int
+    let resolvedCount: Int
+    let failedCount: Int
+    let failedConflicts: [UseCaseSyncConflict]
 
-    public var resolutionRate: Float {
+    var resolutionRate: Float {
         guard totalConflicts > 0 else { return 1.0 }
         return Float(resolvedCount) / Float(totalConflicts)
     }
 
-    public var isSuccessful: Bool {
+    var isSuccessful: Bool {
         failedCount == 0
     }
 
-    public init(
+    init(
         totalConflicts: Int,
         resolvedCount: Int,
         failedCount: Int,
-        failedConflicts: [SyncConflict]
+        failedConflicts: [UseCaseSyncConflict]
     ) {
         self.totalConflicts = totalConflicts
         self.resolvedCount = resolvedCount

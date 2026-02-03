@@ -2,7 +2,8 @@ import Foundation
 import SwiftData
 
 /// Generic SwiftData data source for repository operations
-actor SwiftDataSource<T: PersistentModel & Identifiable> {
+@MainActor
+final class SwiftDataSource<T: PersistentModel & Identifiable> {
     // MARK: - Properties
 
     private let modelContainer: ModelContainer
@@ -160,8 +161,9 @@ actor SwiftDataSource<T: PersistentModel & Identifiable> {
 
 // MARK: - Repository Protocol
 
-/// Base protocol for repositories
-protocol Repository: Sendable {
+/// Base protocol for SwiftData repositories
+/// Note: SwiftData entities are not Sendable - implementations handle isolation
+protocol SwiftDataRepository {
     associatedtype Entity
 
     func create(_ entity: Entity) async throws
@@ -171,8 +173,9 @@ protocol Repository: Sendable {
     func list() async throws -> [Entity]
 }
 
-/// Default repository implementation
-actor DefaultRepository<Entity: PersistentModel & Identifiable>: Repository {
+/// Default SwiftData repository implementation
+@MainActor
+final class SwiftDataDefaultRepository<Entity: PersistentModel & Identifiable>: SwiftDataRepository {
     private let dataSource: SwiftDataSource<Entity>
 
     init(dataSource: SwiftDataSource<Entity>) {

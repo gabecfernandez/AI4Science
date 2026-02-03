@@ -169,7 +169,7 @@ actor ConfidenceFilter {
             var cluster = [first]
 
             remaining.removeAll { defect in
-                let distance = calculateCenter(first.boundingBox).distance(to: calculateCenter(defect.boundingBox))
+                let distance = calculateCenter(first.boundingBox).euclideanDistance(to: calculateCenter(defect.boundingBox))
                 if distance < maxDistance {
                     cluster.append(defect)
                     return true
@@ -296,7 +296,7 @@ actor ConfidenceFilter {
 // MARK: - Distance Calculation Extension
 
 private extension CGPoint {
-    func distance(to point: CGPoint) -> Float {
+    nonisolated func euclideanDistance(to point: CGPoint) -> Float {
         let dx = x - point.x
         let dy = y - point.y
         return Float(sqrt(dx * dx + dy * dy))

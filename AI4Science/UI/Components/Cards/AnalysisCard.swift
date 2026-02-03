@@ -126,7 +126,7 @@ public struct AnalysisCard: View {
         .cornerRadius(BorderStyles.radiusMedium)
         .shadow(Shadows.small)
         .onTapGesture(perform: onTap)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
     }
 
     private func formatTime(_ date: Date) -> String {

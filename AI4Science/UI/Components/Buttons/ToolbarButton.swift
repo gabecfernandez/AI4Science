@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Toolbar button for navigation and action bars
 public struct ToolbarButton: View {
-    enum Style {
+    public enum Style {
         case icon
         case text
         case iconText
@@ -66,11 +66,9 @@ public struct ToolbarButton: View {
             .cornerRadius(BorderStyles.radiusMedium)
         }
         .disabled(!isEnabled || isLoading)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .opacity(isLoading ? 0.8 : 1.0)
         .accessibilityLabel(title ?? "Toolbar button")
-        .accessibilityHint(isLoading ? "Processing" : nil)
-        .accessibilityEnabled(isEnabled)
     }
 }
 

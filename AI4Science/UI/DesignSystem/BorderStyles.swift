@@ -169,16 +169,7 @@ extension View {
     }
 }
 
-// MARK: - Shape Builders
-extension Shape {
-    public func fill(_ color: Color) -> some View {
-        fill(color)
-    }
-
-    public func stroke(_ color: Color, lineWidth: CGFloat = 1) -> some View {
-        stroke(color, lineWidth: lineWidth)
-    }
-}
+// Note: Shape already provides fill() and stroke() methods via SwiftUI
 
 // MARK: - Divider Styles
 public struct DividerStyle {
@@ -214,13 +205,11 @@ public struct CustomDivider: View {
     public var body: some View {
         switch style.style {
         case .horizontal:
-            Rectangle()
-                .fill(style.color)
+            style.color
                 .frame(height: style.width)
 
         case .vertical:
-            Rectangle()
-                .fill(style.color)
+            style.color
                 .frame(width: style.width)
 
         case .dashed:

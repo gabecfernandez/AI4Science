@@ -18,7 +18,7 @@ public struct RunAnalysisUseCase: Sendable {
         captureId: String,
         modelId: String,
         parameters: AnalysisParameters? = nil
-    ) async throws -> AnalysisResult {
+    ) async throws -> AnalysisUseCaseResult {
         // Validate inputs
         guard !captureId.isEmpty else {
             throw AnalysisError.validationFailed("Capture ID is required.")
@@ -64,12 +64,12 @@ public struct RunAnalysisUseCase: Sendable {
 
 // MARK: - Supporting Types
 
-public struct AnalysisResult: Sendable, Codable, Identifiable {
+public struct AnalysisUseCaseResult: Sendable, Codable, Identifiable {
     public let id: String
     public let captureId: String
     public let modelId: String
     public let confidence: Float
-    public let findings: [Finding]
+    public let findings: [AnalysisFinding]
     public let processingTime: Double
     public let createdAt: Date
 
@@ -78,7 +78,7 @@ public struct AnalysisResult: Sendable, Codable, Identifiable {
         captureId: String,
         modelId: String,
         confidence: Float,
-        findings: [Finding],
+        findings: [AnalysisFinding],
         processingTime: Double,
         createdAt: Date = Date()
     ) {
@@ -92,12 +92,12 @@ public struct AnalysisResult: Sendable, Codable, Identifiable {
     }
 }
 
-public struct Finding: Sendable, Codable, Identifiable {
+public struct AnalysisFinding: Sendable, Codable, Identifiable {
     public let id: String
     public let type: String
     public let label: String
     public let confidence: Float
-    public let boundingBox: BoundingBox?
+    public let boundingBox: AnalysisBoundingBox?
     public let metadata: [String: String]
 
     public init(
@@ -105,7 +105,7 @@ public struct Finding: Sendable, Codable, Identifiable {
         type: String,
         label: String,
         confidence: Float,
-        boundingBox: BoundingBox? = nil,
+        boundingBox: AnalysisBoundingBox? = nil,
         metadata: [String: String] = [:]
     ) {
         self.id = id
@@ -117,7 +117,7 @@ public struct Finding: Sendable, Codable, Identifiable {
     }
 }
 
-public struct BoundingBox: Sendable, Codable {
+public struct AnalysisBoundingBox: Sendable, Codable {
     public let x: Float
     public let y: Float
     public let width: Float
@@ -149,14 +149,14 @@ public struct AnalysisParameters: Sendable, Codable {
 
 public struct AnalysisProgress: Sendable {
     public let analysisId: String
-    public let status: AnalysisStatus
+    public let status: AnalysisUseCaseStatus
     public let progress: Float // 0.0 to 1.0
     public let estimatedTimeRemaining: TimeInterval?
     public let currentStep: String?
 
     public init(
         analysisId: String,
-        status: AnalysisStatus,
+        status: AnalysisUseCaseStatus,
         progress: Float,
         estimatedTimeRemaining: TimeInterval? = nil,
         currentStep: String? = nil
@@ -205,10 +205,18 @@ public protocol AnalysisRepositoryProtocol: Sendable {
         captureId: String,
         modelId: String,
         parameters: AnalysisParameters?
-    ) async throws -> AnalysisResult
+    ) async throws -> AnalysisUseCaseResult
 
-    func getAnalysisResult(id: String) async throws -> AnalysisResult
+    func getAnalysisResult(id: String) async throws -> AnalysisUseCaseResult
     func getAnalysisProgress(_ analysisId: String) async throws -> AnalysisProgress
     func cancelAnalysis(_ analysisId: String) async throws
-    func fetchAnalysisHistory(captureId: String) async throws -> [AnalysisResult]
+    func fetchAnalysisHistory(captureId: String) async throws -> [AnalysisUseCaseResult]
+}
+
+public enum AnalysisUseCaseStatus: String, Sendable {
+    case pending
+    case running
+    case completed
+    case failed
+    case cancelled
 }

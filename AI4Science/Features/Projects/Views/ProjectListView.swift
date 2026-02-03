@@ -1,203 +1,268 @@
 import SwiftUI
 
 struct ProjectListView: View {
-    @State private var viewModel = ProjectListViewModel()
+    @Environment(ServiceContainer.self) private var services
+    @State private var viewModel: ProjectsListViewModel?
     @State private var showCreateProject = false
-    @State private var selectedProject: Project?
     @State private var searchText = ""
-
-    var filteredProjects: [Project] {
-        if searchText.isEmpty {
-            return viewModel.projects
-        }
-        return viewModel.projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(red: 0.09, green: 0.17, blue: 0.26),
-                        Color(red: 0.12, green: 0.20, blue: 0.30)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                ColorPalette.background
+                    .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Header
-                    VStack(spacing: 16) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Projects")
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundColor(.white)
-
-                                Text("\(viewModel.projects.count) projects")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.6))
-                            }
-
-                            Spacer()
-
-                            Button(action: { showCreateProject = true }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-
-                        // Search bar
-                        HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.white.opacity(0.5))
-
-                            TextField("Search projects...", text: $searchText)
-                                .textInputAutocapitalization(.words)
-                                .foregroundColor(.white)
-
-                            if !searchText.isEmpty {
-                                Button(action: { searchText = "" }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.white.opacity(0.5))
-                                }
-                            }
-                        }
-                        .padding(12)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(8)
-                        .padding(.horizontal, 20)
-                    }
-                    .padding(.vertical, 16)
-
-                    // Projects list
-                    if filteredProjects.isEmpty {
-                        VStack(spacing: 16) {
-                            Spacer()
-
-                            Image(systemName: "folder.badge.questionmark")
-                                .font(.system(size: 48))
-                                .foregroundColor(.white.opacity(0.3))
-
-                            Text("No Projects")
-                                .font(.headline)
-                                .foregroundColor(.white)
-
-                            Text("Create a new project to get started")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.6))
-
-                            Button(action: { showCreateProject = true }) {
-                                Text("Create Project")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                            }
-                            .foregroundColor(.blue)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.blue, lineWidth: 1)
-                            )
-
-                            Spacer()
-                        }
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 12) {
-                                ForEach(filteredProjects) { project in
-                                    NavigationLink(value: project) {
-                                        ProjectCard(project: project)
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
-                        }
+                if let viewModel = viewModel {
+                    projectContent(viewModel)
+                } else {
+                    LoadingView( "Loading...")
+                }
+            }
+            .navigationTitle("Projects")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showCreateProject = true
+                    } label: {
+                        IconAssets.addCircle
+                            .font(.system(size: 22))
+                            .foregroundColor(ColorPalette.utsa_primary)
                     }
                 }
             }
-            .navigationDestination(for: Project.self) { project in
-                ProjectDetailView(project: project)
-            }
             .sheet(isPresented: $showCreateProject) {
-                ProjectCreateView(isPresented: $showCreateProject) { newProject in
-                    viewModel.projects.append(newProject)
+                if let services = services as ServiceContainer? {
+                    ProjectCreateView(
+                        repository: services.projectRepository,
+                        isPresented: $showCreateProject
+                    ) {
+                        Task { await viewModel?.refresh() }
+                    }
                 }
             }
             .task {
-                await viewModel.loadProjects()
+                if viewModel == nil {
+                    viewModel = ProjectsListViewModel(repository: services.projectRepository)
+                }
+                await viewModel?.loadProjects()
             }
         }
     }
-}
 
-struct ProjectCard: View {
-    let project: Project
+    @ViewBuilder
+    private func projectContent(_ viewModel: ProjectsListViewModel) -> some View {
+        VStack(spacing: 0) {
+            // Header with search and filter
+            headerSection(viewModel)
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(project.name)
-                        .font(.headline)
-                        .foregroundColor(.white)
-
-                    Text(project.description)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
-                        .lineLimit(2)
-                }
-
+            // Content
+            if viewModel.isLoading && viewModel.projects.isEmpty {
                 Spacer()
+                LoadingView( "Loading projects...")
+                Spacer()
+            } else if viewModel.isEmpty {
+                emptyStateView
+            } else if viewModel.isFilteredEmpty {
+                filteredEmptyView
+            } else {
+                projectsList(viewModel)
+            }
+        }
+        .refreshable {
+            await viewModel.refresh()
+        }
+    }
 
-                VStack(alignment: .trailing, spacing: 4) {
-                    Label("\(project.sampleCount)", systemImage: "beaker.fill")
-                        .font(.caption)
-                        .foregroundColor(.blue)
+    @ViewBuilder
+    private func headerSection(_ viewModel: ProjectsListViewModel) -> some View {
+        VStack(spacing: Spacing.md) {
+            // Search bar
+            SearchBar(
+                placeholder: "Search projects...",
+                text: Binding(
+                    get: { viewModel.searchText },
+                    set: { viewModel.searchText = $0 }
+                )
+            )
 
-                    Text(project.status.rawValue)
-                        .font(.caption2)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(statusColor(project.status))
-                        .foregroundColor(.white)
-                        .cornerRadius(4)
+            // Status filter
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.sm) {
+                    ForEach(ProjectStatusFilter.allCases, id: \.self) { filter in
+                        FilterChip(
+                            title: filter.rawValue,
+                            isSelected: viewModel.selectedStatus == filter
+                        ) {
+                            viewModel.selectedStatus = filter
+                        }
+                    }
                 }
             }
 
-            HStack(spacing: 16) {
-                Label("\(project.memberCount) members", systemImage: "person.2.fill")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
-
-                Label(project.createdDate.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
-
+            // Project count
+            HStack {
+                Text("\(viewModel.projectCount) project\(viewModel.projectCount == 1 ? "" : "s")")
+                    .font(Typography.labelSmall)
+                    .foregroundColor(ColorPalette.onSurfaceVariant)
                 Spacer()
             }
         }
-        .padding(16)
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        .padding(.horizontal, Spacing.base)
+        .padding(.vertical, Spacing.md)
+        .background(ColorPalette.surface)
+    }
+
+    @ViewBuilder
+    private func projectsList(_ viewModel: ProjectsListViewModel) -> some View {
+        ScrollView {
+            LazyVStack(spacing: Spacing.md) {
+                ForEach(viewModel.filteredProjects) { project in
+                    NavigationLink(value: project.id) {
+                        ProjectListCard(
+                            project: project,
+                            onDelete: {
+                                Task { await viewModel.deleteProject(project.id) }
+                            }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, Spacing.base)
+            .padding(.vertical, Spacing.md)
+        }
+        .navigationDestination(for: UUID.self) { projectId in
+            ProjectDetailView(
+                projectId: projectId,
+                repository: services.projectRepository
+            )
+        }
+    }
+
+    private var emptyStateView: some View {
+        EmptyStateView(
+            icon: IconAssets.projects,
+            title: "No Projects Yet",
+            message: "Create your first project to get started with AI4Science",
+            action: ("Create Project", { showCreateProject = true })
         )
     }
 
-    private func statusColor(_ status: Project.Status) -> Color {
-        switch status {
-        case .active:
-            return Color.green.opacity(0.3)
-        case .paused:
-            return Color.orange.opacity(0.3)
-        case .completed:
-            return Color.blue.opacity(0.3)
+    private var filteredEmptyView: some View {
+        VStack(spacing: Spacing.lg) {
+            Spacer()
+
+            IconAssets.search
+                .font(.system(size: 48))
+                .foregroundColor(ColorPalette.onSurfaceVariant)
+
+            Text("No matching projects")
+                .font(Typography.titleMedium)
+                .foregroundColor(ColorPalette.onBackground)
+
+            Text("Try adjusting your search or filter")
+                .font(Typography.bodyMedium)
+                .foregroundColor(ColorPalette.onSurfaceVariant)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(Spacing.lg)
+    }
+}
+
+// MARK: - Project List Card
+
+struct ProjectListCard: View {
+    let project: Project
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text(project.title)
+                        .font(Typography.titleMedium)
+                        .fontWeight(.semibold)
+                        .foregroundColor(ColorPalette.onSurface)
+                        .lineLimit(1)
+
+                    if !project.description.isEmpty {
+                        Text(project.description)
+                            .font(Typography.bodySmall)
+                            .foregroundColor(ColorPalette.onSurfaceVariant)
+                            .lineLimit(2)
+                    }
+                }
+
+                Spacer()
+
+                ProjectStatusBadge(status: project.status)
+            }
+
+            HStack(spacing: Spacing.lg) {
+                Label("\(project.sampleCount)", systemImage: "flask.fill")
+                    .font(Typography.labelSmall)
+                    .foregroundColor(ColorPalette.onSurfaceVariant)
+
+                Label("\(project.participantCount)", systemImage: "person.2.fill")
+                    .font(Typography.labelSmall)
+                    .foregroundColor(ColorPalette.onSurfaceVariant)
+
+                Spacer()
+
+                Text(formatDate(project.updatedAt))
+                    .font(Typography.labelSmall)
+                    .foregroundColor(ColorPalette.onSurfaceVariant)
+            }
+        }
+        .padding(Spacing.base)
+        .background(ColorPalette.surface)
+        .cornerRadius(BorderStyles.radiusMedium)
+        .overlay(
+            RoundedRectangle(cornerRadius: BorderStyles.radiusMedium)
+                .stroke(ColorPalette.divider, lineWidth: 1)
+        )
+        .contextMenu {
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+// MARK: - Filter Chip
+
+struct FilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(Typography.labelMedium)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundColor(isSelected ? .white : ColorPalette.onSurfaceVariant)
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
+                .background(isSelected ? ColorPalette.utsa_primary : ColorPalette.surface)
+                .cornerRadius(Spacing.radiusCircle)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Spacing.radiusCircle)
+                        .stroke(
+                            isSelected ? ColorPalette.utsa_primary : ColorPalette.divider,
+                            lineWidth: 1
+                        )
+                )
         }
     }
 }

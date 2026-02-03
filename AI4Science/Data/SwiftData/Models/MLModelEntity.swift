@@ -11,8 +11,8 @@ final class MLModelEntity {
     /// Model name
     var name: String
 
-    /// Model description
-    var description: String
+    /// Model modelDescription
+    var modelDescription: String
 
     /// Model version
     var version: String
@@ -75,7 +75,7 @@ final class MLModelEntity {
     init(
         id: String,
         name: String,
-        description: String,
+        modelDescription: String,
         version: String,
         modelType: String,
         framework: String,
@@ -84,12 +84,14 @@ final class MLModelEntity {
     ) {
         self.id = id
         self.name = name
-        self.description = description
+        self.modelDescription = modelDescription
         self.version = version
         self.modelType = modelType
         self.framework = framework
         self.inputSpec = inputSpec
         self.outputSpec = outputSpec
+        self.createdAt = Date()
+        self.updatedAt = Date()
     }
 
     /// Update download status

@@ -1,20 +1,11 @@
 import Foundation
 
 /// Protocol for entities that support offline sync
+/// Note: SyncStatus enum is defined in Core/Models/SyncStatus.swift
 public protocol Syncable: Sendable {
     var isSyncPending: Bool { get }
     var lastSyncDate: Date? { get }
     var syncStatus: SyncStatus { get }
-}
-
-/// Sync status
-@frozen
-public enum SyncStatus: String, Codable, Sendable, CaseIterable {
-    case synced
-    case pending
-    case syncing
-    case failed
-    case conflict
 }
 
 /// Protocol for sync operations

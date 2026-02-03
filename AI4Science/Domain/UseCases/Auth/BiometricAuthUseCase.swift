@@ -55,10 +55,10 @@ public actor BiometricAuthUseCase: Sendable {
 
     /// Authenticate user with biometric
     /// - Returns: Authentication session with tokens
-    /// - Throws: AuthError if authentication fails
+    /// - Throws: ServiceAuthError if authentication fails
     public func execute() async throws -> AuthSession {
         guard isBiometricAvailable() else {
-            throw AuthError.biometricNotAvailable
+            throw ServiceAuthError.biometricNotAvailable
         }
 
         let context = LAContext()
@@ -68,7 +68,7 @@ public actor BiometricAuthUseCase: Sendable {
             .deviceOwnerAuthenticationWithBiometrics,
             error: &error
         ) else {
-            throw AuthError.biometricFailed
+            throw ServiceAuthError.biometricFailed
         }
 
         do {
@@ -78,23 +78,23 @@ public actor BiometricAuthUseCase: Sendable {
             )
 
             guard authenticated else {
-                throw AuthError.biometricFailed
+                throw ServiceAuthError.biometricFailed
             }
 
             let session = try await authService.authenticateWithBiometric()
             return session
-        } catch let error as AuthError {
+        } catch let error as ServiceAuthError {
             throw error
         } catch {
-            throw AuthError.biometricFailed
+            throw ServiceAuthError.biometricFailed
         }
     }
 
     /// Enable biometric authentication
-    /// - Throws: AuthError if enabling fails
+    /// - Throws: ServiceAuthError if enabling fails
     public func enableBiometric() async throws {
         guard isBiometricAvailable() else {
-            throw AuthError.biometricNotAvailable
+            throw ServiceAuthError.biometricNotAvailable
         }
 
         // The actual enablement logic would be handled by the auth service

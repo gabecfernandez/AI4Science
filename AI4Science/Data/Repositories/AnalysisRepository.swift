@@ -1,27 +1,15 @@
 import Foundation
 import SwiftData
 
-/// Protocol for analysis result operations
-protocol AnalysisRepositoryProtocol: Sendable {
-    func createAnalysisResult(_ result: AnalysisResultEntity) async throws
-    func getAnalysisResult(id: String) async throws -> AnalysisResultEntity?
-    func getAnalysisResultsByCapture(captureID: String) async throws -> [AnalysisResultEntity]
-    func getAnalysisResultsByModel(modelID: String) async throws -> [AnalysisResultEntity]
-    func updateAnalysisResult(_ result: AnalysisResultEntity) async throws
-    func deleteAnalysisResult(id: String) async throws
-    func getAllAnalysisResults() async throws -> [AnalysisResultEntity]
-    func getResultsByStatus(_ status: String) async throws -> [AnalysisResultEntity]
-    func getReviewedResults() async throws -> [AnalysisResultEntity]
-    func getPendingAnalysis() async throws -> [AnalysisResultEntity]
+/// Protocol for analysis result operations - entity methods are internal to actor only
+protocol AnalysisResultDataSourceProtocol: Sendable {
+    // Domain model operations would go here when AnalysisResult domain model is added
+    // For now, keep entity operations internal to actor only
 }
 
-/// Analysis repository implementation
-actor AnalysisRepository: AnalysisRepositoryProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// Analysis result repository implementation using ModelActor
+@ModelActor
+final actor AnalysisResultRepository {
 
     /// Create a new analysis result
     func createAnalysisResult(_ result: AnalysisResultEntity) async throws {
@@ -64,7 +52,7 @@ actor AnalysisRepository: AnalysisRepositoryProtocol {
 
     /// Delete analysis result
     func deleteAnalysisResult(id: String) async throws {
-        guard let result = try getAnalysisResult(id: id) else {
+        guard let result = try await getAnalysisResult(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(result)
@@ -109,14 +97,61 @@ actor AnalysisRepository: AnalysisRepositoryProtocol {
     }
 }
 
-/// Factory for creating analysis repository
-struct AnalysisRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> AnalysisRepository {
-        AnalysisRepository(modelContext: modelContext)
-    }
+/// Type alias for compatibility
+typealias AnalysisRepository = AnalysisResultRepository
 
-    static func makeRepository(modelContainer: ModelContainer) -> AnalysisRepository {
-        let context = ModelContext(modelContainer)
-        return AnalysisRepository(modelContext: context)
+/// Factory for creating analysis result repository
+enum AnalysisResultRepositoryFactory {
+    @MainActor
+    static func makeRepository(modelContainer: ModelContainer) -> AnalysisResultRepository {
+        AnalysisResultRepository(modelContainer: modelContainer)
+    }
+}
+
+// MARK: - Sendable Display Models
+
+/// Sendable display model for analysis results
+struct AnalysisResultDisplayData: Identifiable, Sendable {
+    let id: String
+    let modelName: String
+    let modelVersion: String
+    let analysisType: String
+    let status: String
+    let startedAt: Date
+    let completedAt: Date?
+    let duration: Double?
+    let confidenceScore: Double?
+    let objectCount: Int
+    let isReviewed: Bool
+    let reviewNotes: String?
+    let captureSampleName: String?
+    let captureType: String?
+}
+
+extension AnalysisResultRepository {
+    /// Get all analysis results as Sendable display models
+    func getAllAnalysisResultsDisplayData() async throws -> [AnalysisResultDisplayData] {
+        let descriptor = FetchDescriptor<AnalysisResultEntity>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        let entities = try modelContext.fetch(descriptor)
+        return entities.map { entity in
+            AnalysisResultDisplayData(
+                id: entity.id,
+                modelName: entity.modelName,
+                modelVersion: entity.modelVersion,
+                analysisType: entity.analysisType,
+                status: entity.status,
+                startedAt: entity.startedAt,
+                completedAt: entity.completedAt,
+                duration: entity.duration,
+                confidenceScore: entity.confidenceScore,
+                objectCount: entity.objectCount,
+                isReviewed: entity.isReviewed,
+                reviewNotes: entity.reviewNotes,
+                captureSampleName: entity.capture?.sample?.name,
+                captureType: entity.capture?.captureType
+            )
+        }
     }
 }

@@ -57,8 +57,8 @@ public struct AuthSession: Sendable {
     }
 }
 
-/// Authentication errors
-public enum AuthError: LocalizedError, Sendable {
+/// Authentication service errors
+public enum ServiceAuthError: LocalizedError, Sendable {
     case invalidCredentials
     case userNotFound
     case userAlreadyExists

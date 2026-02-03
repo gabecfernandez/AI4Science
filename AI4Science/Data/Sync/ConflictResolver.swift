@@ -25,7 +25,7 @@ actor ConflictResolver: Sendable {
         entityType: String,
         entityID: String,
         strategy: String = "client_wins"
-    ) async -> ConflictResolution? {
+    ) async -> ConflictResolutionResult? {
         do {
             let context = ModelContext(modelContainer)
 
@@ -43,7 +43,7 @@ actor ConflictResolver: Sendable {
                 return nil
             }
 
-            let resolution: ConflictResolution
+            let resolution: ConflictResolutionResult
 
             switch strategy {
             case "server_wins":
@@ -62,11 +62,11 @@ actor ConflictResolver: Sendable {
             syncMeta.syncStatus = "synced"
             try context.save()
 
-            Logger.info("Resolved conflict for \(entityType):\(entityID) using \(strategy) strategy")
+            AppLogger.info("Resolved conflict for \(entityType):\(entityID) using \(strategy) strategy")
 
             return resolution
         } catch {
-            Logger.error("Failed to resolve conflict: \(error.localizedDescription)")
+            AppLogger.error("Failed to resolve conflict: \(error.localizedDescription)")
             return nil
         }
     }
@@ -145,8 +145,8 @@ actor ConflictResolver: Sendable {
 
     // MARK: - Private Methods
 
-    private func resolveWithClientWins(_ syncMeta: SyncMetadataEntity) -> ConflictResolution {
-        ConflictResolution(
+    private func resolveWithClientWins(_ syncMeta: SyncMetadataEntity) -> ConflictResolutionResult {
+        ConflictResolutionResult(
             entityType: syncMeta.entityType,
             entityID: syncMeta.entityID,
             strategy: "client_wins",
@@ -155,8 +155,8 @@ actor ConflictResolver: Sendable {
         )
     }
 
-    private func resolveWithServerWins(_ syncMeta: SyncMetadataEntity) -> ConflictResolution {
-        ConflictResolution(
+    private func resolveWithServerWins(_ syncMeta: SyncMetadataEntity) -> ConflictResolutionResult {
+        ConflictResolutionResult(
             entityType: syncMeta.entityType,
             entityID: syncMeta.entityID,
             strategy: "server_wins",
@@ -168,9 +168,9 @@ actor ConflictResolver: Sendable {
     private func resolveWithMerge(
         _ syncMeta: SyncMetadataEntity,
         context: ModelContext
-    ) async throws -> ConflictResolution {
+    ) async throws -> ConflictResolutionResult {
         // Implement merge logic here
-        ConflictResolution(
+        ConflictResolutionResult(
             entityType: syncMeta.entityType,
             entityID: syncMeta.entityID,
             strategy: "merge",
@@ -214,7 +214,7 @@ struct ConflictInfo: Sendable {
 }
 
 /// Result of conflict resolution
-struct ConflictResolution: Sendable {
+struct ConflictResolutionResult: Sendable {
     let entityType: String
     let entityID: String
     let strategy: String

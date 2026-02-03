@@ -42,13 +42,13 @@ actor AROverlayService {
     }
 
     struct DefectInfo {
-        let severity: DefectSeverity
+        let severity: OverlaySeverity
         let location: SIMD3<Float>
         let extent: SIMD3<Float>
         let confidence: Float
         let description: String
 
-        enum DefectSeverity {
+        enum OverlaySeverity {
             case low
             case medium
             case high
@@ -93,8 +93,8 @@ actor AROverlayService {
         let transform: simd_float4x4
     }
 
-    nonisolated init() {
-        // Empty init for actor
+    init() {
+        logger.info("AROverlayService initialized")
     }
 
     /// Create a defect overlay
@@ -102,7 +102,7 @@ actor AROverlayService {
         id: String,
         location: SIMD3<Float>,
         extent: SIMD3<Float>,
-        severity: DefectInfo.DefectSeverity,
+        severity: DefectInfo.OverlaySeverity,
         confidence: Float,
         description: String,
         in frame: ARFrame
@@ -130,7 +130,7 @@ actor AROverlayService {
 
         activeOverlays[id] = overlay
 
-        logger.info("Defect overlay created: \(id) with severity: \(severity.description)")
+        logger.info("Defect overlay created: \(id)")
         return overlay
     }
 
@@ -281,20 +281,22 @@ actor AROverlayService {
 
     /// Update overlay position
     func updateOverlayPosition(id: String, newPosition: SIMD3<Float>) throws {
-        guard var overlay = activeOverlays[id] else {
+        guard let overlay = activeOverlays[id] else {
             throw OverlayError.overlayNotFound
         }
 
-        var updatedAnchor = overlay.anchor
-        updatedAnchor.position = newPosition
-        overlay = AROverlay(
+        let updatedAnchor = AnchorData(
+            position: newPosition,
+            transform: overlay.anchor.transform
+        )
+        let updatedOverlay = AROverlay(
             id: overlay.id,
             type: overlay.type,
             anchor: updatedAnchor,
             isVisible: overlay.isVisible,
             createdAt: overlay.createdAt
         )
-        activeOverlays[id] = overlay
+        activeOverlays[id] = updatedOverlay
 
         logger.debug("Overlay \(id) position updated")
     }
@@ -331,7 +333,7 @@ actor AROverlayService {
     }
 }
 
-private extension AROverlayService.DefectInfo.DefectSeverity {
+private extension AROverlayService.DefectInfo.OverlaySeverity {
     var description: String {
         switch self {
         case .low:

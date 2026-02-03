@@ -21,8 +21,8 @@ public actor CreateProjectUseCase: Sendable {
         let request = CreateProjectRequest(name: name, description: description)
 
         do {
-            let project = try await projectService.createProject(request)
-            return project
+            let response = try await projectService.createProject(request)
+            return response.toDomainProject()
         } catch let error as ProjectError {
             throw error
         } catch {

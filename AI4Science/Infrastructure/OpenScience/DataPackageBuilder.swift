@@ -3,7 +3,7 @@ import Foundation
 /// Builder for creating FAIR-compliant data packages
 actor DataPackageBuilder {
     // MARK: - Properties
-    private let logger = Logger(subsystem: "com.ai4science.openscience", category: "DataPackageBuilder")
+    private let logger = DataPackageLogger(subsystem: "com.ai4science.openscience", category: "DataPackageBuilder")
     private var dataPackage: DataPackage
 
     // MARK: - Initialization
@@ -207,59 +207,60 @@ struct DataFile: Codable, Sendable {
 }
 
 // MARK: - Predefined Builders
+// NOTE: These factory methods are async because DataPackageBuilder is an actor
 extension DataPackageBuilder {
     /// Create builder for biological sample data
-    static func biologicalSample() -> DataPackageBuilder {
+    static func biologicalSample() async -> DataPackageBuilder {
         let builder = DataPackageBuilder(identifier: UUID().uuidString)
+        _ = await builder.setFormat("JSON-LD")
+        _ = await builder.addMetadata(key: "type", value: "BiologicalSample")
         return builder
-            .setFormat("JSON-LD")
-            .addMetadata(key: "type", value: "BiologicalSample")
     }
 
     /// Create builder for environmental data
-    static func environmental() -> DataPackageBuilder {
+    static func environmental() async -> DataPackageBuilder {
         let builder = DataPackageBuilder(identifier: UUID().uuidString)
+        _ = await builder.setFormat("NetCDF")
+        _ = await builder.addMetadata(key: "type", value: "EnvironmentalData")
         return builder
-            .setFormat("NetCDF")
-            .addMetadata(key: "type", value: "EnvironmentalData")
     }
 
     /// Create builder for survey data
-    static func survey() -> DataPackageBuilder {
+    static func survey() async -> DataPackageBuilder {
         let builder = DataPackageBuilder(identifier: UUID().uuidString)
+        _ = await builder.setFormat("CSV")
+        _ = await builder.addMetadata(key: "type", value: "SurveyData")
         return builder
-            .setFormat("CSV")
-            .addMetadata(key: "type", value: "SurveyData")
     }
 }
 
 // MARK: - Logger Helper
-private struct Logger {
+private struct DataPackageLogger: Sendable {
     private let subsystem: String
     private let category: String
 
-    init(subsystem: String, category: String) {
+    nonisolated init(subsystem: String, category: String) {
         self.subsystem = subsystem
         self.category = category
     }
 
-    func debug(_ message: String) {
+    nonisolated func debug(_ message: String) {
         os_log("%{public}@", log: getLog(), type: .debug, message)
     }
 
-    func info(_ message: String) {
+    nonisolated func info(_ message: String) {
         os_log("%{public}@", log: getLog(), type: .info, message)
     }
 
-    func warning(_ message: String) {
+    nonisolated func warning(_ message: String) {
         os_log("%{public}@", log: getLog(), type: .default, message)
     }
 
-    func error(_ message: String) {
+    nonisolated func error(_ message: String) {
         os_log("%{public}@", log: getLog(), type: .error, message)
     }
 
-    private func getLog() -> os.OSLog {
+    private nonisolated func getLog() -> os.OSLog {
         return OSLog(subsystem: subsystem, category: category)
     }
 }

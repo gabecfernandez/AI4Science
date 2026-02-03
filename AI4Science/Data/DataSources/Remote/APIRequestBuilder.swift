@@ -12,7 +12,9 @@ actor APIRequestBuilder {
 
     init(baseURL: URL) {
         self.baseURL = baseURL
-        setDefaultHeaders()
+        // Set default headers directly - actor hasn't started yet
+        self.headers["Accept"] = "application/json"
+        self.headers["User-Agent"] = "AI4Science/1.0"
     }
 
     // MARK: - Public Methods

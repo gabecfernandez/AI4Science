@@ -46,10 +46,9 @@ public struct IconButton: View {
         .background(backgroundColor ?? Color.clear)
         .cornerRadius(BorderStyles.radiusMedium)
         .disabled(!isEnabled || isLoading)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .opacity(isLoading ? 0.8 : 1.0)
         .accessibilityElement(children: .ignore)
-        .accessibilityEnabled(isEnabled)
     }
 }
 

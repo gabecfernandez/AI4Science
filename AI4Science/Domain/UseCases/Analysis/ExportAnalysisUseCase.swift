@@ -39,7 +39,7 @@ public actor ExportAnalysisUseCase: Sendable {
         } catch let error as AnalysisError {
             throw error
         } catch {
-            throw AnalysisError.unknownError(error.localizedDescription)
+            throw AnalysisError.processingFailed(error.localizedDescription)
         }
     }
 

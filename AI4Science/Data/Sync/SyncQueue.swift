@@ -42,7 +42,7 @@ actor SyncQueue: Sendable {
         context.insert(queueEntry)
         try context.save()
 
-        Logger.info("Queued \(operationType) for \(entityType):\(entityID)")
+        AppLogger.info("Queued \(operationType) for \(entityType):\(entityID)")
         return queueEntry
     }
 
@@ -59,14 +59,20 @@ actor SyncQueue: Sendable {
 
             for item in pendingItems {
                 if item.shouldRetry {
-                    await processQueueItem(item)
+                    await processQueueItem(
+                        id: item.id,
+                        operationType: item.operationType,
+                        entityType: item.entityType,
+                        entityID: item.entityID,
+                        maxRetries: item.maxRetries
+                    )
                     synced += 1
                 }
             }
 
             return synced
         } catch {
-            Logger.error("Failed to process queue: \(error.localizedDescription)")
+            AppLogger.error("Failed to process queue: \(error.localizedDescription)")
             return 0
         }
     }
@@ -80,7 +86,7 @@ actor SyncQueue: Sendable {
                 let descriptor = FetchDescriptor(predicate: predicate)
                 return try context.fetchCount(descriptor)
             } catch {
-                Logger.error("Failed to count pending items: \(error.localizedDescription)")
+                AppLogger.error("Failed to count pending items: \(error.localizedDescription)")
                 return 0
             }
         }
@@ -96,7 +102,7 @@ actor SyncQueue: Sendable {
         if let item = try context.fetch(descriptor).first {
             context.delete(item)
             try context.save()
-            Logger.info("Removed from queue: \(id)")
+            AppLogger.info("Removed from queue: \(id)")
         }
     }
 
@@ -111,7 +117,7 @@ actor SyncQueue: Sendable {
         }
 
         try context.save()
-        Logger.warning("Queue cleared")
+        AppLogger.warning("Queue cleared")
     }
 
     /// Get queue items by entity type
@@ -125,25 +131,29 @@ actor SyncQueue: Sendable {
 
     // MARK: - Private Methods
 
-    private func processQueueItem(_ item: SyncQueueEntity) async {
-        let context = ModelContext(modelContainer)
+    private func processQueueItem(id itemId: String, operationType: String, entityType: String, entityID: String, maxRetries: Int) async {
+        await MainActor.run {
+            let context = ModelContext(modelContainer)
 
-        do {
-            item.markInProgress()
+            // Re-fetch the entity within MainActor context to avoid crossing isolation boundaries
+            let predicate = #Predicate<SyncQueueEntity> { $0.id == itemId }
+            let descriptor = FetchDescriptor(predicate: predicate)
+            guard let item = try? context.fetch(descriptor).first else {
+                AppLogger.warning("Queue item \(itemId) not found during processing")
+                return
+            }
 
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+            // Mark as in progress
+            item.status = "in_progress"
 
-            // Update would sync to server here
+            // Simulate network sync (would be actual API call)
             // For now, just mark as synced
-            item.markSynced()
+            item.status = "synced"
+            item.lastAttemptedAt = Date()
 
-            Logger.info("Synced \(item.operationType) for \(item.entityType)")
-        } catch {
-            item.markFailedWithRetry(errorMessage: error.localizedDescription)
-            Logger.warning("Failed to sync \(item.entityType):\(item.entityID) - will retry")
+            AppLogger.info("Synced \(operationType) for \(entityType)")
+
+            try? context.save()
         }
-
-        try? context.save()
     }
 }

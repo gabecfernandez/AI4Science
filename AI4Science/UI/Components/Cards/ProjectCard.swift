@@ -102,7 +102,7 @@ public struct ProjectCard: View {
         )
         .shadow(Shadows.small)
         .onTapGesture(perform: onTap)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .alert("Delete Project", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
                 onDelete?()

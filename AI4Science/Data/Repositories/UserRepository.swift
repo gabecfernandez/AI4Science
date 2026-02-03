@@ -1,24 +1,16 @@
 import Foundation
 import SwiftData
 
-/// Repository protocol for user operations
+/// Repository protocol for user operations - returns only Sendable domain types
+/// Entity-based operations are internal to the actor and not exposed via protocol
 protocol UserRepositoryProtocol: Sendable {
-    func createUser(_ user: UserEntity) async throws
-    func getUser(id: String) async throws -> UserEntity?
-    func getUserByEmail(_ email: String) async throws -> UserEntity?
-    func updateUser(_ user: UserEntity) async throws
-    func deleteUser(id: String) async throws
-    func getAllUsers() async throws -> [UserEntity]
-    func getCurrentUser() async throws -> UserEntity?
+    // Domain model operations would go here when User domain model is added
+    // For now, keep entity operations internal to actor only
 }
 
-/// User repository implementation with SwiftData
-actor UserRepository: UserRepositoryProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// User repository implementation using ModelActor
+@ModelActor
+final actor UserRepository {
 
     /// Create a new user
     func createUser(_ user: UserEntity) async throws {
@@ -50,7 +42,7 @@ actor UserRepository: UserRepositoryProtocol {
 
     /// Delete user by ID
     func deleteUser(id: String) async throws {
-        guard let user = try getUser(id: id) else {
+        guard let user = try await getUser(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(user)
@@ -73,38 +65,43 @@ actor UserRepository: UserRepositoryProtocol {
     }
 }
 
-/// Repository error types
-enum RepositoryError: LocalizedError {
-    case notFound
-    case saveFailed
-    case deleteFailed
-    case invalidData
-    case networkError
+// Note: RepositoryError is defined in Core/Protocols/Repository.swift
 
-    var errorDescription: String? {
-        switch self {
-        case .notFound:
-            return "Resource not found"
-        case .saveFailed:
-            return "Failed to save data"
-        case .deleteFailed:
-            return "Failed to delete data"
-        case .invalidData:
-            return "Invalid data"
-        case .networkError:
-            return "Network error occurred"
-        }
+/// Factory for creating user repository
+enum UserRepositoryFactory {
+    @MainActor
+    static func makeRepository(modelContainer: ModelContainer) -> UserRepository {
+        UserRepository(modelContainer: modelContainer)
     }
 }
 
-/// Factory for creating user repository
-struct UserRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> UserRepository {
-        UserRepository(modelContext: modelContext)
-    }
+// MARK: - Sendable Display Models
 
-    static func makeRepository(modelContainer: ModelContainer) -> UserRepository {
-        let context = ModelContext(modelContainer)
-        return UserRepository(modelContext: context)
+/// Sendable display model for user profile
+struct UserDisplayData: Sendable {
+    let id: String
+    let fullName: String
+    let email: String
+    let institution: String?
+    let profileImageURL: String?
+    let createdAt: Date
+}
+
+extension UserRepository {
+    /// Get first user as a Sendable display model
+    func getFirstUserDisplayData() async throws -> UserDisplayData? {
+        let descriptor = FetchDescriptor<UserEntity>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        let users = try modelContext.fetch(descriptor)
+        guard let user = users.first else { return nil }
+        return UserDisplayData(
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            institution: user.institution,
+            profileImageURL: user.profileImageURL,
+            createdAt: user.createdAt
+        )
     }
 }

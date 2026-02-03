@@ -63,7 +63,7 @@ public struct LoadMLModelUseCase: Sendable {
     /// - Parameter modelId: Model identifier
     /// - Returns: ModelInfo with specifications
     /// - Throws: MLError if fetch fails
-    public func getModelInfo(modelId: String) async throws -> ModelInfo {
+    public func getModelInfo(modelId: String) async throws -> LoadedModelInfo {
         guard !modelId.isEmpty else {
             throw MLError.validationFailed("Model ID is required.")
         }
@@ -78,7 +78,7 @@ public struct LoadedMLModel: Sendable {
     public let id: String
     public let name: String
     public let version: String
-    public let type: ModelType
+    public let type: LoadedModelType
     public let sizeInBytes: Int
     public let inputShape: [Int]
     public let outputShape: [Int]
@@ -89,7 +89,7 @@ public struct LoadedMLModel: Sendable {
         id: String,
         name: String,
         version: String,
-        type: ModelType,
+        type: LoadedModelType,
         sizeInBytes: Int,
         inputShape: [Int],
         outputShape: [Int],
@@ -108,12 +108,12 @@ public struct LoadedMLModel: Sendable {
     }
 }
 
-public struct ModelInfo: Sendable, Codable {
+public struct LoadedModelInfo: Sendable, Codable {
     public let id: String
     public let name: String
     public let description: String
     public let version: String
-    public let type: ModelType
+    public let type: LoadedModelType
     public let sizeInBytes: Int
     public let accuracy: Float
     public let inferenceTime: Double // milliseconds
@@ -128,7 +128,7 @@ public struct ModelInfo: Sendable, Codable {
         name: String,
         description: String,
         version: String,
-        type: ModelType,
+        type: LoadedModelType,
         sizeInBytes: Int,
         accuracy: Float,
         inferenceTime: Double,
@@ -154,7 +154,7 @@ public struct ModelInfo: Sendable, Codable {
     }
 }
 
-public enum ModelType: Sendable, Codable, Equatable {
+public enum LoadedModelType: Sendable, Codable, Equatable {
     case objectDetection
     case imageClassification
     case segmentation
@@ -231,8 +231,11 @@ public enum MLError: LocalizedError, Sendable {
 public protocol MLRepositoryProtocol: Sendable {
     func loadModel(modelId: String) async throws -> LoadedMLModel
     func unloadModel(modelId: String) async throws
-    func getModelInfo(modelId: String) async throws -> ModelInfo
+    func getModelInfo(modelId: String) async throws -> LoadedModelInfo
     func downloadModel(modelId: String) async throws -> ModelDownloadProgress
-    func listAvailableModels() async throws -> [ModelInfo]
+    func listAvailableModels() async throws -> [LoadedModelInfo]
     func checkModelUpdates(modelId: String) async throws -> ModelUpdateInfo?
 }
+
+// Note: ModelDownloadProgress is defined in DownloadMLModelUseCase.swift
+// Note: ModelUpdateInfo is defined in UpdateMLModelUseCase.swift

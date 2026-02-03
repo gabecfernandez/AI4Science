@@ -30,19 +30,19 @@ actor APIResponseHandler {
         do {
             return try decoder.decode(type, from: data)
         } catch let DecodingError.dataCorrupted(context) {
-            Logger.error("Data corrupted: \(context.debugDescription)")
+            AppLogger.error("Data corrupted: \(context.debugDescription)")
             throw APIError.decodingError
         } catch let DecodingError.keyNotFound(key, context) {
-            Logger.error("Key not found: \(key), \(context.debugDescription)")
+            AppLogger.error("Key not found: \(key), \(context.debugDescription)")
             throw APIError.decodingError
         } catch let DecodingError.typeMismatch(type, context) {
-            Logger.error("Type mismatch: \(type), \(context.debugDescription)")
+            AppLogger.error("Type mismatch: \(type), \(context.debugDescription)")
             throw APIError.decodingError
         } catch let DecodingError.valueNotFound(type, context) {
-            Logger.error("Value not found: \(type), \(context.debugDescription)")
+            AppLogger.error("Value not found: \(type), \(context.debugDescription)")
             throw APIError.decodingError
         } catch {
-            Logger.error("Decoding failed: \(error.localizedDescription)")
+            AppLogger.error("Decoding failed: \(error.localizedDescription)")
             throw APIError.decodingError
         }
     }
@@ -54,7 +54,7 @@ actor APIResponseHandler {
         do {
             return try encoder.encode(object)
         } catch {
-            Logger.error("Encoding failed: \(error.localizedDescription)")
+            AppLogger.error("Encoding failed: \(error.localizedDescription)")
             throw APIError.encodingError
         }
     }
@@ -112,7 +112,7 @@ actor APIResponseHandler {
         var pageInfo = PaginationInfo()
 
         if let linkHeader = response.value(forHTTPHeaderField: "Link") {
-            parseLink Header(linkHeader, into: &pageInfo)
+            parseLinkHeader(linkHeader, into: &pageInfo)
         }
 
         if let pageHeader = response.value(forHTTPHeaderField: "X-Page") {
@@ -181,11 +181,18 @@ actor APIResponseHandler {
 // MARK: - Models
 
 /// Generic API response
-struct APIResponse: Sendable {
+struct APIResponse: @unchecked Sendable {
     let statusCode: Int
     let message: String
-    let data: Any?
+    nonisolated(unsafe) let data: Any?
     let timestamp: Date
+
+    nonisolated init(statusCode: Int, message: String, data: Any?, timestamp: Date) {
+        self.statusCode = statusCode
+        self.message = message
+        self.data = data
+        self.timestamp = timestamp
+    }
 }
 
 /// Pagination information

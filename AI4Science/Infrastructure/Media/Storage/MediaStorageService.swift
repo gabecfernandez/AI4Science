@@ -265,7 +265,7 @@ struct MediaFile {
 
     var fileSizeFormatted: String {
         let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useMB, .useKB, .useB]
+        formatter.allowedUnits = [.useMB, .useKB, .useBytes]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: fileSize)
     }

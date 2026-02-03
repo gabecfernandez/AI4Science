@@ -10,42 +10,41 @@ final class ProjectListViewModel {
     var showError = false
     var searchText = ""
 
+    private let demoUserID = UUID()
+
     func loadProjects() async {
         isLoading = true
         defer { isLoading = false }
 
         do {
             // Simulate API call
-            try await Task.sleep(nanoseconds: 2_000_000_000)
+            try await Task.sleep(nanoseconds: 500_000_000)
 
             // Create sample projects
             projects = [
                 Project(
-                    id: "1",
-                    name: "Materials Analysis 2024",
+                    title: "Materials Analysis 2024",
                     description: "Comprehensive analysis of novel composite materials",
                     status: .active,
-                    sampleCount: 24,
-                    memberCount: 5,
-                    createdDate: Date().addingTimeInterval(-86400 * 30)
+                    principalInvestigatorID: demoUserID,
+                    labAffiliation: .placeholder,
+                    createdAt: Date().addingTimeInterval(-86400 * 30)
                 ),
                 Project(
-                    id: "2",
-                    name: "Protein Structure Study",
+                    title: "Protein Structure Study",
                     description: "AI-driven protein folding predictions",
                     status: .active,
-                    sampleCount: 15,
-                    memberCount: 3,
-                    createdDate: Date().addingTimeInterval(-86400 * 60)
+                    principalInvestigatorID: demoUserID,
+                    labAffiliation: .placeholder,
+                    createdAt: Date().addingTimeInterval(-86400 * 60)
                 ),
                 Project(
-                    id: "3",
-                    name: "Crystal Growth Optimization",
+                    title: "Crystal Growth Optimization",
                     description: "Testing growth parameters for semiconductor crystals",
-                    status: .paused,
-                    sampleCount: 8,
-                    memberCount: 2,
-                    createdDate: Date().addingTimeInterval(-86400 * 90)
+                    status: .onHold,
+                    principalInvestigatorID: demoUserID,
+                    labAffiliation: .placeholder,
+                    createdAt: Date().addingTimeInterval(-86400 * 90)
                 )
             ]
         } catch {
@@ -54,13 +53,13 @@ final class ProjectListViewModel {
         }
     }
 
-    func deleteProject(_ projectID: String) async {
+    func deleteProject(_ projectID: UUID) async {
         isLoading = true
         defer { isLoading = false }
 
         do {
             // Simulate API call
-            try await Task.sleep(nanoseconds: 1_500_000_000)
+            try await Task.sleep(nanoseconds: 500_000_000)
 
             projects.removeAll { $0.id == projectID }
         } catch {
@@ -69,16 +68,17 @@ final class ProjectListViewModel {
         }
     }
 
-    func archiveProject(_ projectID: String) async {
+    func archiveProject(_ projectID: UUID) async {
         isLoading = true
         defer { isLoading = false }
 
         do {
             // Simulate API call
-            try await Task.sleep(nanoseconds: 1_500_000_000)
+            try await Task.sleep(nanoseconds: 500_000_000)
 
             if let index = projects.firstIndex(where: { $0.id == projectID }) {
                 // Update project status
+                _ = index // Placeholder
             }
         } catch {
             errorMessage = "Failed to archive project"

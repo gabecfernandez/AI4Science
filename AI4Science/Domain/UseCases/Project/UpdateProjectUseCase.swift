@@ -44,8 +44,8 @@ public actor UpdateProjectUseCase: Sendable {
         )
 
         do {
-            let updatedProject = try await projectService.updateProject(request)
-            return updatedProject
+            let response = try await projectService.updateProject(request)
+            return response.toDomainProject()
         } catch let error as ProjectError {
             throw error
         } catch {

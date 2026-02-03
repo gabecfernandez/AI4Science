@@ -16,7 +16,7 @@ struct PredictionResult: Sendable, Codable {
     let output: PredictionOutput
 
     /// Model information
-    let modelInfo: ModelInfo
+    let modelInfo: PredictionModelInfo
 
     /// Confidence/score information
     let confidence: ConfidenceInfo
@@ -36,7 +36,7 @@ struct PredictionResult: Sendable, Codable {
         type: PredictionType,
         inputMetadata: InputMetadata,
         output: PredictionOutput,
-        modelInfo: ModelInfo,
+        modelInfo: PredictionModelInfo,
         confidence: ConfidenceInfo,
         inferenceTime: Int,
         metadata: [String: String]? = nil
@@ -159,8 +159,8 @@ enum PredictionValue: Sendable, Codable {
     case object([String: PredictionValue])
 }
 
-/// Model information for prediction
-struct ModelInfo: Sendable, Codable {
+/// Model information for prediction results
+struct PredictionModelInfo: Sendable, Codable {
     /// Name of the model
     let name: String
 
@@ -202,11 +202,12 @@ struct ConfidenceInfo: Sendable, Codable {
             self.minimum = 0
             self.standardDeviation = 0
         } else {
-            self.average = scores.reduce(0, +) / Float(scores.count)
+            let avg = scores.reduce(0, +) / Float(scores.count)
+            self.average = avg
             self.maximum = scores.max() ?? 0
             self.minimum = scores.min() ?? 0
 
-            let variance = scores.map { pow($0 - average, 2) }.reduce(0, +) / Float(scores.count)
+            let variance = scores.map { pow($0 - avg, 2) }.reduce(0, +) / Float(scores.count)
             self.standardDeviation = sqrt(variance)
         }
     }
@@ -231,7 +232,7 @@ struct PredictionResultBuilder {
     private var type: PredictionType = .custom
     private var inputMetadata: InputMetadata?
     private var output: PredictionOutput?
-    private var modelInfo: ModelInfo?
+    private var modelInfo: PredictionModelInfo?
     private var confidence: ConfidenceInfo?
     private var inferenceTime: Int = 0
     private var metadata: [String: String]?
@@ -251,7 +252,7 @@ struct PredictionResultBuilder {
         return self
     }
 
-    mutating func setModel(_ info: ModelInfo) -> Self {
+    mutating func setModel(_ info: PredictionModelInfo) -> Self {
         self.modelInfo = info
         return self
     }

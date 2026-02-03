@@ -61,7 +61,7 @@ public extension Data {
 
         var offset = 0
         while offset < count {
-            let rangeLength = min(chunkSize, count - offset)
+            let rangeLength = Swift.min(chunkSize, count - offset)
             let range = offset ..< offset + rangeLength
             compressed.append(self.subdata(in: range))
             offset += rangeLength
@@ -76,9 +76,7 @@ public extension Data {
 
         var decompressed = Data()
 
-        guard let readStream = InputStream(data: self) else {
-            return nil
-        }
+        let readStream = InputStream(data: self)
 
         readStream.open()
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 8192)
@@ -139,13 +137,13 @@ public extension Data {
         append(data)
     }
 
-    /// Get first bytes as specified type
-    func prefix<T: FixedWidthInteger>(_ count: Int) -> Data {
+    /// Get first N bytes
+    func prefixData(_ count: Int) -> Data {
         Data(self.prefix(count))
     }
 
-    /// Get last bytes as specified type
-    func suffix<T: FixedWidthInteger>(_ count: Int) -> Data {
+    /// Get last N bytes
+    func suffixData(_ count: Int) -> Data {
         Data(self.suffix(count))
     }
 }

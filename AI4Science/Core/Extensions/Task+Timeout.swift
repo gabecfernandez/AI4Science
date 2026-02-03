@@ -8,7 +8,7 @@ extension Task where Success == Never, Failure == Never {
 }
 
 /// Run async operation with timeout
-public func withTimeout<T>(
+public func withTimeout<T: Sendable>(
     seconds: TimeInterval,
     operation: @escaping @Sendable () async throws -> T
 ) async throws -> T {
@@ -32,7 +32,7 @@ public func withTimeout<T>(
 }
 
 /// Run async operation with deadline
-public func withDeadline<T>(
+public func withDeadline<T: Sendable>(
     _ deadline: Date,
     operation: @escaping @Sendable () async throws -> T
 ) async throws -> T {

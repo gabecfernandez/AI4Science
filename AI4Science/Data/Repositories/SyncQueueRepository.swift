@@ -1,29 +1,17 @@
 import Foundation
 import SwiftData
 
-/// Protocol for sync queue operations
+/// Protocol for sync queue operations - returns only Sendable domain types
+/// Entity-based operations are internal to the actor and not exposed via protocol
 protocol SyncQueueRepositoryProtocol: Sendable {
-    func addToQueue(_ entry: SyncQueueEntity) async throws
-    func getSyncQueueEntry(id: String) async throws -> SyncQueueEntity?
-    func getPendingQueue() async throws -> [SyncQueueEntity]
-    func getQueueByStatus(_ status: String) async throws -> [SyncQueueEntity]
-    func getHighPriorityQueue() async throws -> [SyncQueueEntity]
-    func updateQueueEntry(_ entry: SyncQueueEntity) async throws
-    func removeFromQueue(id: String) async throws
-    func clearQueue() async throws
     func getQueueSize() async throws -> Int
-    func getFailedEntries() async throws -> [SyncQueueEntity]
-    func getCriticalEntries() async throws -> [SyncQueueEntity]
-    func getExpiredEntries() async throws -> [SyncQueueEntity]
+    func clearQueue() async throws
+    // Entity operations are internal to actor only
 }
 
-/// Sync queue repository implementation
-actor SyncQueueRepository: SyncQueueRepositoryProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+/// Sync queue repository implementation using ModelActor
+@ModelActor
+final actor SyncQueueRepository {
 
     /// Add entry to sync queue
     func addToQueue(_ entry: SyncQueueEntity) async throws {
@@ -75,7 +63,7 @@ actor SyncQueueRepository: SyncQueueRepositoryProtocol {
 
     /// Remove entry from queue
     func removeFromQueue(id: String) async throws {
-        guard let entry = try getSyncQueueEntry(id: id) else {
+        guard let entry = try await getSyncQueueEntry(id: id) else {
             throw RepositoryError.notFound
         }
         modelContext.delete(entry)
@@ -119,20 +107,19 @@ actor SyncQueueRepository: SyncQueueRepositoryProtocol {
 
     /// Get expired entries
     func getExpiredEntries() async throws -> [SyncQueueEntity] {
-        let descriptor = FetchDescriptor<SyncQueueEntity>()
-        let entries = try modelContext.fetch(descriptor)
-        return entries.filter { $0.isExpired }
+        // Use predicate to filter expired entries (older than 24 hours)
+        let expirationDate = Date().addingTimeInterval(-86400)
+        let descriptor = FetchDescriptor<SyncQueueEntity>(
+            predicate: #Predicate { $0.enqueuedAt < expirationDate }
+        )
+        return try modelContext.fetch(descriptor)
     }
 }
 
 /// Factory for creating sync queue repository
-struct SyncQueueRepositoryFactory {
-    static func makeRepository(modelContext: ModelContext) -> SyncQueueRepository {
-        SyncQueueRepository(modelContext: modelContext)
-    }
-
+enum SyncQueueRepositoryFactory {
+    @MainActor
     static func makeRepository(modelContainer: ModelContainer) -> SyncQueueRepository {
-        let context = ModelContext(modelContainer)
-        return SyncQueueRepository(modelContext: context)
+        SyncQueueRepository(modelContainer: modelContainer)
     }
 }

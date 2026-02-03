@@ -4,13 +4,13 @@ import Foundation
 @available(iOS 15.0, *)
 public protocol SyncServiceProtocol: Sendable {
     /// Trigger full data synchronization
-    func syncData() async throws -> SyncResult
+    func syncData() async throws -> ServiceSyncResult
 
     /// Check current sync progress
-    func checkSyncStatus() async throws -> SyncStatus
+    func checkSyncStatus() async throws -> SyncProgressStatus
 
     /// Resolve sync conflicts
-    func resolveConflicts(_ conflicts: [SyncConflict]) async throws -> SyncResult
+    func resolveConflicts(_ conflicts: [SyncConflict]) async throws -> ServiceSyncResult
 
     /// Stop ongoing sync
     func stopSync() async throws
@@ -22,14 +22,14 @@ public protocol SyncServiceProtocol: Sendable {
     func getSyncStatistics() async throws -> SyncStatistics
 }
 
-/// Sync result
-public struct SyncResult: Sendable {
+/// Sync result for the sync service
+public struct ServiceSyncResult: Sendable {
     public let timestamp: Date
     public let duration: TimeInterval
     public let status: SyncResultStatus
     public let changesSynced: Int
     public let conflictsResolved: Int
-    public let errors: [SyncError]
+    public let errors: [SyncErrorInfo]
     public let details: SyncDetails
 
     public init(
@@ -38,7 +38,7 @@ public struct SyncResult: Sendable {
         status: SyncResultStatus,
         changesSynced: Int,
         conflictsResolved: Int,
-        errors: [SyncError],
+        errors: [SyncErrorInfo],
         details: SyncDetails
     ) {
         self.timestamp = timestamp
@@ -85,8 +85,8 @@ public struct SyncDetails: Sendable {
     }
 }
 
-/// Sync status
-public struct SyncStatus: Sendable {
+/// Sync progress status
+public struct SyncProgressStatus: Sendable {
     public let isRunning: Bool
     public let progress: Double
     public let currentOperation: String
@@ -172,8 +172,8 @@ public enum ConflictType: String, Sendable {
     case custom
 }
 
-/// Sync error
-public struct SyncError: Sendable {
+/// Sync error info
+public struct SyncErrorInfo: Sendable {
     public let code: String
     public let message: String
     public let resourceId: String?

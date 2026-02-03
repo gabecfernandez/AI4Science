@@ -77,8 +77,8 @@ public actor Configuration {
         }
     }
 
-    /// Feature flags
-    public struct FeatureFlags: Sendable {
+    /// Configuration-specific feature flags
+    public struct ConfigFeatureFlags: Sendable {
         public var enableOfflineMode: Bool
         public var enableAnalytics: Bool
         public var enableCrashReporting: Bool
@@ -108,7 +108,7 @@ public actor Configuration {
     private var apiEndpoints: APIEndpoints
     private var networkConfig: NetworkConfig
     private var storageConfig: StorageConfig
-    private var featureFlags: FeatureFlags
+    private var featureFlags: ConfigFeatureFlags
     private var environment: AppEnvironment
 
     private init() {
@@ -116,7 +116,7 @@ public actor Configuration {
         self.apiEndpoints = APIEndpoints(baseURL: URL(string: "https://api.ai4science.local")!)
         self.networkConfig = NetworkConfig()
         self.storageConfig = StorageConfig()
-        self.featureFlags = FeatureFlags()
+        self.featureFlags = ConfigFeatureFlags()
     }
 
     /// Get shared configuration instance
@@ -135,31 +135,31 @@ public actor Configuration {
 
     nonisolated public var endpoints: APIEndpoints {
         get async {
-            await instance.apiEndpoints
+            await Self.instance.apiEndpoints
         }
     }
 
     nonisolated public var network: NetworkConfig {
         get async {
-            await instance.networkConfig
+            await Self.instance.networkConfig
         }
     }
 
     nonisolated public var storage: StorageConfig {
         get async {
-            await instance.storageConfig
+            await Self.instance.storageConfig
         }
     }
 
-    nonisolated public var features: FeatureFlags {
+    nonisolated public var features: ConfigFeatureFlags {
         get async {
-            await instance.featureFlags
+            await Self.instance.featureFlags
         }
     }
 
     nonisolated public var env: AppEnvironment {
         get async {
-            await instance.environment
+            await Self.instance.environment
         }
     }
 
@@ -181,11 +181,11 @@ public actor Configuration {
         self.storageConfig = config
     }
 
-    func setFeatureFlags(_ flags: FeatureFlags) {
+    func setFeatureFlags(_ flags: ConfigFeatureFlags) {
         self.featureFlags = flags
     }
 
-    func updateFeatureFlag(_ keyPath: WritableKeyPath<FeatureFlags, Bool>, to value: Bool) {
+    func updateFeatureFlag(_ keyPath: WritableKeyPath<ConfigFeatureFlags, Bool>, to value: Bool) {
         self.featureFlags[keyPath: keyPath] = value
     }
 
@@ -220,19 +220,19 @@ public actor Configuration {
 
     nonisolated public var isDevelopment: Bool {
         get async {
-            await instance.environment == .development
+            await Self.instance.environment == .development
         }
     }
 
     nonisolated public var isStaging: Bool {
         get async {
-            await instance.environment == .staging
+            await Self.instance.environment == .staging
         }
     }
 
     nonisolated public var isProduction: Bool {
         get async {
-            await instance.environment == .production
+            await Self.instance.environment == .production
         }
     }
 }

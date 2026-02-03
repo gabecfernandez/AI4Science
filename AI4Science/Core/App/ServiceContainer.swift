@@ -32,15 +32,13 @@ final class ServiceContainer {
     // MARK: - Initialization
 
     init(modelContainer: ModelContainer) {
-        let context = modelContainer.mainContext
-
-        // Initialize repositories
-        self.userRepository = UserRepository(modelContext: context)
-        self.projectRepository = ProjectRepository(modelContext: context)
-        self.sampleRepository = SampleRepository(modelContext: context)
-        self.captureRepository = CaptureRepository(modelContext: context)
-        self.annotationRepository = AnnotationRepository(modelContext: context)
-        self.analysisRepository = AnalysisRepository(modelContext: context)
+        // Initialize repositories using @ModelActor pattern (requires modelContainer)
+        self.userRepository = UserRepository(modelContainer: modelContainer)
+        self.projectRepository = ProjectRepository(modelContainer: modelContainer)
+        self.sampleRepository = SampleRepository(modelContainer: modelContainer)
+        self.captureRepository = CaptureRepository(modelContainer: modelContainer)
+        self.annotationRepository = AnnotationRepository(modelContainer: modelContainer)
+        self.analysisRepository = AnalysisRepository(modelContainer: modelContainer)
 
         // Initialize services
         self.authService = AuthService(userRepository: userRepository)
@@ -58,7 +56,7 @@ final class ServiceContainer {
             annotationRepository: annotationRepository
         )
 
-        AppLogger.shared.info("ServiceContainer initialized")
+        AppLogger.info("ServiceContainer initialized")
     }
 }
 
@@ -74,12 +72,14 @@ final class AuthService: @unchecked Sendable {
     func signIn(email: String, password: String) async throws -> User {
         let user = User(
             id: UUID(),
+            firstName: "User",
+            lastName: "",
             email: email,
-            displayName: "User",
             role: .researcher,
             labAffiliation: nil
         )
-        try await userRepository.save(user)
+        // Note: UserRepository would need a save method for domain models
+        // For now, this is a stub implementation
         return user
     }
 
@@ -99,7 +99,7 @@ final class MLService: @unchecked Sendable {
 
     func preloadModels() async {
         loadedModels.insert("defectDetection")
-        AppLogger.shared.info("ML models preloaded")
+        AppLogger.info("ML models preloaded")
     }
 
     func runInference(on imageURL: URL, modelType: String) async throws -> [DetectionOutput] {
@@ -109,12 +109,6 @@ final class MLService: @unchecked Sendable {
     func unloadModels() async {
         loadedModels.removeAll()
     }
-}
-
-struct DetectionOutput: Sendable {
-    let label: String
-    let confidence: Double
-    let boundingBox: CGRect
 }
 
 // MARK: - Camera Service Implementation

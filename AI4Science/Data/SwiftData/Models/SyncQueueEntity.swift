@@ -129,12 +129,14 @@ final class SyncQueueEntity {
     }
 
     /// Get retry wait time in seconds (exponential backoff)
-    nonisolated var retryWaitTime: TimeInterval {
+    @MainActor
+    var retryWaitTime: TimeInterval {
         pow(2.0, Double(retryCount)) * 60.0 // 1 min, 2 min, 4 min, etc.
     }
 
     /// Check if entry is expired (24 hours)
-    nonisolated var isExpired: Bool {
+    @MainActor
+    var isExpired: Bool {
         Date().timeIntervalSince(enqueuedAt) > 86400
     }
 }

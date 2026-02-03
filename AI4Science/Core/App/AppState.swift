@@ -21,7 +21,7 @@ final class AppState {
     var syncStatus: SyncStatusState = .idle
 
     // MARK: - Feature Flags
-    var featureFlags: FeatureFlags = FeatureFlags()
+    var featureFlags: AppFeatureFlags = AppFeatureFlags()
 
     // MARK: - Error Handling
     var currentError: AppError?
@@ -63,7 +63,7 @@ final class AppState {
     func handleError(_ error: AppError) {
         currentError = error
         showingError = true
-        AppLogger.shared.error("App error: \(error.localizedDescription)")
+        AppLogger.error("App error: \(error.localizedDescription)")
     }
 
     func clearError() {
@@ -112,9 +112,9 @@ enum SyncStatusState: Equatable, Sendable {
     }
 }
 
-// MARK: - Feature Flags
+// MARK: - App Feature Flags
 
-struct FeatureFlags: Sendable {
+struct AppFeatureFlags: Sendable {
     var enableAROverlay: Bool = true
     var enableOfflineML: Bool = true
     var enableResearchKit: Bool = true

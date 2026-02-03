@@ -44,7 +44,7 @@ public struct SelectableRow<Content: View>: View {
 
                 Spacer()
             }
-            .contentShape(Rectangle())
+            .contentShape(.rect)
             .padding(Spacing.base)
             .background(
                 isSelected

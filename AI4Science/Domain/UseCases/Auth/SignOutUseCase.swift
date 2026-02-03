@@ -10,14 +10,14 @@ public actor SignOutUseCase: Sendable {
     }
 
     /// Execute sign out operation with cleanup
-    /// - Throws: AuthError if sign out fails
+    /// - Throws: ServiceAuthError if sign out fails
     public func execute() async throws {
         do {
             try await authService.signOut()
-        } catch let error as AuthError {
+        } catch let error as ServiceAuthError {
             throw error
         } catch {
-            throw AuthError.unknownError(error.localizedDescription)
+            throw ServiceAuthError.unknownError(error.localizedDescription)
         }
     }
 }

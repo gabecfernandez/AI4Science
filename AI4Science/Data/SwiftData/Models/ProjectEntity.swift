@@ -12,7 +12,7 @@ final class ProjectEntity {
     var name: String
 
     /// Detailed project description
-    var description: String
+    var projectDescription: String
 
     /// The owner/creator of the project
     var owner: UserEntity?
@@ -44,6 +44,12 @@ final class ProjectEntity {
     /// Tags for organizing projects
     var tags: [String] = []
 
+    /// Project start date
+    var startDate: Date?
+
+    /// Principal investigator ID
+    var principalInvestigatorId: String?
+
     /// Relationship to project samples
     @Relationship(deleteRule: .cascade, inverse: \SampleEntity.project) var samples: [SampleEntity] = []
 
@@ -54,7 +60,7 @@ final class ProjectEntity {
     init(
         id: String,
         name: String,
-        description: String,
+        projectDescription: String,
         owner: UserEntity? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -62,7 +68,7 @@ final class ProjectEntity {
     ) {
         self.id = id
         self.name = name
-        self.description = description
+        self.projectDescription = projectDescription
         self.owner = owner
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -73,15 +79,15 @@ final class ProjectEntity {
     @MainActor
     func updateInfo(
         name: String? = nil,
-        description: String? = nil,
+        projectDescription: String? = nil,
         imageURL: String? = nil,
         tags: [String]? = nil
     ) {
         if let name = name {
             self.name = name
         }
-        if let description = description {
-            self.description = description
+        if let projectDescription = projectDescription {
+            self.projectDescription = projectDescription
         }
         if let imageURL = imageURL {
             self.imageURL = imageURL

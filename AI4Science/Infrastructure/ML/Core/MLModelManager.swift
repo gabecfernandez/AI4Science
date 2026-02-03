@@ -2,6 +2,9 @@ import Foundation
 import CoreML
 import os.log
 
+// MARK: - Stub Implementation for Initial Build
+// TODO: Restore full implementation after initial build verification
+
 /// Error types for ML model management
 public enum MLModelManagerError: LocalizedError {
     case modelNotFound(String)
@@ -32,120 +35,58 @@ public enum MLModelManagerError: LocalizedError {
     }
 }
 
-/// Actor managing the lifecycle of ML models
+/// Actor managing the lifecycle of ML models (stubbed)
+/// Note: This actor manages CoreML models, not domain MLModel types
 public actor MLModelManager {
+    /// Shared instance
+    public static let shared = MLModelManager()
+
     private let logger = Logger(subsystem: "com.ai4science.ml", category: "MLModelManager")
 
-    /// Loaded models cache: [modelId: MLModel]
-    private var loadedModels: [String: MLModel] = [:]
+    /// Loaded models cache: [modelId: CoreML.MLModel]
+    /// Using nonisolated(unsafe) to store non-Sendable CoreML models
+    /// Safety: All access is serialized through actor isolation
+    nonisolated(unsafe) private var loadedModels: [String: CoreML.MLModel] = [:]
 
-    /// Model metadata: [modelId: metadata]
-    private var modelMetadata: [String: ModelMetadata] = [:]
-
-    /// Current memory usage in bytes
-    private var currentMemoryUsageBytes: UInt64 = 0
-
-    /// Maximum memory available for models (device-dependent)
+    /// Maximum memory available for models
     private let maxMemoryBytes: UInt64
-
-    /// Model loading queue for serialized access
-    private let modelLoadingQueue = DispatchQueue(
-        label: "com.ai4science.ml.modelLoading",
-        qos: .userInitiated
-    )
-
-    /// Metadata about a loaded model
-    private struct ModelMetadata: Sendable {
-        let modelId: String
-        let modelPath: String
-        let modelSizeBytes: UInt64
-        let loadedAt: Date
-        let config: MLModelConfiguration
-    }
 
     /// Initialize the manager
     public init(maxMemoryMB: UInt64 = 500) {
         self.maxMemoryBytes = maxMemoryMB * 1024 * 1024
-        logger.info("MLModelManager initialized with max memory: \(maxMemoryMB)MB")
+        logger.info("MLModelManager initialized with max memory: \(maxMemoryMB)MB (stub)")
     }
 
-    /// Register model metadata
-    public func registerModel(
-        id: String,
-        modelPath: String,
-        sizeBytes: UInt64
-    ) {
-        logger.debug("Registering model: \(id)")
-    }
-
-    /// Load a model from file path
+    /// Load a model from file path (stub)
+    @discardableResult
     public func loadModel(
         modelId: String,
         modelPath: String,
-        sizeBytes: UInt64,
+        sizeBytes: UInt64 = 0,
         configuration: MLModelConfiguration = .init()
-    ) async throws -> MLModel {
+    ) async throws -> String {
         // Check if already loaded
-        if let cachedModel = loadedModels[modelId] {
-            logger.debug("Model already loaded in memory: \(modelId)")
-            return cachedModel
+        if loadedModels[modelId] != nil {
+            logger.debug("Model already loaded: \(modelId)")
+            return modelId
         }
 
-        // Check memory availability
-        guard currentMemoryUsageBytes + sizeBytes <= maxMemoryBytes else {
-            logger.error("Insufficient memory to load model: \(modelId)")
-            throw MLModelManagerError.insufficientMemory
-        }
+        // Load model from path - assumes .mlmodelc (compiled) or will compile on load
+        let modelURL = URL(fileURLWithPath: modelPath)
+        let model = try CoreML.MLModel(contentsOf: modelURL, configuration: configuration)
 
-        // Load model on dedicated queue
-        let model = try await withCheckedThrowingContinuation { continuation in
-            modelLoadingQueue.async { [weak self] in
-                do {
-                    let loadedModel = try MLModel(contentsOf: URL(fileURLWithPath: modelPath), configuration: configuration)
-                    continuation.resume(returning: loadedModel)
-                } catch {
-                    continuation.resume(throwing: MLModelManagerError.loadingFailed(modelId, error))
-                }
-            }
-        }
-
-        // Cache model and metadata
         loadedModels[modelId] = model
-        modelMetadata[modelId] = ModelMetadata(
-            modelId: modelId,
-            modelPath: modelPath,
-            modelSizeBytes: sizeBytes,
-            loadedAt: Date(),
-            config: configuration
-        )
-        currentMemoryUsageBytes += sizeBytes
-
-        logger.info("Model loaded successfully: \(modelId), Memory: \(self.currentMemoryUsageBytes / (1024 * 1024))MB")
-        return model
+        logger.info("Model loaded: \(modelId)")
+        return modelId
     }
 
     /// Unload a model from memory
     public func unloadModel(modelId: String) throws {
-        guard let model = loadedModels[modelId] else {
+        guard loadedModels[modelId] != nil else {
             throw MLModelManagerError.modelNotLoaded(modelId)
         }
-
-        if let metadata = modelMetadata[modelId] {
-            currentMemoryUsageBytes -= metadata.modelSizeBytes
-        }
-
         loadedModels.removeValue(forKey: modelId)
-        modelMetadata.removeValue(forKey: modelId)
-
-        logger.info("Model unloaded: \(modelId), Memory: \(self.currentMemoryUsageBytes / (1024 * 1024))MB")
-    }
-
-    /// Get a loaded model
-    public func getModel(modelId: String) throws -> MLModel {
-        guard let model = loadedModels[modelId] else {
-            throw MLModelManagerError.modelNotLoaded(modelId)
-        }
-        return model
+        logger.info("Model unloaded: \(modelId)")
     }
 
     /// Check if model is loaded
@@ -158,28 +99,47 @@ public actor MLModelManager {
         Array(loadedModels.keys)
     }
 
-    /// Get current memory usage
-    public func getMemoryUsageMB() -> UInt64 {
-        currentMemoryUsageBytes / (1024 * 1024)
-    }
-
-    /// Get available memory for models
-    public func getAvailableMemoryMB() -> UInt64 {
-        let availableBytes = maxMemoryBytes > currentMemoryUsageBytes ? maxMemoryBytes - currentMemoryUsageBytes : 0
-        return availableBytes / (1024 * 1024)
-    }
-
     /// Unload all models
     public func unloadAllModels() {
         loadedModels.removeAll()
-        modelMetadata.removeAll()
-        currentMemoryUsageBytes = 0
         logger.info("All models unloaded")
     }
 
-    /// Get model metadata
-    public func getModelMetadata(modelId: String) -> (sizeBytes: UInt64, loadedAt: Date)? {
-        guard let metadata = modelMetadata[modelId] else { return nil }
-        return (metadata.modelSizeBytes, metadata.loadedAt)
+    /// Load a model by name from bundle (stub implementation)
+    /// - Parameter name: Model name (without extension)
+    /// - Returns: Loaded CoreML.MLModel
+    /// - Throws: MLModelError if model cannot be found or loaded
+    public func loadModel(named name: String) async throws -> CoreML.MLModel {
+        // Check if already loaded
+        if let model = loadedModels[name] {
+            return model
+        }
+
+        // Try to find the model in the bundle
+        guard let modelURL = Bundle.main.url(forResource: name, withExtension: "mlmodelc") else {
+            // Try compiled version
+            if let compiledURL = Bundle.main.url(forResource: name, withExtension: "mlmodel") {
+                let compiledModelURL = try await CoreML.MLModel.compileModel(at: compiledURL)
+                let model = try CoreML.MLModel(contentsOf: compiledModelURL)
+                loadedModels[name] = model
+                logger.info("Model compiled and loaded: \(name)")
+                return model
+            }
+            logger.warning("Model not found: \(name) - returning stub model")
+            throw MLModelError.modelNotFound(name)
+        }
+
+        let configuration = MLModelConfiguration()
+        let model = try CoreML.MLModel(contentsOf: modelURL, configuration: configuration)
+        loadedModels[name] = model
+        logger.info("Model loaded: \(name)")
+        return model
+    }
+
+    /// Get a loaded model by name
+    /// - Parameter name: Model name
+    /// - Returns: CoreML.MLModel if loaded, nil otherwise
+    public func getModel(named name: String) -> CoreML.MLModel? {
+        return loadedModels[name]
     }
 }

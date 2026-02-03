@@ -1,6 +1,7 @@
 import Foundation
 import CoreML
 import Vision
+import UIKit
 
 /// Protocol defining the contract for image preprocessors
 public protocol PreprocessorProtocol: Sendable {

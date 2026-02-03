@@ -23,8 +23,8 @@ final class DefectEntity {
     /// Bounding box coordinates (JSON string)
     var boundingBox: String
 
-    /// Detailed description
-    var description: String
+    /// Detailed defectDescription
+    var defectDescription: String
 
     /// Detection method (manual, ml_model, hybrid)
     var detectionMethod: String = "manual"
@@ -64,7 +64,7 @@ final class DefectEntity {
         severity: String = "medium",
         confidence: Double = 0.0,
         boundingBox: String = "{}",
-        description: String = "",
+        defectDescription: String = "",
         detectionMethod: String = "manual"
     ) {
         self.id = id
@@ -73,7 +73,7 @@ final class DefectEntity {
         self.severity = severity
         self.confidence = min(max(confidence, 0.0), 1.0)
         self.boundingBox = boundingBox
-        self.description = description
+        self.defectDescription = defectDescription
         self.detectionMethod = detectionMethod
         self.createdAt = Date()
         self.updatedAt = Date()
@@ -84,7 +84,7 @@ final class DefectEntity {
     func updateInfo(
         defectType: String? = nil,
         severity: String? = nil,
-        description: String? = nil,
+        defectDescription: String? = nil,
         confidence: Double? = nil
     ) {
         if let defectType = defectType {
@@ -93,8 +93,8 @@ final class DefectEntity {
         if let severity = severity {
             self.severity = severity
         }
-        if let description = description {
-            self.description = description
+        if let defectDescription = defectDescription {
+            self.defectDescription = defectDescription
         }
         if let confidence = confidence {
             self.confidence = min(max(confidence, 0.0), 1.0)

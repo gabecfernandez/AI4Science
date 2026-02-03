@@ -25,7 +25,7 @@ actor PreviewLayerCoordinator {
         }
     }
 
-    nonisolated init() {
+    init() {
         // Empty init for actor
     }
 
@@ -48,7 +48,7 @@ actor PreviewLayerCoordinator {
         }
 
         previewLayer.frame = frame
-        logger.debug("Preview layer frame updated: \(frame)")
+        logger.debug("Preview layer frame updated: \(frame.debugDescription)")
     }
 
     /// Set video gravity for preview
@@ -187,7 +187,7 @@ actor PreviewLayerCoordinator {
 
         if connection.isVideoOrientationSupported {
             connection.videoOrientation = videoOrientation
-            logger.info("Orientation updated to: \(videoOrientation.description)")
+            logger.info("Orientation updated to: \(String(describing: videoOrientation))")
         }
     }
 
@@ -211,7 +211,7 @@ actor PreviewLayerCoordinator {
             y: tapPoint.y / bounds.height
         )
 
-        logger.debug("Normalized focus point: \(normalizedPoint)")
+        logger.debug("Normalized focus point: \(normalizedPoint.debugDescription)")
         return normalizedPoint
     }
 

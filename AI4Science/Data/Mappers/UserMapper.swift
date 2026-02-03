@@ -1,9 +1,11 @@
 import Foundation
 
 /// Mapper for converting between User domain models and persistence models
+/// Note: Methods marked nonisolated to allow calling from actor contexts
+/// (Project has SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor)
 struct UserMapper {
     /// Map UserEntity to UserDTO for API communication
-    static func toDTO(_ entity: UserEntity) -> UserDTO {
+    nonisolated static func toDTO(_ entity: UserEntity) -> UserDTO {
         UserDTO(
             id: entity.id,
             email: entity.email,
@@ -16,7 +18,7 @@ struct UserMapper {
     }
 
     /// Map UserDTO to UserEntity for persistence
-    static func toEntity(_ dto: UserDTO) -> UserEntity {
+    nonisolated static func toEntity(_ dto: UserDTO) -> UserEntity {
         UserEntity(
             id: dto.id,
             email: dto.email,
@@ -28,8 +30,8 @@ struct UserMapper {
         )
     }
 
-    /// Map domain User model to UserEntity
-    static func toEntity(from user: User) -> UserEntity {
+    /// Map UserModel to UserEntity
+    nonisolated static func toEntity(from user: UserModel) -> UserEntity {
         UserEntity(
             id: user.id,
             email: user.email,
@@ -42,9 +44,9 @@ struct UserMapper {
         )
     }
 
-    /// Map UserEntity to domain User model
-    static func toModel(_ entity: UserEntity) -> User {
-        User(
+    /// Map UserEntity to UserModel
+    nonisolated static func toModel(_ entity: UserEntity) -> UserModel {
+        UserModel(
             id: entity.id,
             email: entity.email,
             fullName: entity.fullName,
@@ -60,7 +62,7 @@ struct UserMapper {
     }
 
     /// Update UserEntity from UserDTO
-    static func update(_ entity: UserEntity, with dto: UserDTO) {
+    nonisolated static func update(_ entity: UserEntity, with dto: UserDTO) {
         entity.email = dto.email
         entity.fullName = dto.fullName
         entity.institution = dto.institution
@@ -68,8 +70,8 @@ struct UserMapper {
         entity.updatedAt = dto.updatedAt
     }
 
-    /// Update UserEntity from domain User
-    static func update(_ entity: UserEntity, with user: User) {
+    /// Update UserEntity from UserModel
+    nonisolated static func update(_ entity: UserEntity, with user: UserModel) {
         entity.email = user.email
         entity.fullName = user.fullName
         entity.institution = user.institution
@@ -81,8 +83,9 @@ struct UserMapper {
     }
 }
 
-/// Domain User model
-struct User: Codable, Identifiable {
+/// Local User model for mapper operations
+/// Note: Marked nonisolated to allow use in actor contexts
+nonisolated struct UserModel: Codable, Identifiable, Sendable {
     let id: String
     var email: String
     var fullName: String

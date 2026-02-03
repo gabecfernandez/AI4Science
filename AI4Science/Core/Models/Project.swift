@@ -28,7 +28,7 @@ public struct Project: Identifiable, Codable, Sendable {
     public var createdAt: Date
     public var updatedAt: Date
 
-    public init(
+    public nonisolated init(
         id: UUID = UUID(),
         title: String,
         description: String,

@@ -79,6 +79,10 @@ struct AI4ScienceApp: App {
     private func initializeApp() async {
         AppLogger.shared.info("Starting app initialization")
 
+        // Seed sample data if database is empty (development/demo only)
+        let context = modelContainer.mainContext
+        await SampleDataSeeder.seedIfEmpty(modelContext: context)
+
         // Check authentication state
         await appState.checkAuthenticationState()
 
@@ -126,12 +130,7 @@ struct MainTabView: View {
 
         TabView(selection: $selectedTab) {
             Tab("Projects", systemImage: "folder.fill", value: .projects) {
-                NavigationStack(path: $nav.projectsPath) {
-                    ProjectsListView()
-                        .navigationDestination(for: ProjectDestination.self) { destination in
-                            destination.view
-                        }
-                }
+                ProjectListView()
             }
 
             Tab("Capture", systemImage: "camera.fill", value: .capture) {
@@ -211,7 +210,7 @@ struct LaunchScreenView: View {
 
 struct AuthenticationFlowView: View {
     var body: some View {
-        LoginView()
+        AppLoginView()
     }
 }
 
@@ -227,7 +226,7 @@ struct OnboardingFlowView: View {
                 .font(Typography.body)
                 .foregroundStyle(.secondary)
 
-            PrimaryButton(title: "Get Started") {
+            PrimaryButton("Get Started") {
                 appState.authState = .authenticated
             }
         }
@@ -237,42 +236,31 @@ struct OnboardingFlowView: View {
 
 // MARK: - Root Views for Each Tab
 
-struct ProjectsListView: View {
-    var body: some View {
-        Text("Projects")
-            .navigationTitle("Projects")
-    }
-}
-
 struct CaptureRootView: View {
     var body: some View {
-        Text("Capture")
-            .navigationTitle("Capture")
+        CaptureListView()
     }
 }
 
 struct AnalysisDashboardView: View {
     var body: some View {
-        Text("Analysis")
-            .navigationTitle("Analysis")
+        AnalysisDashboardViewContent()
     }
 }
 
 struct ResearchDashboardView: View {
     var body: some View {
-        Text("Research")
-            .navigationTitle("Research")
+        ResearchDashboardViewContent()
     }
 }
 
 struct ProfileRootView: View {
     var body: some View {
-        Text("Profile")
-            .navigationTitle("Profile")
+        ProfileView()
     }
 }
 
-struct LoginView: View {
+struct AppLoginView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
@@ -288,7 +276,7 @@ struct LoginView: View {
                 .font(Typography.body)
                 .foregroundStyle(.secondary)
 
-            PrimaryButton(title: "Sign In (Demo)") {
+            PrimaryButton("Sign In (Demo)") {
                 appState.authState = .authenticated
             }
             .padding(.top, Spacing.xl)

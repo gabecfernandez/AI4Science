@@ -19,7 +19,8 @@ public actor FetchProjectsUseCase: Sendable {
         }
 
         do {
-            let projects = try await projectService.fetchProjects(userId: userId)
+            let responses = try await projectService.fetchProjects(userId: userId)
+            let projects = responses.toDomainProjects()
             return projects.sorted { $0.updatedAt > $1.updatedAt }
         } catch let error as ProjectError {
             throw error
@@ -34,7 +35,7 @@ public actor FetchProjectsUseCase: Sendable {
     /// - Throws: ProjectError if fetch fails
     public func fetchArchived(userId: String) async throws -> [Project] {
         let allProjects = try await execute(userId: userId)
-        return allProjects.filter { $0.isArchived }
+        return allProjects.filter { $0.status == .archived }
     }
 
     /// Fetch active projects only
@@ -43,7 +44,7 @@ public actor FetchProjectsUseCase: Sendable {
     /// - Throws: ProjectError if fetch fails
     public func fetchActive(userId: String) async throws -> [Project] {
         let allProjects = try await execute(userId: userId)
-        return allProjects.filter { !$0.isArchived }
+        return allProjects.filter { $0.status != .archived }
     }
 
     /// Search projects by name or description
@@ -57,7 +58,7 @@ public actor FetchProjectsUseCase: Sendable {
         let lowercaseQuery = query.lowercased()
 
         return allProjects.filter { project in
-            project.name.lowercased().contains(lowercaseQuery) ||
+            project.title.lowercased().contains(lowercaseQuery) ||
             project.description.lowercased().contains(lowercaseQuery)
         }
     }

@@ -48,7 +48,7 @@ public actor AppConfiguration: Sendable {
 
     // MARK: - Logging
 
-    public var logLevel: Logger.Level = .info
+    public var logLevel: AppLogger.Level = .info
 
     // MARK: - Timeouts
 

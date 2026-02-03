@@ -14,13 +14,13 @@ public actor CaptureVideoUseCase: Sendable {
     /// - Parameters:
     ///   - sampleId: Sample ID to attach video to
     ///   - duration: Video duration in seconds
-    ///   - metadata: Capture metadata
-    /// - Returns: Captured video
+    ///   - metadata: Capture service metadata
+    /// - Returns: Captured video as domain model
     /// - Throws: CaptureError if capture fails
     public func execute(
         sampleId: String,
         duration: TimeInterval,
-        metadata: CaptureMetadata
+        metadata: CaptureServiceMetadata
     ) async throws -> Capture {
         guard !sampleId.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw CaptureError.fileNotFound
@@ -29,12 +29,12 @@ public actor CaptureVideoUseCase: Sendable {
         try validateDuration(duration)
 
         do {
-            let capture = try await captureService.captureVideo(
+            let response = try await captureService.captureVideo(
                 sampleId: sampleId,
                 duration: duration,
                 metadata: metadata
             )
-            return capture
+            return response.toDomainCapture()
         } catch let error as CaptureError {
             throw error
         } catch {
@@ -47,13 +47,13 @@ public actor CaptureVideoUseCase: Sendable {
     ///   - deviceInfo: Device information
     ///   - notes: Optional notes about the capture
     ///   - tags: Optional tags for categorization
-    /// - Returns: Configured capture metadata
+    /// - Returns: Configured capture service metadata
     public func createMetadata(
         deviceInfo: String,
         notes: String? = nil,
         tags: [String] = []
-    ) -> CaptureMetadata {
-        return CaptureMetadata(
+    ) -> CaptureServiceMetadata {
+        return CaptureServiceMetadata(
             deviceInfo: deviceInfo,
             notes: notes,
             tags: tags

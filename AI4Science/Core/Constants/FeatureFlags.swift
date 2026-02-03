@@ -49,115 +49,115 @@ public actor FeatureFlags: Sendable {
     // MARK: - Get Shared Instance
 
     nonisolated static var shared: FeatureFlags {
-        instance
+        Self.instance
     }
 
     // MARK: - Core Feature Getters
 
     nonisolated func isOfflineModeEnabled() async -> Bool {
-        await instance.offlineModeEnabled
+        await Self.instance.offlineModeEnabled
     }
 
     nonisolated func isCloudSyncEnabled() async -> Bool {
-        await instance.cloudSyncEnabled
+        await Self.instance.cloudSyncEnabled
     }
 
     nonisolated func isAnalyticsEnabled() async -> Bool {
-        await instance.analyticsEnabled
+        await Self.instance.analyticsEnabled
     }
 
     nonisolated func isCrashReportingEnabled() async -> Bool {
-        await instance.crashReportingEnabled
+        await Self.instance.crashReportingEnabled
     }
 
     // MARK: - ML Feature Getters
 
     nonisolated func isAdvancedMLEnabled() async -> Bool {
-        await instance.advancedMLEnabled
+        await Self.instance.advancedMLEnabled
     }
 
     nonisolated func isOnDeviceInferenceEnabled() async -> Bool {
-        await instance.onDeviceInferenceEnabled
+        await Self.instance.onDeviceInferenceEnabled
     }
 
     nonisolated func isBatchInferenceEnabled() async -> Bool {
-        await instance.batchInferenceEnabled
+        await Self.instance.batchInferenceEnabled
     }
 
     nonisolated func isAutoAnnotationEnabled() async -> Bool {
-        await instance.autoAnnotationEnabled
+        await Self.instance.autoAnnotationEnabled
     }
 
     // MARK: - Camera Feature Getters
 
     nonisolated func isMultiCameraCapureEnabled() async -> Bool {
-        await instance.multiCameraCapureEnabled
+        await Self.instance.multiCameraCapureEnabled
     }
 
     nonisolated func isTorchEnabled() async -> Bool {
-        await instance.torchEnabled
+        await Self.instance.torchEnabled
     }
 
     nonisolated func isVideoRecordingEnabled() async -> Bool {
-        await instance.videoRecordingEnabled
+        await Self.instance.videoRecordingEnabled
     }
 
     nonisolated func isLivePreviewEnabled() async -> Bool {
-        await instance.livePreviewEnabled
+        await Self.instance.livePreviewEnabled
     }
 
     // MARK: - Data Feature Getters
 
     nonisolated func isCloudBackupEnabled() async -> Bool {
-        await instance.cloudBackupEnabled
+        await Self.instance.cloudBackupEnabled
     }
 
     nonisolated func isDataCompressionEnabled() async -> Bool {
-        await instance.dataCompressionEnabled
+        await Self.instance.dataCompressionEnabled
     }
 
     nonisolated func isEncryptionEnabled() async -> Bool {
-        await instance.encryptionEnabled
+        await Self.instance.encryptionEnabled
     }
 
     nonisolated func isDifferentialSyncEnabled() async -> Bool {
-        await instance.differentialSyncEnabled
+        await Self.instance.differentialSyncEnabled
     }
 
     // MARK: - UI Feature Getters
 
     nonisolated func isDarkModeEnabled() async -> Bool {
-        await instance.darkModeEnabled
+        await Self.instance.darkModeEnabled
     }
 
     nonisolated func isLandscapeOrientationEnabled() async -> Bool {
-        await instance.landscapeOrientationEnabled
+        await Self.instance.landscapeOrientationEnabled
     }
 
     nonisolated func isTabletUIEnabled() async -> Bool {
-        await instance.tabletUIEnabled
+        await Self.instance.tabletUIEnabled
     }
 
     nonisolated func isCustomThemeEnabled() async -> Bool {
-        await instance.customThemeEnabled
+        await Self.instance.customThemeEnabled
     }
 
     // MARK: - Experimental Feature Getters
 
     nonisolated func isBetaFeaturesEnabled() async -> Bool {
-        await instance.betaFeaturesEnabled
+        await Self.instance.betaFeaturesEnabled
     }
 
     nonisolated func isDebugMenuEnabled() async -> Bool {
-        await instance.debugMenuEnabled
+        await Self.instance.debugMenuEnabled
     }
 
     nonisolated func isPerformanceMetricsEnabled() async -> Bool {
-        await instance.performanceMetricsEnabled
+        await Self.instance.performanceMetricsEnabled
     }
 
     nonisolated func isExperimentalAnnotationToolsEnabled() async -> Bool {
-        await instance.experimentalAnnotationToolsEnabled
+        await Self.instance.experimentalAnnotationToolsEnabled
     }
 
     // MARK: - Setters
@@ -315,7 +315,7 @@ public actor FeatureFlags: Sendable {
     // MARK: - Debug Helper
 
     nonisolated func getAllFlags() async -> [String: Bool] {
-        await instance.getAllFlagsInternal()
+        await Self.instance.getAllFlagsInternal()
     }
 
     private func getAllFlagsInternal() -> [String: Bool] {

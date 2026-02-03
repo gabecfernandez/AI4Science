@@ -12,20 +12,20 @@ public actor CapturePhotoUseCase: Sendable {
     /// Execute photo capture
     /// - Parameters:
     ///   - sampleId: Sample ID to attach photo to
-    ///   - metadata: Capture metadata (device info, location, notes, etc.)
-    /// - Returns: Captured photo
+    ///   - metadata: Capture service metadata (device info, location, notes, etc.)
+    /// - Returns: Captured photo as domain model
     /// - Throws: CaptureError if capture fails
-    public func execute(sampleId: String, metadata: CaptureMetadata) async throws -> Capture {
+    public func execute(sampleId: String, metadata: CaptureServiceMetadata) async throws -> Capture {
         guard !sampleId.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw CaptureError.fileNotFound
         }
 
         do {
-            let capture = try await captureService.capturePhoto(
+            let response = try await captureService.capturePhoto(
                 sampleId: sampleId,
                 metadata: metadata
             )
-            return capture
+            return response.toDomainCapture()
         } catch let error as CaptureError {
             throw error
         } catch {
@@ -38,13 +38,13 @@ public actor CapturePhotoUseCase: Sendable {
     ///   - deviceInfo: Device information
     ///   - notes: Optional notes about the capture
     ///   - tags: Optional tags for categorization
-    /// - Returns: Configured capture metadata
+    /// - Returns: Configured capture service metadata
     public func createMetadata(
         deviceInfo: String,
         notes: String? = nil,
         tags: [String] = []
-    ) -> CaptureMetadata {
-        return CaptureMetadata(
+    ) -> CaptureServiceMetadata {
+        return CaptureServiceMetadata(
             deviceInfo: deviceInfo,
             notes: notes,
             tags: tags

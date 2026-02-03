@@ -1,9 +1,19 @@
 import Foundation
 
-public struct SaveCaptureUseCase: Sendable {
-    private let captureRepository: any CaptureRepositoryProtocol
+/// Protocol for capture save operations used by this use case
+public protocol SaveCaptureRepositoryProtocol: Sendable {
+    func saveCapture(
+        projectId: String,
+        type: CaptureType,
+        data: Data,
+        metadata: CaptureMetadata
+    ) async throws -> Capture
+}
 
-    public init(captureRepository: any CaptureRepositoryProtocol) {
+public struct SaveCaptureUseCase: Sendable {
+    private let captureRepository: any SaveCaptureRepositoryProtocol
+
+    public init(captureRepository: any SaveCaptureRepositoryProtocol) {
         self.captureRepository = captureRepository
     }
 

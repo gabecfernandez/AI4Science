@@ -1,10 +1,12 @@
 import Foundation
 
 /// Mapper for converting between Annotation domain models and persistence models
+/// Note: Methods marked nonisolated to allow calling from actor contexts
+/// (Project has SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor)
 struct AnnotationMapper {
-    /// Map AnnotationEntity to domain Annotation model
-    static func toModel(_ entity: AnnotationEntity) -> Annotation {
-        Annotation(
+    /// Map AnnotationEntity to AnnotationModel
+    nonisolated static func toModel(_ entity: AnnotationEntity) -> AnnotationModel {
+        AnnotationModel(
             id: entity.id,
             annotationType: entity.annotationType,
             content: entity.content,
@@ -20,8 +22,8 @@ struct AnnotationMapper {
         )
     }
 
-    /// Map domain Annotation model to AnnotationEntity
-    static func toEntity(from annotation: Annotation) -> AnnotationEntity {
+    /// Map AnnotationModel to AnnotationEntity
+    nonisolated static func toEntity(from annotation: AnnotationModel) -> AnnotationEntity {
         AnnotationEntity(
             id: annotation.id,
             annotationType: annotation.annotationType,
@@ -33,8 +35,8 @@ struct AnnotationMapper {
         )
     }
 
-    /// Update AnnotationEntity from domain Annotation
-    static func update(_ entity: AnnotationEntity, with annotation: Annotation) {
+    /// Update AnnotationEntity from AnnotationModel
+    nonisolated static func update(_ entity: AnnotationEntity, with annotation: AnnotationModel) {
         entity.content = annotation.content
         entity.coordinates = annotation.coordinates
         entity.label = annotation.label
@@ -46,7 +48,7 @@ struct AnnotationMapper {
     }
 
     /// Parse coordinates string to coordinates array
-    static func parseCoordinates(_ coordinatesString: String) -> [[Double]] {
+    nonisolated static func parseCoordinates(_ coordinatesString: String) -> [[Double]] {
         guard let data = coordinatesString.data(using: .utf8),
               let array = try? JSONDecoder().decode([[Double]].self, from: data) else {
             return []
@@ -55,7 +57,7 @@ struct AnnotationMapper {
     }
 
     /// Serialize coordinates array to string
-    static func serializeCoordinates(_ coordinates: [[Double]]) -> String {
+    nonisolated static func serializeCoordinates(_ coordinates: [[Double]]) -> String {
         guard let data = try? JSONEncoder().encode(coordinates),
               let string = String(data: data, encoding: .utf8) else {
             return "[]"
@@ -64,8 +66,9 @@ struct AnnotationMapper {
     }
 }
 
-/// Domain Annotation model
-struct Annotation: Codable, Identifiable {
+/// Local Annotation model for mapper operations
+/// Note: Marked nonisolated to allow use in actor contexts
+nonisolated struct AnnotationModel: Codable, Identifiable, Sendable {
     let id: String
     let annotationType: String
     var content: String
@@ -164,7 +167,7 @@ struct Annotation: Codable, Identifiable {
 }
 
 /// Annotation type definitions
-enum AnnotationType: String, Codable {
+nonisolated enum AnnotationType: String, Codable, Sendable {
     case region = "region"
     case point = "point"
     case polygon = "polygon"

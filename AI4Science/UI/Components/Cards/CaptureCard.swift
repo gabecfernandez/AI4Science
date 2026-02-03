@@ -76,7 +76,7 @@ public struct CaptureCard: View {
         )
         .shadow(Shadows.small)
         .onTapGesture(perform: onTap)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
     }
 }
 

@@ -1,7 +1,9 @@
 import Foundation
 
 /// Protocol for remote data source operations
-protocol RemoteDataSourceProtocol: Sendable {
+/// Note: Protocol and implementations are MainActor-isolated
+@MainActor
+protocol RemoteDataSourceProtocol {
     associatedtype Model: Codable
 
     func create(_ model: Model) async throws -> Model
@@ -12,7 +14,8 @@ protocol RemoteDataSourceProtocol: Sendable {
 }
 
 /// Base remote data source
-actor RemoteDataSource<T: Codable>: RemoteDataSourceProtocol {
+@MainActor
+final class RemoteDataSource<T: Codable & Sendable>: RemoteDataSourceProtocol {
     typealias Model = T
 
     private let apiClient: APIClient
@@ -24,7 +27,7 @@ actor RemoteDataSource<T: Codable>: RemoteDataSourceProtocol {
     }
 
     func create(_ model: T) async throws -> T {
-        let response = try await apiClient.post(
+        let response: T = try await apiClient.post(
             endpoint: endpoint,
             body: model
         )
@@ -37,7 +40,7 @@ actor RemoteDataSource<T: Codable>: RemoteDataSourceProtocol {
     }
 
     func update(_ model: T) async throws -> T {
-        let response = try await apiClient.put(
+        let response: T = try await apiClient.put(
             endpoint: endpoint,
             body: model
         )
@@ -56,7 +59,8 @@ actor RemoteDataSource<T: Codable>: RemoteDataSourceProtocol {
 }
 
 /// User remote data source
-actor UserRemoteDataSource: RemoteDataSourceProtocol {
+@MainActor
+final class UserRemoteDataSource: RemoteDataSourceProtocol {
     typealias Model = UserDTO
 
     private let apiClient: APIClient
@@ -95,7 +99,8 @@ actor UserRemoteDataSource: RemoteDataSourceProtocol {
 }
 
 /// Project remote data source
-actor ProjectRemoteDataSource: RemoteDataSourceProtocol {
+@MainActor
+final class ProjectRemoteDataSource: RemoteDataSourceProtocol {
     typealias Model = ProjectDTO
 
     private let apiClient: APIClient
@@ -133,8 +138,12 @@ actor ProjectRemoteDataSource: RemoteDataSourceProtocol {
     }
 }
 
+// MARK: - Data Transfer Objects
+
 /// Data transfer objects for API communication
-struct UserDTO: Codable {
+/// These are value types for API communication - marked nonisolated to avoid
+/// MainActor-isolated Codable conformance issues
+nonisolated struct UserDTO: Codable, Sendable {
     let id: String
     let email: String
     let fullName: String
@@ -144,7 +153,7 @@ struct UserDTO: Codable {
     let updatedAt: Date
 }
 
-struct ProjectDTO: Codable {
+nonisolated struct ProjectDTO: Codable, Sendable {
     let id: String
     let name: String
     let description: String
@@ -153,7 +162,7 @@ struct ProjectDTO: Codable {
     let updatedAt: Date
 }
 
-struct CaptureDTO: Codable {
+nonisolated struct CaptureDTO: Codable, Sendable {
     let id: String
     let captureType: String
     let capturedAt: Date
@@ -161,7 +170,7 @@ struct CaptureDTO: Codable {
     let updatedAt: Date
 }
 
-struct AnalysisResultDTO: Codable {
+nonisolated struct AnalysisResultDTO: Codable, Sendable {
     let id: String
     let modelID: String
     let analysisType: String

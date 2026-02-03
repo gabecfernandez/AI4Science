@@ -27,7 +27,7 @@ final class LoginViewModel {
 
             // Validate email format
             if !isValidEmail(email) {
-                throw AuthError.invalidEmail
+                throw ViewModelAuthError.invalidEmail
             }
 
             // Simulate successful login
@@ -38,10 +38,10 @@ final class LoginViewModel {
                 }
                 // Continue to next screen (handled by navigation)
             } else {
-                throw AuthError.invalidPassword
+                throw ViewModelAuthError.invalidPassword
             }
         } catch {
-            errorMessage = (error as? AuthError)?.localizedDescription ?? error.localizedDescription
+            errorMessage = (error as? ViewModelAuthError)?.localizedDescription ?? error.localizedDescription
             showError = true
         }
     }
@@ -73,7 +73,7 @@ final class LoginViewModel {
     }
 }
 
-enum AuthError: LocalizedError {
+enum ViewModelAuthError: LocalizedError {
     case invalidEmail
     case invalidPassword
     case networkError

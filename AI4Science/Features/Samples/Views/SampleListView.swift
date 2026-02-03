@@ -4,10 +4,10 @@ struct SampleListView: View {
     let projectID: String
     @State private var viewModel = SampleListViewModel()
     @State private var searchText = ""
-    @State private var selectedSample: Sample?
+    @State private var selectedSample: SampleDisplayItem?
     @State private var showCreateSample = false
 
-    var filteredSamples: [Sample] {
+    var filteredSamples: [SampleDisplayItem] {
         if searchText.isEmpty {
             return viewModel.samples
         }
@@ -93,7 +93,7 @@ struct SampleListView: View {
                         VStack(spacing: 12) {
                             ForEach(filteredSamples) { sample in
                                 NavigationLink(value: sample) {
-                                    SampleCard(sample: sample)
+                                    SampleListItemCard(sample: sample)
                                 }
                             }
                         }
@@ -102,7 +102,7 @@ struct SampleListView: View {
                 }
             }
         }
-        .navigationDestination(for: Sample.self) { sample in
+        .navigationDestination(for: SampleDisplayItem.self) { sample in
             SampleDetailView(sample: sample)
         }
         .sheet(isPresented: $showCreateSample) {
@@ -116,8 +116,8 @@ struct SampleListView: View {
     }
 }
 
-struct SampleCard: View {
-    let sample: Sample
+struct SampleListItemCard: View {
+    let sample: SampleDisplayItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -175,7 +175,7 @@ struct SampleCard: View {
         )
     }
 
-    private func statusIcon(_ status: Sample.AnalysisStatus) -> String {
+    private func statusIcon(_ status: SampleDisplayItem.AnalysisStatus) -> String {
         switch status {
         case .pending:
             return "hourglass"
@@ -188,7 +188,7 @@ struct SampleCard: View {
         }
     }
 
-    private func statusColor(_ status: Sample.AnalysisStatus) -> Color {
+    private func statusColor(_ status: SampleDisplayItem.AnalysisStatus) -> Color {
         switch status {
         case .pending:
             return .gray
@@ -202,22 +202,7 @@ struct SampleCard: View {
     }
 }
 
-struct Sample: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let type: String
-    let date: Date
-    let imageCount: Int
-    let hasAnalysis: Bool
-    let analysisStatus: AnalysisStatus
-
-    enum AnalysisStatus: String {
-        case pending = "Pending"
-        case processing = "Processing"
-        case completed = "Completed"
-        case error = "Error"
-    }
-}
+// SampleDisplayItem is defined in SampleDisplayModels.swift
 
 #Preview {
     NavigationStack {

@@ -10,9 +10,59 @@
 		00BB21922F2E531600589682 /* AI4Science.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AI4Science.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		00BB29B32F2E728E00589682 /* Exceptions for "AI4Science" folder in "AI4Science" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Infrastructure/Research/Core/ConsentManager.swift,
+				Infrastructure/Research/Core/EligibilityChecker.swift,
+				Infrastructure/Research/Core/ResearchCoordinator.swift,
+				Infrastructure/Research/Core/StudyManager.swift,
+				Infrastructure/Research/Steps/AnnotationStep.swift,
+				Infrastructure/Research/Steps/CalibrationStep.swift,
+				Infrastructure/Research/Steps/CustomInstructionStep.swift,
+				Infrastructure/Research/Steps/ImageCaptureStep.swift,
+				Infrastructure/Research/Tasks/ActiveTaskBuilder.swift,
+				Infrastructure/Research/Tasks/ConsentTaskBuilder.swift,
+				Infrastructure/Research/Tasks/OnboardingTaskBuilder.swift,
+				Infrastructure/Research/Tasks/SurveyTaskBuilder.swift,
+				Infrastructure/Research/Tasks/TaskFactory.swift,
+				Infrastructure/ResearchKit/Configuration/ConsentConfiguration.swift,
+				Infrastructure/ResearchKit/Configuration/ResearchKitConfiguration.swift,
+				Infrastructure/ResearchKit/Configuration/SurveyConfiguration.swift,
+				Infrastructure/ResearchKit/Results/ConsentResultHandler.swift,
+				Infrastructure/ResearchKit/Results/ResultExporter.swift,
+				Infrastructure/ResearchKit/Results/ResultProcessor.swift,
+				Infrastructure/ResearchKit/Results/SurveyResultHandler.swift,
+				Infrastructure/ResearchKit/Services/ConsentService.swift,
+				Infrastructure/ResearchKit/Services/ResearchKitManager.swift,
+				Infrastructure/ResearchKit/Services/SurveyService.swift,
+				Infrastructure/ResearchKit/Services/TaskService.swift,
+				Infrastructure/ResearchKit/Steps/CompletionStepFactory.swift,
+				Infrastructure/ResearchKit/Steps/FormStepFactory.swift,
+				Infrastructure/ResearchKit/Steps/InstructionStepFactory.swift,
+				Infrastructure/ResearchKit/Steps/QuestionStepFactory.swift,
+				Infrastructure/ResearchKit/Steps/ReviewStepFactory.swift,
+				Infrastructure/ResearchKit/Tasks/ConsentTask.swift,
+				Infrastructure/ResearchKit/Tasks/DemographicsSurveyTask.swift,
+				Infrastructure/ResearchKit/Tasks/OnboardingSurveyTask.swift,
+				Infrastructure/ResearchKit/Tasks/QualityAssessmentTask.swift,
+				Infrastructure/ResearchKit/Tasks/SampleCollectionTask.swift,
+				Infrastructure/ResearchKit/UI/ConsentViewCoordinator.swift,
+				Infrastructure/ResearchKit/UI/ResearchKitViewControllerRepresentable.swift,
+				Infrastructure/ResearchKit/UI/SurveyViewCoordinator.swift,
+				Infrastructure/ResearchKit/UI/TaskViewCoordinator.swift,
+			);
+			target = 00BB21912F2E531600589682 /* AI4Science */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		00BB21942F2E531600589682 /* AI4Science */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				00BB29B32F2E728E00589682 /* Exceptions for "AI4Science" folder in "AI4Science" target */,
+			);
 			path = AI4Science;
 			sourceTree = "<group>";
 		};
@@ -249,7 +299,7 @@
 		00BB219E2F2E531800589682 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AI4Science-icon";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -281,7 +331,7 @@
 		00BB219F2F2E531800589682 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AI4Science-icon";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

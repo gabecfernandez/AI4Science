@@ -10,7 +10,7 @@ public enum SyncDirection: String, Sendable, Codable, Hashable {
 
 /// Sync error types
 @frozen
-public enum SyncError: String, Sendable, Codable, Hashable {
+public enum SyncServiceErrorType: String, Sendable, Codable, Hashable {
     case networkUnavailable
     case conflictDetected
     case invalidData
@@ -26,7 +26,7 @@ public struct SyncOperation: Sendable, Codable, Hashable, Identifiable {
     public let entityId: UUID
     public let direction: SyncDirection
     public let status: SyncStatus
-    public let error: SyncError?
+    public let error: SyncServiceErrorType?
     public let timestamp: Date
     public var retryCount: Int
 
@@ -36,7 +36,7 @@ public struct SyncOperation: Sendable, Codable, Hashable, Identifiable {
         entityId: UUID,
         direction: SyncDirection,
         status: SyncStatus = .pending,
-        error: SyncError? = nil,
+        error: SyncServiceErrorType? = nil,
         timestamp: Date = Date(),
         retryCount: Int = 0
     ) {
@@ -52,7 +52,7 @@ public struct SyncOperation: Sendable, Codable, Hashable, Identifiable {
 }
 
 /// Protocol for offline sync operations
-public protocol SyncService: Sendable {
+public protocol OfflineSyncService: Sendable {
     /// Sync all pending changes
     /// - Parameter direction: Direction of sync
     func syncAll(direction: SyncDirection) async throws -> [SyncOperation]
