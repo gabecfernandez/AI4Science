@@ -107,3 +107,51 @@ enum AnalysisResultRepositoryFactory {
         AnalysisResultRepository(modelContainer: modelContainer)
     }
 }
+
+// MARK: - Sendable Display Models
+
+/// Sendable display model for analysis results
+struct AnalysisResultDisplayData: Identifiable, Sendable {
+    let id: String
+    let modelName: String
+    let modelVersion: String
+    let analysisType: String
+    let status: String
+    let startedAt: Date
+    let completedAt: Date?
+    let duration: Double?
+    let confidenceScore: Double?
+    let objectCount: Int
+    let isReviewed: Bool
+    let reviewNotes: String?
+    let captureSampleName: String?
+    let captureType: String?
+}
+
+extension AnalysisResultRepository {
+    /// Get all analysis results as Sendable display models
+    func getAllAnalysisResultsDisplayData() async throws -> [AnalysisResultDisplayData] {
+        let descriptor = FetchDescriptor<AnalysisResultEntity>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        let entities = try modelContext.fetch(descriptor)
+        return entities.map { entity in
+            AnalysisResultDisplayData(
+                id: entity.id,
+                modelName: entity.modelName,
+                modelVersion: entity.modelVersion,
+                analysisType: entity.analysisType,
+                status: entity.status,
+                startedAt: entity.startedAt,
+                completedAt: entity.completedAt,
+                duration: entity.duration,
+                confidenceScore: entity.confidenceScore,
+                objectCount: entity.objectCount,
+                isReviewed: entity.isReviewed,
+                reviewNotes: entity.reviewNotes,
+                captureSampleName: entity.capture?.sample?.name,
+                captureType: entity.capture?.captureType
+            )
+        }
+    }
+}

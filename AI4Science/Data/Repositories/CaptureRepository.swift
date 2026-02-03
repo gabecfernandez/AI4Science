@@ -100,3 +100,49 @@ enum CaptureRepositoryFactory {
         CaptureRepository(modelContainer: modelContainer)
     }
 }
+
+// MARK: - Sendable Display Models
+
+/// Sendable display model for capture list
+struct CaptureDisplayData: Identifiable, Sendable {
+    let id: String
+    let captureType: String
+    let fileURL: String
+    let capturedAt: Date
+    let processingStatus: String
+    let qualityScore: Double?
+    let notes: String?
+    let sampleName: String?
+    let deviceInfo: String?
+    let isProcessed: Bool
+}
+
+extension CaptureRepository {
+    /// Get all captures as Sendable display models
+    func getAllCapturesDisplayData() throws -> [CaptureDisplayData] {
+        let descriptor = FetchDescriptor<CaptureEntity>(
+            sortBy: [SortDescriptor(\.capturedAt, order: .reverse)]
+        )
+        let entities = try modelContext.fetch(descriptor)
+        return entities.map { entity in
+            CaptureDisplayData(
+                id: entity.id,
+                captureType: entity.captureType,
+                fileURL: entity.fileURL,
+                capturedAt: entity.capturedAt,
+                processingStatus: entity.processingStatus,
+                qualityScore: entity.qualityScore,
+                notes: entity.notes,
+                sampleName: entity.sample?.name,
+                deviceInfo: entity.deviceInfo,
+                isProcessed: entity.isProcessed
+            )
+        }
+    }
+
+    /// Get capture count
+    func getCaptureCount() throws -> Int {
+        let descriptor = FetchDescriptor<CaptureEntity>()
+        return try modelContext.fetchCount(descriptor)
+    }
+}

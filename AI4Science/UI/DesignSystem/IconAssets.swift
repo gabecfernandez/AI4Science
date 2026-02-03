@@ -96,6 +96,7 @@ public struct IconAssets {
     public static let heartOutline = Image(systemName: "heart")
 
     // MARK: - Account Icons
+    public static let profile = Image(systemName: "person.circle.fill")
     public static let user = Image(systemName: "person.fill")
     public static let userOutline = Image(systemName: "person")
     public static let users = Image(systemName: "person.2.fill")

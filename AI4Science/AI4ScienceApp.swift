@@ -238,29 +238,25 @@ struct OnboardingFlowView: View {
 
 struct CaptureRootView: View {
     var body: some View {
-        Text("Capture")
-            .navigationTitle("Capture")
+        CaptureListView()
     }
 }
 
 struct AnalysisDashboardView: View {
     var body: some View {
-        Text("Analysis")
-            .navigationTitle("Analysis")
+        AnalysisDashboardViewContent()
     }
 }
 
 struct ResearchDashboardView: View {
     var body: some View {
-        Text("Research")
-            .navigationTitle("Research")
+        ResearchDashboardViewContent()
     }
 }
 
 struct ProfileRootView: View {
     var body: some View {
-        Text("Profile")
-            .navigationTitle("Profile")
+        ProfileView()
     }
 }
 

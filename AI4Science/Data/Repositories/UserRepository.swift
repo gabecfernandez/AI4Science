@@ -74,3 +74,34 @@ enum UserRepositoryFactory {
         UserRepository(modelContainer: modelContainer)
     }
 }
+
+// MARK: - Sendable Display Models
+
+/// Sendable display model for user profile
+struct UserDisplayData: Sendable {
+    let id: String
+    let fullName: String
+    let email: String
+    let institution: String?
+    let profileImageURL: String?
+    let createdAt: Date
+}
+
+extension UserRepository {
+    /// Get first user as a Sendable display model
+    func getFirstUserDisplayData() async throws -> UserDisplayData? {
+        let descriptor = FetchDescriptor<UserEntity>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        let users = try modelContext.fetch(descriptor)
+        guard let user = users.first else { return nil }
+        return UserDisplayData(
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            institution: user.institution,
+            profileImageURL: user.profileImageURL,
+            createdAt: user.createdAt
+        )
+    }
+}
