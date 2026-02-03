@@ -70,6 +70,11 @@ struct AI4ScienceApp: App {
                 .task {
                     await initializeApp()
                 }
+                .onOpenURL { url in
+                    Task {
+                        await handleOAuthCallback(url: url)
+                    }
+                }
         }
     }
 
@@ -83,8 +88,12 @@ struct AI4ScienceApp: App {
         let context = modelContainer.mainContext
         await SampleDataSeeder.seedIfEmpty(modelContext: context)
 
-        // Check authentication state
-        await appState.checkAuthenticationState()
+        // Attempt Supabase session restore from Keychain
+        if let restoredUser = await serviceContainer.authService.restoreSession() {
+            appState.signIn(user: restoredUser)
+        } else {
+            await appState.checkAuthenticationState()
+        }
 
         // Load cached ML models
         await serviceContainer.mlService.preloadModels()
@@ -93,6 +102,21 @@ struct AI4ScienceApp: App {
         await serviceContainer.syncService.configure()
 
         AppLogger.shared.info("App initialization complete")
+    }
+
+    @MainActor
+    private func handleOAuthCallback(url: URL) async {
+        guard url.scheme == "ai4science" else {
+            AppLogger.shared.warning("Unrecognised URL scheme: \(url)")
+            return
+        }
+        do {
+            let user = try await serviceContainer.authService.handleGoogleOAuthCallback(url: url)
+            appState.signIn(user: user)
+        } catch {
+            let appErr = (error as? AuthError)?.appError ?? .unknown(error.localizedDescription)
+            appState.handleError(appErr)
+        }
     }
 }
 
@@ -210,7 +234,7 @@ struct LaunchScreenView: View {
 
 struct AuthenticationFlowView: View {
     var body: some View {
-        AppLoginView()
+        LoginView()
     }
 }
 

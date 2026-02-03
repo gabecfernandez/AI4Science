@@ -3,6 +3,8 @@ import SwiftUI
 struct RegisterView: View {
     @State private var viewModel = RegisterViewModel()
     @Environment(\.dismiss) var dismiss
+    @Environment(AppState.self) private var appState
+    @Environment(ServiceContainer.self) private var services
 
     var body: some View {
         NavigationStack {
@@ -40,13 +42,17 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("First and last name", text: $viewModel.fullName)
+                                TextField(
+                                    "Full Name",
+                                    text: $viewModel.fullName,
+                                    prompt: Text("First and last name").foregroundStyle(.white.opacity(0.5))
+                                )
                                     .textContentType(.name)
                                     .textInputAutocapitalization(.words)
+                                    .foregroundStyle(.white)
                                     .padding(12)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(8)
-                                    .foregroundColor(.white)
                             }
 
                             // Email
@@ -55,15 +61,22 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("Enter your email", text: $viewModel.email)
+                                TextField(
+                                    "Email",
+                                    text: $viewModel.email,
+                                    prompt: Text("Enter your email").foregroundStyle(.white.opacity(0.5))
+                                )
                                     .textContentType(.emailAddress)
                                     .keyboardType(.emailAddress)
                                     .autocorrectionDisabled()
                                     .textInputAutocapitalization(.never)
+                                    .foregroundStyle(.white)
                                     .padding(12)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(8)
-                                    .foregroundColor(.white)
+                                    .onChange(of: viewModel.email) { _, newValue in
+                                        viewModel.validateEmail(newValue)
+                                    }
 
                                 if !viewModel.emailValidationMessage.isEmpty {
                                     Text(viewModel.emailValidationMessage)
@@ -78,12 +91,19 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                SecureField("Create password", text: $viewModel.password)
+                                SecureField(
+                                    "Password",
+                                    text: $viewModel.password,
+                                    prompt: Text("Create password").foregroundStyle(.white.opacity(0.5))
+                                )
                                     .textContentType(.newPassword)
+                                    .foregroundStyle(.white)
                                     .padding(12)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(8)
-                                    .foregroundColor(.white)
+                                    .onChange(of: viewModel.password) { _, newValue in
+                                        viewModel.validatePassword(newValue)
+                                    }
 
                                 PasswordStrengthIndicator(strength: viewModel.passwordStrength)
                             }
@@ -94,12 +114,16 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                SecureField("Confirm password", text: $viewModel.confirmPassword)
+                                SecureField(
+                                    "Confirm",
+                                    text: $viewModel.confirmPassword,
+                                    prompt: Text("Confirm password").foregroundStyle(.white.opacity(0.5))
+                                )
                                     .textContentType(.newPassword)
+                                    .foregroundStyle(.white)
                                     .padding(12)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(8)
-                                    .foregroundColor(.white)
                             }
 
                             // Institution field
@@ -108,18 +132,24 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("Your institution", text: $viewModel.institution)
+                                TextField(
+                                    "Institution",
+                                    text: $viewModel.institution,
+                                    prompt: Text("Your institution").foregroundStyle(.white.opacity(0.5))
+                                )
                                     .textInputAutocapitalization(.sentences)
+                                    .foregroundStyle(.white)
                                     .padding(12)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(8)
-                                    .foregroundColor(.white)
                             }
 
                             // Terms checkbox
                             HStack(spacing: 12) {
                                 Image(systemName: viewModel.agreedToTerms ? "checkmark.square.fill" : "square")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(viewModel.agreedToTerms
+                                        ? Color(red: 0.4, green: 0.75, blue: 1.0)
+                                        : Color.white.opacity(0.4))
                                     .font(.title3)
                                     .onTapGesture { viewModel.agreedToTerms.toggle() }
 
@@ -129,23 +159,23 @@ struct RegisterView: View {
                                         .foregroundColor(.white.opacity(0.7))
                                     + Text(" Terms of Service ")
                                         .font(.caption)
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.white)
                                     + Text("and")
                                         .font(.caption)
                                         .foregroundColor(.white.opacity(0.7))
                                     + Text(" Privacy Policy")
                                         .font(.caption)
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.white)
                                 }
 
                                 Spacer()
                             }
                             .padding(12)
-                            .background(Color.white.opacity(0.05))
+                            .background(Color.white.opacity(0.1))
                             .cornerRadius(8)
                         }
                         .padding(16)
-                        .background(Color.white.opacity(0.05))
+                        .background(Color.white.opacity(0.1))
                         .cornerRadius(12)
 
                         // Register button
@@ -172,7 +202,7 @@ struct RegisterView: View {
                                 .foregroundColor(.white.opacity(0.7))
                             Button("Sign In") { dismiss() }
                                 .fontWeight(.semibold)
-                                .foregroundColor(.blue)
+                                .foregroundColor(Color(red: 0.4, green: 0.75, blue: 1.0))
                         }
                         .font(.subheadline)
                         .frame(maxWidth: .infinity)
@@ -180,8 +210,13 @@ struct RegisterView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 32)
                 }
+                .scrollDismissesKeyboard(.immediately)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                viewModel.authService = services.authService
+                viewModel.appState = appState
+            }
         }
         .alert("Error", isPresented: $viewModel.showError, presenting: viewModel.errorMessage) { _ in
             Button("OK") { viewModel.showError = false }

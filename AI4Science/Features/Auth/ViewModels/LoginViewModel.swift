@@ -11,6 +11,10 @@ final class LoginViewModel {
     var showError = false
     var errorMessage = ""
 
+    /// Injected by LoginView via .onAppear
+    var authService: AuthenticationService?
+    var appState: AppState?
+
     func login() async {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please enter email and password"
@@ -22,26 +26,23 @@ final class LoginViewModel {
         defer { isLoading = false }
 
         do {
-            // Simulate network call
-            try await Task.sleep(nanoseconds: 2_000_000_000)
-
-            // Validate email format
             if !isValidEmail(email) {
                 throw ViewModelAuthError.invalidEmail
             }
-
-            // Simulate successful login
-            if password.count >= 6 {
-                // Store credentials if remember me is selected
-                if rememberMe {
-                    try saveCredentials(email: email)
-                }
-                // Continue to next screen (handled by navigation)
-            } else {
-                throw ViewModelAuthError.invalidPassword
+            guard let authService = authService else {
+                throw ViewModelAuthError.unknownError
             }
+            let user = try await authService.signIn(email: email, password: password)
+            appState?.signIn(user: user)
+            if rememberMe {
+                try saveCredentials(email: email)
+            }
+        } catch let error as AuthError {
+            errorMessage = error.errorDescription ?? "Authentication failed"
+            showError = true
         } catch {
-            errorMessage = (error as? ViewModelAuthError)?.localizedDescription ?? error.localizedDescription
+            errorMessage = (error as? ViewModelAuthError)?.localizedDescription
+                           ?? error.localizedDescription
             showError = true
         }
     }
