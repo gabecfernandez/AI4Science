@@ -344,7 +344,7 @@ struct ProjectDetailView: View {
 
 // MARK: - Supporting Views
 
-struct SettingsRow: View {
+private struct SettingsRow: View {
     let label: String
     let value: String
 
