@@ -305,4 +305,24 @@ extension AppError {
             return .encodingError("Unknown encoding error")
         }
     }
+
+    /// Create AppError from generic Error
+    static func from(_ error: Error) -> AppError {
+        if let appError = error as? AppError {
+            return appError
+        } else if let urlError = error as? URLError {
+            return from(urlError)
+        } else if let decodingError = error as? DecodingError {
+            return from(decodingError)
+        } else if let encodingError = error as? EncodingError {
+            return from(encodingError)
+        } else {
+            return .unknown(error.localizedDescription)
+        }
+    }
+
+    /// Create AppError from authentication error message
+    static func authentication(_ message: String) -> AppError {
+        return .authenticationError(.unknown)
+    }
 }

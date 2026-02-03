@@ -1,10 +1,36 @@
 import SwiftUI
 
 struct RegisterView: View {
-    @State private var viewModel = RegisterViewModel()
+    @Environment(ServiceContainer.self) private var serviceContainer
+    @Environment(AppState.self) private var appState
     @Environment(\.dismiss) var dismiss
 
+    @State private var viewModel: RegisterViewModel?
+
     var body: some View {
+        Group {
+            if let viewModel = viewModel {
+                contentView(with: viewModel)
+            } else {
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .task {
+            if viewModel == nil {
+                viewModel = RegisterViewModel(
+                    authService: serviceContainer.authService,
+                    appState: appState,
+                    userRepository: serviceContainer.userRepository
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func contentView(with viewModel: RegisterViewModel) -> some View {
+        @Bindable var vm = viewModel
+
         NavigationStack {
             ZStack {
                 LinearGradient(
@@ -40,7 +66,7 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("First and last name", text: $viewModel.fullName)
+                                TextField("First and last name", text: $vm.fullName)
                                     .textContentType(.name)
                                     .textInputAutocapitalization(.words)
                                     .padding(12)
@@ -55,7 +81,7 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("Enter your email", text: $viewModel.email)
+                                TextField("Enter your email", text: $vm.email)
                                     .textContentType(.emailAddress)
                                     .keyboardType(.emailAddress)
                                     .autocorrectionDisabled()
@@ -64,11 +90,14 @@ struct RegisterView: View {
                                     .background(Color.white.opacity(0.1))
                                     .cornerRadius(8)
                                     .foregroundColor(.white)
+                                    .onChange(of: vm.email) { _, newValue in
+                                        vm.validateEmail(newValue)
+                                    }
 
-                                if !viewModel.emailValidationMessage.isEmpty {
-                                    Text(viewModel.emailValidationMessage)
+                                if !vm.emailValidationMessage.isEmpty {
+                                    Text(vm.emailValidationMessage)
                                         .font(.caption)
-                                        .foregroundColor(viewModel.isEmailValid ? .green : .red)
+                                        .foregroundColor(vm.isEmailValid ? .green : .red)
                                 }
                             }
 
@@ -78,14 +107,17 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                SecureField("Create password", text: $viewModel.password)
+                                SecureField("Create password", text: $vm.password)
                                     .textContentType(.newPassword)
                                     .padding(12)
                                     .background(Color.white.opacity(0.1))
                                     .cornerRadius(8)
                                     .foregroundColor(.white)
+                                    .onChange(of: vm.password) { _, newValue in
+                                        vm.validatePassword(newValue)
+                                    }
 
-                                PasswordStrengthIndicator(strength: viewModel.passwordStrength)
+                                PasswordStrengthIndicator(strength: vm.passwordStrength)
                             }
 
                             // Confirm password
@@ -94,7 +126,7 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                SecureField("Confirm password", text: $viewModel.confirmPassword)
+                                SecureField("Confirm password", text: $vm.confirmPassword)
                                     .textContentType(.newPassword)
                                     .padding(12)
                                     .background(Color.white.opacity(0.1))
@@ -108,7 +140,7 @@ struct RegisterView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("Your institution", text: $viewModel.institution)
+                                TextField("Your institution", text: $vm.institution)
                                     .textInputAutocapitalization(.sentences)
                                     .padding(12)
                                     .background(Color.white.opacity(0.1))
@@ -118,10 +150,10 @@ struct RegisterView: View {
 
                             // Terms checkbox
                             HStack(spacing: 12) {
-                                Image(systemName: viewModel.agreedToTerms ? "checkmark.square.fill" : "square")
+                                Image(systemName: vm.agreedToTerms ? "checkmark.square.fill" : "square")
                                     .foregroundColor(.blue)
                                     .font(.title3)
-                                    .onTapGesture { viewModel.agreedToTerms.toggle() }
+                                    .onTapGesture { vm.agreedToTerms.toggle() }
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("I agree to the")
@@ -149,8 +181,8 @@ struct RegisterView: View {
                         .cornerRadius(12)
 
                         // Register button
-                        Button(action: { Task { await viewModel.register() } }) {
-                            if viewModel.isLoading {
+                        Button(action: { Task { await vm.register() } }) {
+                            if vm.isLoading {
                                 ProgressView()
                                     .tint(.white)
                             } else {
@@ -163,8 +195,8 @@ struct RegisterView: View {
                         .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)
-                        .disabled(!viewModel.isFormValid || viewModel.isLoading)
-                        .opacity(!viewModel.isFormValid || viewModel.isLoading ? 0.6 : 1.0)
+                        .disabled(!vm.isFormValid || vm.isLoading)
+                        .opacity(!vm.isFormValid || vm.isLoading ? 0.6 : 1.0)
 
                         // Sign in link
                         HStack(spacing: 4) {
@@ -183,10 +215,24 @@ struct RegisterView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
         }
-        .alert("Error", isPresented: $viewModel.showError, presenting: viewModel.errorMessage) { _ in
-            Button("OK") { viewModel.showError = false }
+        .alert("Error", isPresented: $vm.showError, presenting: vm.errorMessage) { _ in
+            Button("OK") { vm.showError = false }
         } message: { errorMessage in
             Text(errorMessage)
+        }
+        .alert("Success!", isPresented: $vm.showEmailConfirmation) {
+            Button("OK") {
+                vm.showEmailConfirmation = false
+                dismiss()
+            }
+        } message: {
+            Text(vm.emailConfirmationMessage)
+        }
+        .onChange(of: vm.registrationComplete) { _, isComplete in
+            if isComplete {
+                // Registration complete without email confirmation - dismiss to main app
+                dismiss()
+            }
         }
     }
 }

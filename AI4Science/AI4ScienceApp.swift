@@ -21,7 +21,7 @@ struct AI4ScienceApp: App {
     private let modelContainer: ModelContainer
 
     // MARK: - Services
-    private let serviceContainer: ServiceContainer
+    @State private var serviceContainer: ServiceContainer?
 
     init() {
         // Configure SwiftData
@@ -52,9 +52,6 @@ struct AI4ScienceApp: App {
             fatalError("Failed to configure SwiftData: \(error)")
         }
 
-        // Initialize service container
-        serviceContainer = ServiceContainer(modelContainer: modelContainer)
-
         // Configure logging
         AppLogger.configure(level: .debug)
         AppLogger.shared.info("AI4Science app initialized")
@@ -62,21 +59,43 @@ struct AI4ScienceApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(appState)
-                .environment(navigationCoordinator)
-                .environment(serviceContainer)
-                .modelContainer(modelContainer)
-                .task {
-                    await initializeApp()
+            Group {
+                if let serviceContainer = serviceContainer {
+                    RootView()
+                        .environment(appState)
+                        .environment(navigationCoordinator)
+                        .environment(serviceContainer)
+                } else {
+                    // Show loading while ServiceContainer initializes
+                    ProgressView("Initializing...")
                 }
+            }
+            .task {
+                if serviceContainer == nil {
+                    serviceContainer = await ServiceContainer(modelContainer: modelContainer)
+                }
+            }
+            .task {
+                await initializeApp()
+            }
+            .onOpenURL { url in
+                Task {
+                    await handleOAuthCallback(url)
+                }
+            }
         }
+        .modelContainer(modelContainer)
     }
 
     // MARK: - Initialization
 
     @MainActor
     private func initializeApp() async {
+        guard let serviceContainer = serviceContainer else {
+            AppLogger.shared.warning("ServiceContainer not initialized yet")
+            return
+        }
+
         AppLogger.shared.info("Starting app initialization")
 
         // Seed sample data if database is empty (development/demo only)
@@ -84,7 +103,7 @@ struct AI4ScienceApp: App {
         await SampleDataSeeder.seedIfEmpty(modelContext: context)
 
         // Check authentication state
-        await appState.checkAuthenticationState()
+        await appState.checkAuthenticationState(serviceContainer: serviceContainer)
 
         // Load cached ML models
         await serviceContainer.mlService.preloadModels()
@@ -93,6 +112,40 @@ struct AI4ScienceApp: App {
         await serviceContainer.syncService.configure()
 
         AppLogger.shared.info("App initialization complete")
+    }
+
+    // MARK: - OAuth Callback Handler
+
+    @MainActor
+    private func handleOAuthCallback(_ url: URL) async {
+        guard let serviceContainer = serviceContainer else {
+            AppLogger.shared.warning("ServiceContainer not ready for OAuth callback")
+            return
+        }
+
+        // Parse OAuth callback URL
+        let result = await OAuthURLHandler.shared.parseCallback(url)
+
+        guard let result = result else {
+            AppLogger.warning("Received non-OAuth URL: \(url)")
+            return
+        }
+
+        switch result {
+        case .success(let callbackURL):
+            do {
+                // Pass to auth service to complete OAuth flow
+                try await serviceContainer.authService.handleOAuthCallback(url: callbackURL)
+
+                // Refresh auth state (triggers UI update)
+                await appState.checkAuthenticationState(serviceContainer: serviceContainer)
+            } catch {
+                await appState.handleError(AppError.from(error))
+            }
+
+        case .error(let message):
+            await appState.handleError(AppError.authentication(message))
+        }
     }
 }
 
@@ -210,7 +263,7 @@ struct LaunchScreenView: View {
 
 struct AuthenticationFlowView: View {
     var body: some View {
-        AppLoginView()
+        LoginView()
     }
 }
 

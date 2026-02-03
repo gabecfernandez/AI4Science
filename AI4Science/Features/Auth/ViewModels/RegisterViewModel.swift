@@ -17,6 +17,9 @@ final class RegisterViewModel {
     var emailValidationMessage = ""
     var isEmailValid = false
     var passwordStrength: PasswordStrength = .weak
+    var registrationComplete = false
+    var showEmailConfirmation = false
+    var emailConfirmationMessage = ""
 
     enum PasswordStrength {
         case weak
@@ -25,7 +28,16 @@ final class RegisterViewModel {
         case strong
     }
 
-    init() {}
+    // Dependencies
+    private let authService: SupabaseAuthenticationService
+    private let appState: AppState
+    private let userRepository: UserRepository
+
+    init(authService: SupabaseAuthenticationService, appState: AppState, userRepository: UserRepository) {
+        self.authService = authService
+        self.appState = appState
+        self.userRepository = userRepository
+    }
 
     func register() async {
         guard validateForm() else { return }
@@ -34,15 +46,39 @@ final class RegisterViewModel {
         defer { isLoading = false }
 
         do {
-            // Simulate network call
-            try await Task.sleep(nanoseconds: 2_000_000_000)
+            // Register with Supabase
+            let session = try await authService.register(
+                email: email,
+                password: password,
+                displayName: fullName
+            )
 
-            // Save user data
-            try saveUserData()
-            // Continue to next screen (handled by navigation)
-        } catch {
+            // Update user with institution if provided
+            if !institution.isEmpty {
+                try? await userRepository.updateUserInstitution(id: session.userId, institution: institution)
+            }
+
+            // Update app state with authenticated user
+            await appState.checkAuthenticationState(serviceContainer: ServiceContainer.shared)
+
+            AppLogger.info("User registered successfully: \(session.email)")
+            registrationComplete = true
+
+        } catch ServiceAuthError.emailConfirmationRequired {
+            // Email confirmation is required - show success message
+            emailConfirmationMessage = "Account created! Please check your email (\(email)) to verify your account before signing in."
+            showEmailConfirmation = true
+            AppLogger.info("User registered, email confirmation required: \(email)")
+
+        } catch let error as ServiceAuthError {
+            // Map Supabase auth errors to user-friendly messages
             errorMessage = error.localizedDescription
             showError = true
+            AppLogger.error("Registration failed: \(error)")
+        } catch {
+            errorMessage = "An unexpected error occurred. Please try again."
+            showError = true
+            AppLogger.error("Registration failed with unexpected error: \(error)")
         }
     }
 
@@ -139,14 +175,5 @@ final class RegisterViewModel {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
         return emailPredicate.evaluate(with: email)
-    }
-
-    private func saveUserData() throws {
-        let userData = [
-            "fullName": fullName,
-            "email": email,
-            "institution": institution
-        ]
-        UserDefaults.standard.set(userData, forKey: "userData")
     }
 }

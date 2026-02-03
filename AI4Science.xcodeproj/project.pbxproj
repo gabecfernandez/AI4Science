@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0060D1112F31A5910005703D /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 0060D1102F31A5910005703D /* Auth */; };
+		0060D1132F31A5910005703D /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 0060D1122F31A5910005703D /* Functions */; };
+		0060D1152F31A5910005703D /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 0060D1142F31A5910005703D /* PostgREST */; };
+		0060D1172F31A5910005703D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 0060D1162F31A5910005703D /* Realtime */; };
+		0060D1192F31A5910005703D /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 0060D1182F31A5910005703D /* Storage */; };
+		0060D9962F31A9EA0005703D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 0060D9952F31A9EA0005703D /* Supabase */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		00BB21922F2E531600589682 /* AI4Science.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AI4Science.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -14,6 +23,7 @@
 		00BB29B32F2E728E00589682 /* Exceptions for "AI4Science" folder in "AI4Science" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Info.plist,
 				Infrastructure/Research/Core/ConsentManager.swift,
 				Infrastructure/Research/Core/EligibilityChecker.swift,
 				Infrastructure/Research/Core/ResearchCoordinator.swift,
@@ -73,16 +83,30 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0060D1152F31A5910005703D /* PostgREST in Frameworks */,
+				0060D1132F31A5910005703D /* Functions in Frameworks */,
+				0060D9962F31A9EA0005703D /* Supabase in Frameworks */,
+				0060D1112F31A5910005703D /* Auth in Frameworks */,
+				0060D1192F31A5910005703D /* Storage in Frameworks */,
+				0060D1172F31A5910005703D /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0060D9942F31A9EA0005703D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		00BB21892F2E531600589682 = {
 			isa = PBXGroup;
 			children = (
 				00BB21942F2E531600589682 /* AI4Science */,
+				0060D9942F31A9EA0005703D /* Frameworks */,
 				00BB21932F2E531600589682 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -115,6 +139,12 @@
 			);
 			name = AI4Science;
 			packageProductDependencies = (
+				0060D1102F31A5910005703D /* Auth */,
+				0060D1122F31A5910005703D /* Functions */,
+				0060D1142F31A5910005703D /* PostgREST */,
+				0060D1162F31A5910005703D /* Realtime */,
+				0060D1182F31A5910005703D /* Storage */,
+				0060D9952F31A9EA0005703D /* Supabase */,
 			);
 			productName = AI4Science;
 			productReference = 00BB21922F2E531600589682 /* AI4Science.app */;
@@ -144,6 +174,9 @@
 			);
 			mainGroup = 00BB21892F2E531600589682;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 00BB21932F2E531600589682 /* Products */;
 			projectDirPath = "";
@@ -306,6 +339,7 @@
 				DEVELOPMENT_TEAM = BBDB8N976S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AI4Science/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -338,6 +372,7 @@
 				DEVELOPMENT_TEAM = BBDB8N976S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AI4Science/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -382,6 +417,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0060D1102F31A5910005703D /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		0060D1122F31A5910005703D /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		0060D1142F31A5910005703D /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		0060D1162F31A5910005703D /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		0060D1182F31A5910005703D /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		0060D9952F31A9EA0005703D /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0060D10F2F31A5910005703D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 00BB218A2F2E531600589682 /* Project object */;
 }

@@ -63,6 +63,25 @@ final actor UserRepository {
         // Implementation depends on authentication system
         return nil
     }
+
+    /// Check if user exists by ID (Sendable-safe)
+    func userExists(id: String) async throws -> Bool {
+        let descriptor = FetchDescriptor<UserEntity>(
+            predicate: #Predicate { $0.id == id }
+        )
+        let users = try modelContext.fetch(descriptor)
+        return !users.isEmpty
+    }
+
+    /// Update user institution by ID (Sendable-safe)
+    func updateUserInstitution(id: String, institution: String) async throws {
+        guard let user = try await getUser(id: id) else {
+            throw RepositoryError.notFound
+        }
+        user.institution = institution
+        user.updatedAt = Date()
+        try modelContext.save()
+    }
 }
 
 // Note: RepositoryError is defined in Core/Protocols/Repository.swift

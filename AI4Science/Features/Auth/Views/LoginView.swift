@@ -1,10 +1,35 @@
 import SwiftUI
 
 struct LoginView: View {
-    @State private var viewModel = LoginViewModel()
+    @Environment(ServiceContainer.self) private var serviceContainer
+    @Environment(AppState.self) private var appState
     @Environment(\.dismiss) var dismiss
 
+    @State private var vm: LoginViewModel?
+
     var body: some View {
+        Group {
+            if let vm = vm {
+                contentView(with: vm)
+            } else {
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .task {
+            if vm == nil {
+                vm = LoginViewModel(
+                    authService: serviceContainer.authService,
+                    appState: appState
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func contentView(with vm: LoginViewModel) -> some View {
+        @Bindable var vm = vm
+
         NavigationStack {
             ZStack {
                 // Background gradient
@@ -45,7 +70,7 @@ struct LoginView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("Enter your email", text: $viewModel.email)
+                                TextField("Enter your email", text: $vm.email)
                                     .textContentType(.emailAddress)
                                     .keyboardType(.emailAddress)
                                     .autocorrectionDisabled()
@@ -62,7 +87,7 @@ struct LoginView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                SecureField("Enter your password", text: $viewModel.password)
+                                SecureField("Enter your password", text: $vm.password)
                                     .textContentType(.password)
                                     .padding(12)
                                     .background(Color.white.opacity(0.1))
@@ -71,7 +96,7 @@ struct LoginView: View {
                             }
 
                             // Remember me
-                            Toggle("Remember me", isOn: $viewModel.rememberMe)
+                            Toggle("Remember me", isOn: $vm.rememberMe)
                                 .tint(.blue)
                                 .foregroundColor(.white)
                                 .padding(.top, 8)
@@ -81,8 +106,8 @@ struct LoginView: View {
                         .cornerRadius(12)
 
                         // Login button
-                        Button(action: { Task { await viewModel.login() } }) {
-                            if viewModel.isLoading {
+                        Button(action: { Task { await vm.login() } }) {
+                            if vm.isLoading {
                                 ProgressView()
                                     .tint(.white)
                             } else {
@@ -95,14 +120,16 @@ struct LoginView: View {
                         .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)
-                        .disabled(viewModel.isLoading || viewModel.email.isEmpty || viewModel.password.isEmpty)
-                        .opacity(viewModel.isLoading || viewModel.email.isEmpty || viewModel.password.isEmpty ? 0.6 : 1.0)
+                        .disabled(vm.isLoading || vm.email.isEmpty || vm.password.isEmpty)
+                        .opacity(vm.isLoading || vm.email.isEmpty || vm.password.isEmpty ? 0.6 : 1.0)
 
                         // Forgot password
-                        NavigationLink(destination: ForgotPasswordView()) {
-                            Text("Forgot Password?")
-                                .font(.subheadline)
-                                .foregroundColor(.blue)
+                        if let _ = try? NSClassFromString("AI4Science.ForgotPasswordView") {
+                            NavigationLink(destination: Text("Forgot Password (Placeholder)")) {
+                                Text("Forgot Password?")
+                                    .font(.subheadline)
+                                    .foregroundColor(.blue)
+                            }
                         }
 
                         // Divider
@@ -116,7 +143,7 @@ struct LoginView: View {
                         .foregroundColor(.white.opacity(0.3))
 
                         // Biometric login
-                        Button(action: { Task { await viewModel.loginWithBiometric() } }) {
+                        Button(action: { Task { await vm.loginWithBiometric() } }) {
                             Label("Sign In with Face ID", systemImage: "faceid")
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 48)
@@ -146,11 +173,13 @@ struct LoginView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .alert("Error", isPresented: $viewModel.showError, presenting: viewModel.errorMessage) { _ in
-            Button("OK") { viewModel.showError = false }
-        } message: { errorMessage in
-            Text(errorMessage)
+            .alert("Error", isPresented: $vm.showError) {
+                Button("OK") {
+                    vm.showError = false
+                }
+            } message: {
+                Text(vm.errorMessage)
+            }
         }
     }
 }

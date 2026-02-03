@@ -35,14 +35,29 @@ final class AppState {
 
     // MARK: - Authentication Methods
 
-    func checkAuthenticationState() async {
-        // Check for stored credentials/tokens
-        if let storedUser = await loadStoredUser() {
-            currentUser = storedUser
-            authState = .authenticated
-        } else {
-            authState = .unauthenticated
+    func checkAuthenticationState(serviceContainer: ServiceContainer) async {
+        authState = .unknown
+
+        do {
+            // Check for existing Supabase session
+            if let session = try await serviceContainer.authService.getCurrentSession(),
+               try await serviceContainer.authService.validateSession() {
+
+                // Load user from local database and extract display data
+                let userDisplayData = try await serviceContainer.userRepository.getFirstUserDisplayData()
+
+                if let displayData = userDisplayData, displayData.id == session.userId {
+                    // Map display data to User domain model
+                    currentUser = mapDisplayDataToUser(displayData)
+                    authState = .authenticated
+                    return
+                }
+            }
+        } catch {
+            AppLogger.error("Session restoration failed: \(error)")
         }
+
+        authState = .unauthenticated
     }
 
     func signIn(user: User) {
@@ -84,6 +99,22 @@ final class AppState {
 
     private func clearStoredCredentials() async {
         // Clear Keychain/secure storage
+    }
+
+    /// Map UserDisplayData to User domain model
+    private func mapDisplayDataToUser(_ displayData: UserDisplayData) -> User {
+        let nameComponents = displayData.fullName.components(separatedBy: " ")
+        let firstName = nameComponents.first ?? ""
+        let lastName = nameComponents.dropFirst().joined(separator: " ")
+
+        return User(
+            id: UUID(uuidString: displayData.id) ?? UUID(),
+            firstName: firstName,
+            lastName: lastName,
+            email: displayData.email,
+            role: .researcher, // Default role per requirement
+            labAffiliation: nil // TODO: Map institution string to LabAffiliation object when profile management is implemented
+        )
     }
 }
 

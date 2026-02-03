@@ -38,7 +38,7 @@ public struct AuthSession: Sendable {
     public let expiresAt: Date
     public let isBiometricEnabled: Bool
 
-    public init(
+    nonisolated public init(
         userId: String,
         email: String,
         displayName: String,
@@ -66,6 +66,7 @@ public enum ServiceAuthError: LocalizedError, Sendable {
     case sessionExpired
     case biometricNotAvailable
     case biometricFailed
+    case emailConfirmationRequired
     case networkError(String)
     case unknownError(String)
 
@@ -85,6 +86,8 @@ public enum ServiceAuthError: LocalizedError, Sendable {
             return "Biometric authentication is not available"
         case .biometricFailed:
             return "Biometric authentication failed"
+        case .emailConfirmationRequired:
+            return "Account created! Please check your email to verify your account before signing in."
         case .networkError(let message):
             return "Network error: \(message)"
         case .unknownError(let message):

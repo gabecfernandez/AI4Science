@@ -13,6 +13,9 @@ import Observation
 @Observable
 @MainActor
 final class ServiceContainer {
+    // MARK: - Singleton
+    static var shared: ServiceContainer!
+
     // MARK: - Repositories
     let userRepository: UserRepository
     let projectRepository: ProjectRepository
@@ -22,7 +25,7 @@ final class ServiceContainer {
     let analysisRepository: AnalysisRepository
 
     // MARK: - Services
-    let authService: AuthService
+    let authService: SupabaseAuthenticationService
     let mlService: MLService
     let cameraService: CameraServiceImpl
     let mediaService: MediaService
@@ -31,7 +34,7 @@ final class ServiceContainer {
 
     // MARK: - Initialization
 
-    init(modelContainer: ModelContainer) {
+    init(modelContainer: ModelContainer) async {
         // Initialize repositories using @ModelActor pattern (requires modelContainer)
         self.userRepository = UserRepository(modelContainer: modelContainer)
         self.projectRepository = ProjectRepository(modelContainer: modelContainer)
@@ -40,8 +43,14 @@ final class ServiceContainer {
         self.annotationRepository = AnnotationRepository(modelContainer: modelContainer)
         self.analysisRepository = AnalysisRepository(modelContainer: modelContainer)
 
-        // Initialize services
-        self.authService = AuthService(userRepository: userRepository)
+        // Initialize Supabase authentication service
+        self.authService = SupabaseAuthenticationService(
+            client: SupabaseConfig.shared.client,
+            userRepository: userRepository,
+            keychainManager: await KeychainManager.shared
+        )
+
+        // Initialize other services
         self.mlService = MLService()
         self.cameraService = CameraServiceImpl()
         self.mediaService = MediaService()
@@ -56,41 +65,13 @@ final class ServiceContainer {
             annotationRepository: annotationRepository
         )
 
-        AppLogger.info("ServiceContainer initialized")
+        // Set singleton instance
+        ServiceContainer.shared = self
+
+        AppLogger.info("ServiceContainer initialized with Supabase authentication")
     }
 }
 
-// MARK: - Authentication Service
-
-final class AuthService: @unchecked Sendable {
-    private let userRepository: UserRepository
-
-    init(userRepository: UserRepository) {
-        self.userRepository = userRepository
-    }
-
-    func signIn(email: String, password: String) async throws -> User {
-        let user = User(
-            id: UUID(),
-            firstName: "User",
-            lastName: "",
-            email: email,
-            role: .researcher,
-            labAffiliation: nil
-        )
-        // Note: UserRepository would need a save method for domain models
-        // For now, this is a stub implementation
-        return user
-    }
-
-    func signOut() async {
-        // Clear session
-    }
-
-    func refreshToken() async throws {
-        // Refresh authentication token
-    }
-}
 
 // MARK: - ML Service
 
