@@ -28,10 +28,38 @@ enum SampleDataSeeder {
         let sampleUser = createSampleUser()
         modelContext.insert(sampleUser)
 
+        // Create sample labs and wire M2M membership
+        let labs = createSampleLabs(owner: sampleUser)
+        for lab in labs {
+            modelContext.insert(lab)
+        }
+        // Create additional lab members for richer demo data
+        let extraMembers = createExtraMembers()
+        for member in extraMembers { modelContext.insert(member) }
+
+        // Wire members to labs (lab-side; auto-populates user.labs bidirectionally)
+        labs[0].members = [sampleUser, extraMembers[0], extraMembers[1], extraMembers[2]]
+        labs[1].members = [sampleUser, extraMembers[1], extraMembers[3]]
+        // labs[2] has no members (Explore-only, joinable via UI)
+
         // Create sample projects
         let projects = createSampleProjects(owner: sampleUser)
         for project in projects {
             modelContext.insert(project)
+        }
+
+        // Wire projects to labs (M2M — some projects span multiple labs)
+        projects[0].labs = [labs[0], labs[1]]   // Materials Analysis 2024        → Vision & AI + Advanced Materials
+        projects[1].labs = [labs[0], labs[2]]   // Protein Structure Study        → Vision & AI + Bio-Imaging
+        projects[2].labs = [labs[1]]            // Crystal Growth Optimization    → Advanced Materials
+        projects[3].labs = [labs[1]]            // Pilot: Surface Texture Analysis → Advanced Materials
+        // projects[4] stays unassigned (planning stage)
+
+        // Completed projects for Vision & AI Lab (show in Past Projects)
+        let completedProjects = createCompletedProjects(owner: sampleUser)
+        for cp in completedProjects {
+            modelContext.insert(cp)
+            cp.labs = [labs[0]]
         }
 
         // Create sample samples for first project
@@ -77,6 +105,105 @@ enum SampleDataSeeder {
         }
     }
 
+    /// Seeds labs into an existing database that was seeded before labs existed.
+    /// No-op if labs are already present.
+    static func seedLabsIfNeeded(modelContext: ModelContext) async {
+        var labDescriptor = FetchDescriptor<LabEntity>()
+        labDescriptor.fetchLimit = 1
+
+        do {
+            let existingLabs = try modelContext.fetch(labDescriptor)
+            if !existingLabs.isEmpty { return }
+        } catch {
+            AppLogger.shared.error("Failed to check existing labs: \(error)")
+            return
+        }
+
+        // Fetch the existing seeded user
+        let userDescriptor = FetchDescriptor<UserEntity>()
+        guard let sampleUser = try? modelContext.fetch(userDescriptor).first else {
+            AppLogger.shared.warning("No user found — cannot seed labs")
+            return
+        }
+
+        AppLogger.shared.info("Seeding labs into existing database...")
+
+        let labs = createSampleLabs(owner: sampleUser)
+        for lab in labs { modelContext.insert(lab) }
+        sampleUser.labs = [labs[0], labs[1]]
+
+        // Wire existing projects to labs by name (M2M)
+        let projectDescriptor = FetchDescriptor<ProjectEntity>()
+        if let projects = try? modelContext.fetch(projectDescriptor) {
+            for project in projects {
+                switch project.name {
+                case "Materials Analysis 2024":
+                    project.labs = [labs[0], labs[1]]
+                case "Protein Structure Study":
+                    project.labs = [labs[0], labs[2]]
+                case "Crystal Growth Optimization", "Pilot: Surface Texture Analysis":
+                    project.labs = [labs[1]]
+                default:
+                    break
+                }
+            }
+        }
+
+        do {
+            try modelContext.save()
+            AppLogger.shared.info("Labs seeded successfully")
+        } catch {
+            AppLogger.shared.error("Failed to save lab seed data: \(error)")
+        }
+    }
+
+    /// Seeds additional lab members and completed projects for richer demo data.
+    /// Idempotent — uses sentinel checks (known email / project name) rather than
+    /// user count, which can be thrown off by a real Supabase sign-in.
+    static func seedExtraLabMembersIfNeeded(modelContext: ModelContext) async {
+        // Need labs to exist so we can wire memberships
+        let labDescriptor = FetchDescriptor<LabEntity>()
+        guard let labs        = try? modelContext.fetch(labDescriptor),
+              let visionAI    = labs.first(where: { $0.id == "lab-vision-ai-utsa" }),
+              let materials   = labs.first(where: { $0.id == "lab-materials-utsa" }) else { return }
+
+        // Find the original demo user (owner of the labs)
+        guard let sampleUser = visionAI.owner else { return }
+
+        // --- Members: gate on sentinel email ----------------------------------------
+        let memberSentinel = FetchDescriptor<UserEntity>(
+            predicate: #Predicate { $0.email == "mjones@utsa.edu" }
+        )
+        if let existing = try? modelContext.fetch(memberSentinel), existing.isEmpty {
+            AppLogger.shared.info("Seeding extra lab members...")
+            let extraMembers = createExtraMembers()
+            for member in extraMembers { modelContext.insert(member) }
+
+            visionAI.members.append(contentsOf: [extraMembers[0], extraMembers[1], extraMembers[2]])
+            materials.members.append(contentsOf: [extraMembers[1], extraMembers[3]])
+        }
+
+        // --- Completed projects: gate on sentinel project name -----------------------
+        let projSentinel = FetchDescriptor<ProjectEntity>(
+            predicate: #Predicate { $0.name == "Defect Detection Benchmark" }
+        )
+        if let existing = try? modelContext.fetch(projSentinel), existing.isEmpty {
+            AppLogger.shared.info("Seeding completed projects...")
+            let completedProjects = createCompletedProjects(owner: sampleUser)
+            for project in completedProjects {
+                modelContext.insert(project)
+                project.labs = [visionAI]
+            }
+        }
+
+        do {
+            try modelContext.save()
+            AppLogger.shared.info("Extra lab seed data applied successfully")
+        } catch {
+            AppLogger.shared.error("Failed to save extra lab seed data: \(error)")
+        }
+    }
+
     // MARK: - Sample Data Creation
 
     private static func createSampleUser() -> UserEntity {
@@ -87,6 +214,117 @@ enum SampleDataSeeder {
             institution: "UT San Antonio",
             createdAt: Date().addingTimeInterval(-86400 * 365) // 1 year ago
         )
+    }
+
+    private static func createSampleLabs(owner: UserEntity) -> [LabEntity] {
+        let now = Date()
+
+        let visionAILab = LabEntity(
+            id: "lab-vision-ai-utsa",
+            name: "Vision & AI Lab",
+            abbreviation: "VAI",
+            labDescription: "Research lab focused on computer vision and artificial intelligence applications in materials science. Develops on-device ML models for real-time defect detection and material classification.",
+            institution: "UT San Antonio",
+            isPublic: true,
+            createdAt: now.addingTimeInterval(-86400 * 365),
+            updatedAt: now.addingTimeInterval(-86400 * 7)
+        )
+        visionAILab.owner = owner
+
+        let materialsLab = LabEntity(
+            id: "lab-materials-utsa",
+            name: "Advanced Materials Lab",
+            abbreviation: "AML",
+            labDescription: "Specializes in characterization and testing of advanced composite materials including carbon fiber, ceramics, and nanomaterials. Equipped with electron microscopy and surface analysis tools.",
+            institution: "UT San Antonio",
+            isPublic: true,
+            createdAt: now.addingTimeInterval(-86400 * 300),
+            updatedAt: now.addingTimeInterval(-86400 * 14)
+        )
+        materialsLab.owner = owner
+
+        let bioImagingLab = LabEntity(
+            id: "lab-bio-imaging-utsa",
+            name: "Bio-Imaging Research Lab",
+            abbreviation: "BIR",
+            labDescription: "Focuses on high-resolution bio-imaging techniques for studying cellular structures and biological materials. Collaborates with the UTSA Biology and Medical Sciences departments.",
+            institution: "UT San Antonio",
+            isPublic: true,
+            createdAt: now.addingTimeInterval(-86400 * 200),
+            updatedAt: now.addingTimeInterval(-86400 * 30)
+        )
+
+        return [visionAILab, materialsLab, bioImagingLab]
+    }
+
+    /// Four additional researchers / students used as lab members in the demo.
+    private static func createExtraMembers() -> [UserEntity] {
+        let now = Date()
+        return [
+            UserEntity(
+                id: UUID().uuidString,
+                email: "mjones@utsa.edu",
+                fullName: "Dr. Marcus Jones",
+                institution: "UT San Antonio",
+                createdAt: now.addingTimeInterval(-86400 * 500)
+            ),
+            UserEntity(
+                id: UUID().uuidString,
+                email: "rlim@utsa.edu",
+                fullName: "Rachel Lim",
+                institution: "UT San Antonio",
+                createdAt: now.addingTimeInterval(-86400 * 400)
+            ),
+            UserEntity(
+                id: UUID().uuidString,
+                email: "kpatel@utsa.edu",
+                fullName: "Kai Patel",
+                institution: "UT San Antonio",
+                createdAt: now.addingTimeInterval(-86400 * 300)
+            ),
+            UserEntity(
+                id: UUID().uuidString,
+                email: "awilson@utsa.edu",
+                fullName: "Prof. Amy Wilson",
+                institution: "UT San Antonio",
+                createdAt: now.addingTimeInterval(-86400 * 600)
+            )
+        ]
+    }
+
+    /// Completed projects that populate the "Past Projects" section of Vision & AI Lab.
+    private static func createCompletedProjects(owner: UserEntity) -> [ProjectEntity] {
+        let now = Date()
+
+        let benchmark = ProjectEntity(
+            id: UUID().uuidString,
+            name: "Defect Detection Benchmark",
+            projectDescription: "Benchmarking defect detection models against a curated dataset of known defects in carbon fiber composites. Completed with 94% accuracy on the held-out test set.",
+            owner: owner,
+            createdAt: now.addingTimeInterval(-86400 * 240),
+            updatedAt: now.addingTimeInterval(-86400 * 60),
+            projectType: "materials"
+        )
+        benchmark.status = ProjectStatus.completed.rawValue
+        benchmark.sampleCount = 200
+        benchmark.tags = ["benchmark", "defect-detection", "validation"]
+        benchmark.startDate = now.addingTimeInterval(-86400 * 240)
+
+        let classification = ProjectEntity(
+            id: UUID().uuidString,
+            name: "Surface Defect Classification",
+            projectDescription: "Trained and validated a multi-class CNN for classifying surface defects in steel sheets. Achieved 97% top-1 accuracy across crack, scratch, and inclusion classes.",
+            owner: owner,
+            createdAt: now.addingTimeInterval(-86400 * 400),
+            updatedAt: now.addingTimeInterval(-86400 * 120),
+            projectType: "materials"
+        )
+        classification.status = ProjectStatus.completed.rawValue
+        classification.sampleCount = 350
+        classification.tags = ["classification", "CNN", "steel", "completed"]
+        classification.startDate = now.addingTimeInterval(-86400 * 400)
+
+        return [benchmark, classification]
     }
 
     private static func createSampleProjects(owner: UserEntity) -> [ProjectEntity] {

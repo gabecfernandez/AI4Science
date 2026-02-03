@@ -29,6 +29,7 @@ struct AI4ScienceApp: App {
             let schema = Schema([
                 UserEntity.self,
                 ProjectEntity.self,
+                LabEntity.self,
                 SampleEntity.self,
                 CaptureEntity.self,
                 AnnotationEntity.self,
@@ -87,6 +88,8 @@ struct AI4ScienceApp: App {
         // Seed sample data if database is empty (development/demo only)
         let context = modelContainer.mainContext
         await SampleDataSeeder.seedIfEmpty(modelContext: context)
+        await SampleDataSeeder.seedLabsIfNeeded(modelContext: context)
+        await SampleDataSeeder.seedExtraLabMembersIfNeeded(modelContext: context)
 
         // Attempt Supabase session restore from Keychain
         if let restoredUser = await serviceContainer.authService.restoreSession() {
@@ -147,12 +150,22 @@ struct RootView: View {
 
 struct MainTabView: View {
     @Environment(NavigationCoordinator.self) private var navigation
-    @State private var selectedTab: AppTab = .projects
+    @Environment(ServiceContainer.self) private var services
+    @State private var selectedTab: AppTab = .labs
 
     var body: some View {
         @Bindable var nav = navigation
 
         TabView(selection: $selectedTab) {
+            Tab("Labs", systemImage: "building.2.fill", value: .labs) {
+                NavigationStack(path: $nav.labsPath) {
+                    MyLabsView()
+                        .navigationDestination(for: LabDestination.self) { destination in
+                            destination.view(services: services)
+                        }
+                }
+            }
+
             Tab("Projects", systemImage: "folder.fill", value: .projects) {
                 ProjectListView()
             }
@@ -199,6 +212,7 @@ struct MainTabView: View {
 // MARK: - App Tab
 
 enum AppTab: String, CaseIterable, Identifiable, Sendable {
+    case labs
     case projects
     case capture
     case analysis
@@ -391,6 +405,21 @@ enum ProfileDestination: Hashable {
             Text("Lab Affiliation")
         case .exportData:
             Text("Export Data")
+        }
+    }
+}
+
+enum LabDestination: Hashable {
+    case detail(String)    // labId
+    case project(UUID)     // projectId
+
+    @ViewBuilder
+    func view(services: ServiceContainer) -> some View {
+        switch self {
+        case .detail(let labId):
+            LabDetailView(labId: labId, labRepository: services.labRepository, projectRepository: services.projectRepository)
+        case .project(let projectId):
+            ProjectDetailView(projectId: projectId, repository: services.projectRepository)
         }
     }
 }

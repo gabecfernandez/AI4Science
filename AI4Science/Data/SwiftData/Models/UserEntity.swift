@@ -41,6 +41,10 @@ final class UserEntity {
     /// Relationship to user's projects
     @Relationship(deleteRule: .cascade, inverse: \ProjectEntity.owner) var projects: [ProjectEntity] = []
 
+    /// M2M: labs this user belongs to. Inverse anchors the join table.
+    @Relationship(deleteRule: .nullify, inverse: \LabEntity.members)
+    var labs: [LabEntity] = []
+
     /// Relationship to user's devices for sync
     @Relationship(deleteRule: .cascade) var deviceInfo: DeviceInfo?
 

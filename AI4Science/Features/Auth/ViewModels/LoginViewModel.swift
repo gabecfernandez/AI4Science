@@ -14,6 +14,7 @@ final class LoginViewModel {
     /// Injected by LoginView via .onAppear
     var authService: AuthenticationService?
     var appState: AppState?
+    var userRepository: UserRepository?
 
     func login() async {
         guard !email.isEmpty, !password.isEmpty else {
@@ -43,6 +44,45 @@ final class LoginViewModel {
         } catch {
             errorMessage = (error as? ViewModelAuthError)?.localizedDescription
                            ?? error.localizedDescription
+            showError = true
+        }
+    }
+
+    func signInDemo() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let userRepo = userRepository else {
+            errorMessage = "Service unavailable"
+            showError = true
+            return
+        }
+
+        do {
+            guard let userData = try await userRepo.getUserDisplayData(email: "demo@utsa.edu") else {
+                errorMessage = "Demo user not found. Please reinstall the app."
+                showError = true
+                return
+            }
+            guard let uuid = UUID(uuidString: userData.id) else {
+                errorMessage = "Invalid demo user data"
+                showError = true
+                return
+            }
+            let names = userData.fullName.split(separator: " ", maxSplits: 1)
+            let firstName = String(names.first ?? "Dr.")
+            let lastName = names.count > 1 ? String(names[1]) : "Demo"
+            let user = User(
+                id: uuid,
+                firstName: firstName,
+                lastName: lastName,
+                email: userData.email,
+                role: .researcher,
+                createdAt: userData.createdAt
+            )
+            appState?.signIn(user: user)
+        } catch {
+            errorMessage = "Failed to load demo user: \(error.localizedDescription)"
             showError = true
         }
     }

@@ -233,7 +233,7 @@ final class ProjectFormViewModel {
             description: descriptionText.trimmingCharacters(in: .whitespacesAndNewlines),
             status: .planning,
             principalInvestigatorID: UUID(), // Placeholder - should come from auth
-            labAffiliation: LabAffiliation(name: "Vision & AI Lab", institution: "UTSA"),
+            labAffiliations: [],
             metadata: ["projectType": projectType.rawValue, "visibility": visibility.rawValue],
             tags: []
         )

@@ -14,6 +14,7 @@ import Observation
 @MainActor
 final class NavigationCoordinator {
     // MARK: - Navigation Paths
+    var labsPath = NavigationPath()
     var projectsPath = NavigationPath()
     var capturePath = NavigationPath()
     var analysisPath = NavigationPath()
@@ -106,6 +107,7 @@ final class NavigationCoordinator {
     }
 
     func resetToRoot() {
+        labsPath = NavigationPath()
         projectsPath = NavigationPath()
         capturePath = NavigationPath()
         analysisPath = NavigationPath()
@@ -115,6 +117,8 @@ final class NavigationCoordinator {
 
     func popToRoot(for tab: AppTab) {
         switch tab {
+        case .labs:
+            labsPath = NavigationPath()
         case .projects:
             projectsPath = NavigationPath()
         case .capture:

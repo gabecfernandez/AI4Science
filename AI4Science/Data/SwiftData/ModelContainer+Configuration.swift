@@ -9,6 +9,7 @@ extension ModelContainer {
         let schema = Schema([
             UserEntity.self,
             ProjectEntity.self,
+            LabEntity.self,
             SampleEntity.self,
             CaptureEntity.self,
             AnnotationEntity.self,
@@ -45,6 +46,7 @@ extension ModelContainer {
         let schema = Schema([
             UserEntity.self,
             ProjectEntity.self,
+            LabEntity.self,
             SampleEntity.self,
             CaptureEntity.self,
             AnnotationEntity.self,

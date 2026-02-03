@@ -203,7 +203,7 @@ extension ProjectServiceResponse {
             description: description,
             status: status,
             principalInvestigatorID: UUID(uuidString: ownerId) ?? UUID(),
-            labAffiliation: LabAffiliation.placeholder,
+            labAffiliations: [LabAffiliation.placeholder],
             participantIDs: [],
             sampleIDs: sampleIds.compactMap { UUID(uuidString: $0) },
             startDate: createdAt,

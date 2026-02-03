@@ -169,6 +169,31 @@ struct LoginView: View {
                         .font(.subheadline)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 8)
+
+                        // Demo sign-in
+                        HStack {
+                            VStack { Divider().background(.white.opacity(0.3)) }
+                            Text("OR")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.5))
+                            VStack { Divider().background(.white.opacity(0.3)) }
+                        }
+                        .padding(.top, 8)
+
+                        Button(action: { Task { await viewModel.signInDemo() } }) {
+                            Text("Demo Sign In")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .foregroundColor(.white)
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        )
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 32)
@@ -179,6 +204,7 @@ struct LoginView: View {
             .onAppear {
                 viewModel.authService = services.authService
                 viewModel.appState = appState
+                viewModel.userRepository = services.userRepository
             }
         }
         .alert("Error", isPresented: $viewModel.showError, presenting: viewModel.errorMessage) { _ in

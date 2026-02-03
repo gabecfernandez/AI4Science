@@ -27,7 +27,7 @@ final class ProjectListViewModel {
                     description: "Comprehensive analysis of novel composite materials",
                     status: .active,
                     principalInvestigatorID: demoUserID,
-                    labAffiliation: .placeholder,
+                    labAffiliations: [.placeholder],
                     createdAt: Date().addingTimeInterval(-86400 * 30)
                 ),
                 Project(
@@ -35,7 +35,7 @@ final class ProjectListViewModel {
                     description: "AI-driven protein folding predictions",
                     status: .active,
                     principalInvestigatorID: demoUserID,
-                    labAffiliation: .placeholder,
+                    labAffiliations: [.placeholder],
                     createdAt: Date().addingTimeInterval(-86400 * 60)
                 ),
                 Project(
@@ -43,7 +43,7 @@ final class ProjectListViewModel {
                     description: "Testing growth parameters for semiconductor crystals",
                     status: .onHold,
                     principalInvestigatorID: demoUserID,
-                    labAffiliation: .placeholder,
+                    labAffiliations: [.placeholder],
                     createdAt: Date().addingTimeInterval(-86400 * 90)
                 )
             ]

@@ -9,7 +9,9 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(ServiceContainer.self) private var services
+    @Environment(AppState.self) private var appState
     @State private var viewModel: ProfileViewModel?
+    @State private var showSignOutConfirmation = false
 
     var body: some View {
         ZStack {
@@ -28,7 +30,9 @@ struct ProfileView: View {
                 viewModel = ProfileViewModel(
                     userRepository: services.userRepository,
                     projectRepository: services.projectRepository,
-                    captureRepository: services.captureRepository
+                    captureRepository: services.captureRepository,
+                    authService: services.authService,
+                    appState: appState
                 )
             }
             await viewModel?.loadProfile()
@@ -45,6 +49,7 @@ struct ProfileView: View {
                     profileHeader(user)
                     statsSection(user)
                     settingsSection
+                    signOutButton
                 } else {
                     EmptyStateView(
                         icon: IconAssets.profile,
@@ -160,6 +165,26 @@ struct ProfileView: View {
                 RoundedRectangle(cornerRadius: BorderStyles.radiusMedium)
                     .stroke(ColorPalette.divider, lineWidth: 1)
             )
+        }
+    }
+
+    @ViewBuilder
+    private var signOutButton: some View {
+        Button(role: .destructive) {
+            showSignOutConfirmation = true
+        } label: {
+            Text("Sign Out")
+                .font(Typography.bodyMedium)
+                .foregroundColor(ColorPalette.error)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.top, Spacing.lg)
+        .confirmationDialog("Sign Out", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
+            Button("Sign Out", role: .destructive) {
+                Task { await viewModel?.signOut() }
+            }
+        } message: {
+            Text("Are you sure you want to sign out? You will need to sign in again to use the app.")
         }
     }
 
