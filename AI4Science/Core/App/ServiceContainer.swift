@@ -20,6 +20,7 @@ final class ServiceContainer {
     let captureRepository: CaptureRepository
     let annotationRepository: AnnotationRepository
     let analysisRepository: AnalysisRepository
+    let labRepository: LabRepository
 
     // MARK: - Services
     let authService: AuthenticationService
@@ -39,6 +40,7 @@ final class ServiceContainer {
         self.captureRepository = CaptureRepository(modelContainer: modelContainer)
         self.annotationRepository = AnnotationRepository(modelContainer: modelContainer)
         self.analysisRepository = AnalysisRepository(modelContainer: modelContainer)
+        self.labRepository = LabRepository(modelContainer: modelContainer)
 
         // Initialize services
         self.authService = AuthenticationService(userRepository: userRepository)

@@ -35,17 +35,23 @@ final class ProfileViewModel {
     private let userRepository: UserRepository
     private let projectRepository: ProjectRepository
     private let captureRepository: CaptureRepository
+    private let authService: AuthenticationService
+    private let appState: AppState
 
     // MARK: - Initialization
 
     init(
         userRepository: UserRepository,
         projectRepository: ProjectRepository,
-        captureRepository: CaptureRepository
+        captureRepository: CaptureRepository,
+        authService: AuthenticationService,
+        appState: AppState
     ) {
         self.userRepository = userRepository
         self.projectRepository = projectRepository
         self.captureRepository = captureRepository
+        self.authService = authService
+        self.appState = appState
     }
 
     // MARK: - Public Methods
@@ -91,6 +97,16 @@ final class ProfileViewModel {
 
     func refresh() async {
         await loadProfile()
+    }
+
+    func signOut() async {
+        do {
+            try await authService.signOut()
+        } catch {
+            // authService.signOut() already swallows network errors;
+            // this catch is a safety net. Always proceed to clear local state.
+        }
+        appState.signOut()
     }
 }
 

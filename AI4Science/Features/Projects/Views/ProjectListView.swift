@@ -200,6 +200,22 @@ struct ProjectListCard: View {
                 ProjectStatusBadge(status: project.status)
             }
 
+            // Lab label chips
+            if !project.labAffiliations.isEmpty {
+                HStack(spacing: Spacing.sm) {
+                    ForEach(project.labAffiliations) { lab in
+                        let colors = labChipColors(for: lab.name)
+                        Text(lab.name)
+                            .font(Typography.labelSmall)
+                            .foregroundColor(colors.text)
+                            .padding(.horizontal, Spacing.sm)
+                            .padding(.vertical, 2)
+                            .background(colors.background)
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+
             HStack(spacing: Spacing.lg) {
                 Label("\(project.sampleCount)", systemImage: "flask.fill")
                     .font(Typography.labelSmall)
@@ -230,6 +246,20 @@ struct ProjectListCard: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+
+    /// Returns (text, background) for a lab chip.
+    /// Warm colors use darkened text variants so contrast stays above 6:1
+    /// against the light tinted background on both light and dark surfaces.
+    private func labChipColors(for name: String) -> (text: Color, background: Color) {
+        let palette: [(text: Color, background: Color)] = [
+            (ColorPalette.utsa_primary,                          ColorPalette.utsa_primary.opacity(0.1)),
+            (Color(red: 0.02, green: 0.45, blue: 0.22),         ColorPalette.success.opacity(0.1)),
+            (ColorPalette.chart_purple,                          ColorPalette.chart_purple.opacity(0.1)),
+            (Color(red: 0.55, green: 0.33, blue: 0.0),          ColorPalette.chart_orange.opacity(0.13)),
+            (Color(red: 0.70, green: 0.15, blue: 0.12),         ColorPalette.chart_red.opacity(0.1))
+        ]
+        return palette[abs(name.hashValue) % palette.count]
     }
 
     private func formatDate(_ date: Date) -> String {

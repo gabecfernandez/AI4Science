@@ -38,7 +38,9 @@ struct ProjectMapper {
             description: entity.projectDescription,
             status: mapStringToProjectStatus(entity.status),
             principalInvestigatorID: piId,
-            labAffiliation: createDefaultLabAffiliation(),
+            labAffiliations: entity.labs.map { lab in
+                LabAffiliation(name: lab.name, institution: lab.institution ?? "Unknown")
+            },
             participantIDs: entity.collaborators.compactMap { UUID(uuidString: $0) },
             sampleIDs: entity.samples.compactMap { UUID(uuidString: $0.id) },
             startDate: entity.startDate ?? entity.createdAt,
@@ -122,10 +124,4 @@ struct ProjectMapper {
         type ?? "materials_science"
     }
 
-    private nonisolated static func createDefaultLabAffiliation() -> LabAffiliation {
-        LabAffiliation(
-            name: "Vision & AI Lab",
-            institution: "UTSA"
-        )
-    }
 }

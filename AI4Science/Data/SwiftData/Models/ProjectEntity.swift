@@ -17,6 +17,10 @@ final class ProjectEntity {
     /// The owner/creator of the project
     var owner: UserEntity?
 
+    /// M2M: labs this project is affiliated with. Inverse anchors the join table.
+    @Relationship(deleteRule: .nullify, inverse: \LabEntity.projects)
+    var labs: [LabEntity] = []
+
     /// Project creation timestamp
     var createdAt: Date
 

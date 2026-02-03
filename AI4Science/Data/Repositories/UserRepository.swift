@@ -122,4 +122,21 @@ extension UserRepository {
             createdAt: user.createdAt
         )
     }
+
+    /// Get user by email as a Sendable display model
+    func getUserDisplayData(email: String) async throws -> UserDisplayData? {
+        let descriptor = FetchDescriptor<UserEntity>(
+            predicate: #Predicate { $0.email == email }
+        )
+        let users = try modelContext.fetch(descriptor)
+        guard let user = users.first else { return nil }
+        return UserDisplayData(
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            institution: user.institution,
+            profileImageURL: user.profileImageURL,
+            createdAt: user.createdAt
+        )
+    }
 }

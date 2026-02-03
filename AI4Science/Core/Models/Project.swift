@@ -17,7 +17,7 @@ public struct Project: Identifiable, Codable, Sendable {
     public var description: String
     public var status: ProjectStatus
     public var principalInvestigatorID: UUID
-    public var labAffiliation: LabAffiliation
+    public var labAffiliations: [LabAffiliation]
     public var participantIDs: [UUID]
     public var sampleIDs: [UUID]
     public var startDate: Date
@@ -34,7 +34,7 @@ public struct Project: Identifiable, Codable, Sendable {
         description: String,
         status: ProjectStatus = .planning,
         principalInvestigatorID: UUID,
-        labAffiliation: LabAffiliation,
+        labAffiliations: [LabAffiliation] = [],
         participantIDs: [UUID] = [],
         sampleIDs: [UUID] = [],
         startDate: Date = Date(),
@@ -50,7 +50,7 @@ public struct Project: Identifiable, Codable, Sendable {
         self.description = description
         self.status = status
         self.principalInvestigatorID = principalInvestigatorID
-        self.labAffiliation = labAffiliation
+        self.labAffiliations = labAffiliations
         self.participantIDs = participantIDs
         self.sampleIDs = sampleIDs
         self.startDate = startDate
