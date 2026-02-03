@@ -14,6 +14,10 @@ final class RegisterViewModel {
     var showError = false
     var errorMessage = ""
 
+    /// Injected by RegisterView via .onAppear
+    var authService: AuthenticationService?
+    var appState: AppState?
+
     var emailValidationMessage = ""
     var isEmailValid = false
     var passwordStrength: PasswordStrength = .weak
@@ -34,12 +38,20 @@ final class RegisterViewModel {
         defer { isLoading = false }
 
         do {
-            // Simulate network call
-            try await Task.sleep(nanoseconds: 2_000_000_000)
-
-            // Save user data
-            try saveUserData()
-            // Continue to next screen (handled by navigation)
+            guard let authService = authService else {
+                errorMessage = "Service unavailable"
+                showError = true
+                return
+            }
+            let user = try await authService.signUp(
+                email: email,
+                password: password,
+                fullName: fullName
+            )
+            appState?.signIn(user: user)
+        } catch let error as AuthError {
+            errorMessage = error.errorDescription ?? "Registration failed"
+            showError = true
         } catch {
             errorMessage = error.localizedDescription
             showError = true

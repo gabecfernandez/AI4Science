@@ -49,6 +49,24 @@ final actor UserRepository {
         try modelContext.save()
     }
 
+    /// Create or update a user by ID. All parameters are value types (Sendable)
+    /// so this can be called safely from any actor.
+    func upsertUser(id: String, email: String, fullName: String) async throws {
+        let descriptor = FetchDescriptor<UserEntity>(
+            predicate: #Predicate { $0.id == id }
+        )
+        if let existing = try modelContext.fetch(descriptor).first {
+            existing.email = email
+            existing.fullName = fullName
+            existing.updatedAt = Date()
+            try modelContext.save()
+        } else {
+            let entity = UserEntity(id: id, email: email, fullName: fullName)
+            modelContext.insert(entity)
+            try modelContext.save()
+        }
+    }
+
     /// Get all users
     func getAllUsers() async throws -> [UserEntity] {
         let descriptor = FetchDescriptor<UserEntity>(

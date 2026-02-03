@@ -3,6 +3,8 @@ import SwiftUI
 struct LoginView: View {
     @State private var viewModel = LoginViewModel()
     @Environment(\.dismiss) var dismiss
+    @Environment(AppState.self) private var appState
+    @Environment(ServiceContainer.self) private var services
 
     var body: some View {
         NavigationStack {
@@ -45,15 +47,19 @@ struct LoginView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                TextField("Enter your email", text: $viewModel.email)
+                                TextField(
+                                    "Email",
+                                    text: $viewModel.email,
+                                    prompt: Text("Enter your email").foregroundStyle(.white.opacity(0.5))
+                                )
                                     .textContentType(.emailAddress)
                                     .keyboardType(.emailAddress)
                                     .autocorrectionDisabled()
                                     .textInputAutocapitalization(.never)
+                                    .foregroundStyle(.white)
                                     .padding(12)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(8)
-                                    .foregroundColor(.white)
                             }
 
                             // Password field
@@ -62,22 +68,45 @@ struct LoginView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
 
-                                SecureField("Enter your password", text: $viewModel.password)
+                                SecureField(
+                                    "Password",
+                                    text: $viewModel.password,
+                                    prompt: Text("Enter your password").foregroundStyle(.white.opacity(0.5))
+                                )
                                     .textContentType(.password)
+                                    .foregroundStyle(.white)
                                     .padding(12)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white.opacity(0.15))
                                     .cornerRadius(8)
-                                    .foregroundColor(.white)
                             }
 
                             // Remember me
-                            Toggle("Remember me", isOn: $viewModel.rememberMe)
-                                .tint(.blue)
-                                .foregroundColor(.white)
-                                .padding(.top, 8)
+                            HStack {
+                                Text("Remember me")
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Capsule()
+                                    .frame(width: 51, height: 31)
+                                    .foregroundColor(viewModel.rememberMe
+                                        ? Color(red: 0.4, green: 0.75, blue: 1.0)
+                                        : Color.white.opacity(0.3))
+                                    .overlay(
+                                        Circle()
+                                            .foregroundColor(.white)
+                                            .frame(width: 27, height: 27)
+                                            .offset(x: viewModel.rememberMe ? 10 : -10)
+                                            .animation(.easeInOut(duration: 0.2), value: viewModel.rememberMe)
+                                    )
+                                    .onTapGesture {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            viewModel.rememberMe.toggle()
+                                        }
+                                    }
+                            }
+                            .padding(.top, 8)
                         }
                         .padding(16)
-                        .background(Color.white.opacity(0.05))
+                        .background(Color.white.opacity(0.1))
                         .cornerRadius(12)
 
                         // Login button
@@ -102,7 +131,7 @@ struct LoginView: View {
                         NavigationLink(destination: ForgotPasswordView()) {
                             Text("Forgot Password?")
                                 .font(.subheadline)
-                                .foregroundColor(.blue)
+                                .foregroundColor(Color(red: 0.4, green: 0.75, blue: 1.0))
                         }
 
                         // Divider
@@ -121,10 +150,10 @@ struct LoginView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 48)
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color(red: 0.4, green: 0.75, blue: 1.0))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.blue, lineWidth: 1)
+                                .stroke(Color(red: 0.4, green: 0.75, blue: 1.0), lineWidth: 1)
                         )
 
                         // Register link
@@ -134,7 +163,7 @@ struct LoginView: View {
                             NavigationLink(destination: RegisterView()) {
                                 Text("Sign Up")
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(Color(red: 0.4, green: 0.75, blue: 1.0))
                             }
                         }
                         .font(.subheadline)
@@ -144,8 +173,13 @@ struct LoginView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 32)
                 }
+                .scrollDismissesKeyboard(.immediately)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                viewModel.authService = services.authService
+                viewModel.appState = appState
+            }
         }
         .alert("Error", isPresented: $viewModel.showError, presenting: viewModel.errorMessage) { _ in
             Button("OK") { viewModel.showError = false }

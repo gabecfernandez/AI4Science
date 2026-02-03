@@ -22,7 +22,7 @@ final class ServiceContainer {
     let analysisRepository: AnalysisRepository
 
     // MARK: - Services
-    let authService: AuthService
+    let authService: AuthenticationService
     let mlService: MLService
     let cameraService: CameraServiceImpl
     let mediaService: MediaService
@@ -41,7 +41,7 @@ final class ServiceContainer {
         self.analysisRepository = AnalysisRepository(modelContainer: modelContainer)
 
         // Initialize services
-        self.authService = AuthService(userRepository: userRepository)
+        self.authService = AuthenticationService(userRepository: userRepository)
         self.mlService = MLService()
         self.cameraService = CameraServiceImpl()
         self.mediaService = MediaService()
@@ -57,38 +57,6 @@ final class ServiceContainer {
         )
 
         AppLogger.info("ServiceContainer initialized")
-    }
-}
-
-// MARK: - Authentication Service
-
-final class AuthService: @unchecked Sendable {
-    private let userRepository: UserRepository
-
-    init(userRepository: UserRepository) {
-        self.userRepository = userRepository
-    }
-
-    func signIn(email: String, password: String) async throws -> User {
-        let user = User(
-            id: UUID(),
-            firstName: "User",
-            lastName: "",
-            email: email,
-            role: .researcher,
-            labAffiliation: nil
-        )
-        // Note: UserRepository would need a save method for domain models
-        // For now, this is a stub implementation
-        return user
-    }
-
-    func signOut() async {
-        // Clear session
-    }
-
-    func refreshToken() async throws {
-        // Refresh authentication token
     }
 }
 

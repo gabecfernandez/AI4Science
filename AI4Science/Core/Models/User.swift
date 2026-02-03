@@ -22,7 +22,7 @@ public struct User: Identifiable, Codable, Sendable {
     public var updatedAt: Date
     public var isActive: Bool
 
-    public init(
+    nonisolated public init(
         id: UUID = UUID(),
         firstName: String,
         lastName: String,
